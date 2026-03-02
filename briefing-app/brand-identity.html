@@ -1,0 +1,1867 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Briefing — Brand Identity</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #0C0C0E;
+      color: #E8E6E0;
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── LAYOUT ── */
+    .page {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 40px 100px;
+    }
+
+    /* ── PAGE HEADER ── */
+    .page-header {
+      margin-bottom: 72px;
+      border-bottom: 1px solid #222;
+      padding-bottom: 40px;
+    }
+
+    .page-header-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 18px;
+    }
+
+    .page-header h1 {
+      font-size: 42px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #FAFAF8;
+      margin-bottom: 12px;
+    }
+
+    .page-header p {
+      font-size: 15px;
+      color: #888;
+      max-width: 520px;
+      line-height: 1.7;
+    }
+
+    /* ── SECTION TITLES ── */
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 32px;
+    }
+
+    .section-head h2 {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #555;
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }
+
+    .section-head::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: #1E1E20;
+    }
+
+    section {
+      margin-bottom: 80px;
+    }
+
+    /* ══════════════════════════════════════
+       PALETTE CARDS
+    ══════════════════════════════════════ */
+    .palette-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    .palette-card {
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid #1E1E20;
+      transition: border-color 0.2s, transform 0.2s;
+      cursor: default;
+    }
+
+    .palette-card:hover {
+      border-color: #444;
+      transform: translateY(-2px);
+    }
+
+    /* Card A — Night Signal */
+    .palette-card.a { background: #0A0A0F; }
+    /* Card B — Paper Edition */
+    .palette-card.b { background: #F9F8F5; }
+    /* Card C — Ember Dark */
+    .palette-card.c { background: #0F0E0C; }
+
+    .palette-preview {
+      height: 200px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── Option A preview ── */
+    .a .palette-preview {
+      background: linear-gradient(140deg, #0A0A0F 0%, #0E0E1A 100%);
+    }
+
+    .a .prev-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .a .prev-wordmark {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      color: #EAEAF2;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .a .prev-wordmark::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: #4F80FF;
+      border-radius: 50%;
+    }
+
+    .a .prev-cta {
+      padding: 6px 14px;
+      background: #4F80FF;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .a .prev-headline {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #EAEAF2;
+      line-height: 1.2;
+    }
+
+    .a .prev-headline em {
+      color: #4F80FF;
+      font-style: normal;
+    }
+
+    .a .prev-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #4F80FF;
+      letter-spacing: 0.08em;
+    }
+
+    .a .prev-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border: 1px solid #222;
+      border-radius: 20px;
+      font-size: 10px;
+      color: #666;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Option B preview ── */
+    .b .palette-preview {
+      background: #F9F8F5;
+    }
+
+    .b .prev-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .b .prev-wordmark {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 18px;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: -0.02em;
+    }
+
+    .b .prev-cta {
+      padding: 6px 14px;
+      background: #DC2626;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .b .prev-headline {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #0F172A;
+      line-height: 1.25;
+      letter-spacing: -0.02em;
+    }
+
+    .b .prev-meta {
+      font-size: 10px;
+      color: #9CA3AF;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .b .prev-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border: 1px solid #E5E7EB;
+      border-radius: 20px;
+      font-size: 10px;
+      color: #9CA3AF;
+      background: #fff;
+    }
+
+    .b .prev-divider {
+      height: 1px;
+      background: #E5E7EB;
+      margin: 4px 0;
+    }
+
+    /* ── Option C preview ── */
+    .c .palette-preview {
+      background: linear-gradient(140deg, #0F0E0C 0%, #18160F 100%);
+    }
+
+    .c .prev-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .c .prev-wordmark {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      font-weight: 600;
+      color: #F5F0E8;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .c .prev-wordmark::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: #F97316;
+      border-radius: 2px;
+      transform: rotate(45deg);
+    }
+
+    .c .prev-cta {
+      padding: 6px 14px;
+      background: #F97316;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .c .prev-headline {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #F5F0E8;
+      line-height: 1.2;
+    }
+
+    .c .prev-headline em {
+      color: #F97316;
+      font-style: normal;
+    }
+
+    .c .prev-meta {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #F97316;
+      letter-spacing: 0.08em;
+    }
+
+    .c .prev-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border: 1px solid #2A2820;
+      border-radius: 20px;
+      font-size: 10px;
+      color: #666;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Card info ── */
+    .palette-info {
+      padding: 20px 24px;
+      background: #111113;
+      border-top: 1px solid #1E1E20;
+    }
+
+    .palette-info-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+
+    .palette-option-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #555;
+      margin-bottom: 4px;
+    }
+
+    .palette-name {
+      font-size: 16px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #FAFAF8;
+    }
+
+    .palette-inspired {
+      font-size: 11px;
+      color: #555;
+      font-style: italic;
+      margin-top: 2px;
+    }
+
+    .palette-recommended {
+      padding: 3px 8px;
+      background: rgba(79,128,255,0.12);
+      border: 1px solid rgba(79,128,255,0.25);
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+      color: #4F80FF;
+      white-space: nowrap;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .palette-swatches {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .swatch {
+      flex: 1;
+      height: 28px;
+      border-radius: 4px;
+      position: relative;
+      cursor: default;
+    }
+
+    .swatch-label {
+      display: block;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5px;
+      color: #444;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+    }
+
+    .palette-desc {
+      font-size: 12px;
+      color: #666;
+      line-height: 1.6;
+    }
+
+    .palette-feel-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-top: 12px;
+    }
+
+    .feel-tag {
+      padding: 3px 8px;
+      background: #18181A;
+      border: 1px solid #222;
+      border-radius: 4px;
+      font-size: 10px;
+      color: #666;
+    }
+
+    /* ══════════════════════════════════════
+       TYPOGRAPHY
+    ══════════════════════════════════════ */
+    .type-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .type-card {
+      padding: 28px 32px;
+      background: #111113;
+      border: 1px solid #1E1E20;
+      border-radius: 10px;
+    }
+
+    .type-card-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 16px;
+    }
+
+    .type-specimen-a .ts-display {
+      font-size: 40px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #FAFAF8;
+      line-height: 1.1;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .type-specimen-a .ts-sub {
+      font-size: 14px;
+      color: #666;
+      font-family: 'Inter', sans-serif;
+      font-weight: 400;
+      margin-top: 8px;
+      line-height: 1.7;
+    }
+
+    .type-specimen-a .ts-mono {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: #4F80FF;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 16px;
+      font-weight: 500;
+    }
+
+    .type-scale {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .ts-row {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+    }
+
+    .ts-row-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #444;
+      width: 70px;
+      flex-shrink: 0;
+    }
+
+    .ts-row-sample {
+      color: #FAFAF8;
+    }
+
+    /* ══════════════════════════════════════
+       LOGO TREATMENTS
+    ══════════════════════════════════════ */
+    .logo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .logo-card {
+      padding: 32px 28px;
+      border-radius: 10px;
+      border: 1px solid #1E1E20;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Logo A */
+    .logo-a-wrap {
+      background: #0A0A0F;
+      width: 100%;
+    }
+
+    .logo-a {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px;
+      font-weight: 600;
+      color: #EAEAF2;
+      letter-spacing: 0.01em;
+    }
+
+    .logo-a-dot {
+      width: 9px;
+      height: 9px;
+      background: #4F80FF;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Logo B */
+    .logo-b-wrap {
+      background: #F9F8F5;
+    }
+
+    .logo-b {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: -0.02em;
+    }
+
+    /* Logo C */
+    .logo-c-wrap {
+      background: #0F0E0C;
+    }
+
+    .logo-c {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 17px;
+      font-weight: 800;
+      color: #F5F0E8;
+      letter-spacing: -0.03em;
+    }
+
+    .logo-c-mark {
+      width: 28px;
+      height: 28px;
+      background: #F97316;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 900;
+      color: #fff;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .logo-label {
+      font-size: 11px;
+      color: #555;
+      text-align: center;
+    }
+
+    /* ══════════════════════════════════════
+       INNOVATIVE LOGO SYSTEM
+    ══════════════════════════════════════ */
+    .innovative-logo-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr 1fr;
+      gap: 16px;
+    }
+
+    .innovative-logo-card {
+      padding: 28px;
+      border-radius: 10px;
+      border: 1px solid #E5E7EB;
+      background: #F9F8F5;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .innovative-logo-card::after {
+      content: '';
+      position: absolute;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      right: -90px;
+      top: -110px;
+      background: radial-gradient(circle, rgba(196,163,90,0.20), rgba(196,163,90,0));
+      pointer-events: none;
+    }
+
+    .innovative-logo-card.light {
+      background: #F9F8F5;
+      border-color: #E5E7EB;
+    }
+
+    .innovative-logo-card.light::after {
+      background: radial-gradient(circle, rgba(15,23,42,0.10), rgba(15,23,42,0));
+    }
+
+    .innovative-logo-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #9CA3AF;
+      margin-bottom: 18px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .innovative-logo-card.light .innovative-logo-label {
+      color: #9CA3AF;
+    }
+
+    .innovative-logo-lockup {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      z-index: 1;
+      margin-bottom: 18px;
+    }
+
+    .signal-mark {
+      position: relative;
+      background: none;
+      border: none;
+      box-shadow: none;
+      display: block;
+      flex-shrink: 0;
+    }
+
+    .signal-mark .glyph-letter {
+      position: relative;
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 44px;
+      font-weight: 700;
+      line-height: 1;
+      color: #0F172A;
+      transform: translateY(-2px);
+    }
+
+    .innovative-logo-wordmark {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 30px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #0F172A;
+      line-height: 1;
+    }
+
+    .innovative-logo-card.light .innovative-logo-wordmark {
+      color: #0F172A;
+    }
+
+    .innovative-logo-wordmark .io-accent {
+      color: #DC2626;
+    }
+
+    .innovative-logo-desc {
+      font-size: 12px;
+      color: #6B7280;
+      line-height: 1.7;
+      max-width: 480px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .innovative-logo-card.light .innovative-logo-desc {
+      color: #6B7280;
+    }
+
+    .innovative-logo-meta {
+      margin-top: 14px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      position: relative;
+      z-index: 1;
+    }
+
+    .innovative-logo-chip {
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 10px;
+      color: #6B7280;
+      border: 1px solid #E5E7EB;
+      background: #FFFFFF;
+    }
+
+    .innovative-logo-card.light .innovative-logo-chip {
+      color: #6B7280;
+      border-color: #E5E7EB;
+      background: #FFFFFF;
+    }
+
+    .signal-mark.mono {
+      background: none;
+      box-shadow: none;
+    }
+
+    .signal-mark.mono .glyph-letter {
+      color: #0F172A;
+    }
+
+    /* ══════════════════════════════════════
+       UI COMPONENT PREVIEW
+    ══════════════════════════════════════ */
+    .ui-preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .ui-card {
+      padding: 28px;
+      border-radius: 10px;
+      border: 1px solid #1E1E20;
+      background: #111113;
+    }
+
+    .ui-card-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #444;
+      margin-bottom: 20px;
+    }
+
+    /* Nav sample A */
+    .demo-nav-a {
+      background: #0A0A0F;
+      border: 1px solid #18181E;
+      border-radius: 7px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .demo-nav-a .wm {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      font-weight: 600;
+      color: #EAEAF2;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .demo-nav-a .wm::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      background: #4F80FF;
+      border-radius: 50%;
+    }
+
+    .demo-nav-a .links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .demo-nav-a .links span {
+      font-size: 12px;
+      color: #555;
+    }
+
+    .demo-nav-a .btn {
+      padding: 6px 14px;
+      background: #4F80FF;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Hero sample A */
+    .demo-hero-a {
+      background: #0A0A0F;
+      border: 1px solid #18181E;
+      border-radius: 7px;
+      padding: 24px 18px;
+      text-align: center;
+    }
+
+    .demo-hero-a .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border: 1px solid #1E1E28;
+      border-radius: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #444;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    .demo-hero-a .badge::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      background: #4F80FF;
+      border-radius: 50%;
+    }
+
+    .demo-hero-a h2 {
+      font-size: 26px;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: #EAEAF2;
+      line-height: 1.15;
+      margin-bottom: 10px;
+    }
+
+    .demo-hero-a h2 em {
+      font-style: normal;
+      color: #4F80FF;
+    }
+
+    .demo-hero-a p {
+      font-size: 12px;
+      color: #555;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    .demo-hero-a .cta-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .demo-hero-a .cta-primary {
+      padding: 9px 20px;
+      background: #4F80FF;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .demo-hero-a .cta-secondary {
+      padding: 9px 20px;
+      background: transparent;
+      border: 1px solid #222;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+    }
+
+    /* Briefing story sample */
+    .demo-story-a {
+      background: #0A0A0F;
+      border: 1px solid #18181E;
+      border-radius: 7px;
+      padding: 18px;
+    }
+
+    .demo-story-a .story-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .demo-story-a .section-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #4F80FF;
+    }
+
+    .demo-story-a .sentiment {
+      font-size: 9px;
+      color: #444;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .demo-story-a .sentiment-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #3FB950;
+    }
+
+    .demo-story-a h3 {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #EAEAF2;
+      line-height: 1.35;
+      margin-bottom: 7px;
+    }
+
+    .demo-story-a p {
+      font-size: 11.5px;
+      color: #666;
+      line-height: 1.65;
+      margin-bottom: 12px;
+    }
+
+    .demo-story-a .implication {
+      padding: 8px 10px;
+      background: rgba(79,128,255,0.06);
+      border-left: 2px solid #4F80FF;
+      font-size: 11px;
+      color: #888;
+      border-radius: 0 4px 4px 0;
+      line-height: 1.6;
+    }
+
+    .demo-story-a .implication strong {
+      color: #EAEAF2;
+      font-weight: 600;
+    }
+
+    /* Nav sample B */
+    .demo-nav-b {
+      background: #F9F8F5;
+      border: 1px solid #E5E7EB;
+      border-radius: 7px;
+      padding: 12px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+
+    .demo-nav-b .wm {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 16px;
+      font-weight: 700;
+      color: #0F172A;
+      letter-spacing: -0.02em;
+    }
+
+    .demo-nav-b .links {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .demo-nav-b .links span {
+      font-size: 12px;
+      color: #6B7280;
+    }
+
+    .demo-nav-b .btn {
+      padding: 6px 14px;
+      background: #DC2626;
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    /* Hero sample B */
+    .demo-hero-b {
+      background: #F9F8F5;
+      border: 1px solid #E5E7EB;
+      border-radius: 7px;
+      padding: 24px 18px;
+      text-align: center;
+    }
+
+    .demo-hero-b .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border: 1px solid #E5E7EB;
+      border-radius: 20px;
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      color: #6B7280;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+      background: #fff;
+    }
+
+    .demo-hero-b .badge::before {
+      content: '';
+      width: 5px;
+      height: 5px;
+      background: #DC2626;
+      border-radius: 50%;
+    }
+
+    .demo-hero-b h2 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #0F172A;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    .demo-hero-b h2 em {
+      font-style: normal;
+      color: #DC2626;
+    }
+
+    .demo-hero-b p {
+      font-size: 12px;
+      color: #4B5563;
+      line-height: 1.7;
+      margin-bottom: 18px;
+    }
+
+    .demo-hero-b .cta-row {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .demo-hero-b .cta-primary {
+      padding: 9px 20px;
+      background: #DC2626;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .demo-hero-b .cta-secondary {
+      padding: 9px 20px;
+      background: #fff;
+      border: 1px solid #D1D5DB;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    /* Briefing story sample B */
+    .demo-story-b {
+      background: #F9F8F5;
+      border: 1px solid #E5E7EB;
+      border-radius: 7px;
+      padding: 18px;
+    }
+
+    .demo-story-b .story-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .demo-story-b .section-tag {
+      font-family: 'Inter', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #DC2626;
+    }
+
+    .demo-story-b .sentiment {
+      font-size: 9px;
+      color: #6B7280;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .demo-story-b .sentiment-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #3FB950;
+    }
+
+    .demo-story-b h3 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: #0F172A;
+      line-height: 1.35;
+      margin-bottom: 7px;
+    }
+
+    .demo-story-b p {
+      font-size: 11.5px;
+      color: #4B5563;
+      line-height: 1.65;
+      margin-bottom: 12px;
+    }
+
+    .demo-story-b .implication {
+      padding: 8px 10px;
+      background: rgba(220,38,38,0.06);
+      border-left: 2px solid #DC2626;
+      font-size: 11px;
+      color: #374151;
+      border-radius: 0 4px 4px 0;
+      line-height: 1.6;
+    }
+
+    .demo-story-b .implication strong {
+      color: #0F172A;
+      font-weight: 600;
+    }
+
+    /* ══════════════════════════════════════
+       RECOMMENDATION BOX
+    ══════════════════════════════════════ */
+    .recommendation {
+      padding: 32px 36px;
+      background: #0C1020;
+      border: 1px solid rgba(79,128,255,0.2);
+      border-radius: 12px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 24px;
+      align-items: center;
+    }
+
+    .rec-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: #4F80FF;
+      margin-bottom: 10px;
+    }
+
+    .rec-title {
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #FAFAF8;
+      margin-bottom: 10px;
+    }
+
+    .rec-body {
+      font-size: 13px;
+      color: #777;
+      line-height: 1.7;
+      max-width: 560px;
+    }
+
+    .rec-points {
+      list-style: none;
+      margin-top: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .rec-points li {
+      font-size: 12.5px;
+      color: #888;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .rec-points li::before {
+      content: '→';
+      color: #4F80FF;
+      font-family: 'JetBrains Mono', monospace;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .rec-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      padding: 20px 24px;
+      background: rgba(79,128,255,0.08);
+      border: 1px solid rgba(79,128,255,0.15);
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+
+    .rec-badge-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      color: #4F80FF;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .rec-badge-letter {
+      font-size: 36px;
+      font-weight: 900;
+      color: #4F80FF;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .rec-badge-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #FAFAF8;
+    }
+
+    /* ══════════════════════════════════════
+       COLOUR TOKENS TABLE
+    ══════════════════════════════════════ */
+    .tokens-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .token-chip {
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #1E1E20;
+    }
+
+    .token-chip-swatch {
+      height: 60px;
+    }
+
+    .token-chip-info {
+      padding: 10px 12px;
+      background: #111113;
+    }
+
+    .token-chip-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: #FAFAF8;
+      margin-bottom: 2px;
+    }
+
+    .token-chip-hex {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #555;
+    }
+
+    .token-chip-role {
+      font-size: 10px;
+      color: #444;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    /* ══════════════════════════════════════
+       FOOTER
+    ══════════════════════════════════════ */
+    .page-footer {
+      margin-top: 80px;
+      padding-top: 32px;
+      border-top: 1px solid #1A1A1C;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .page-footer p {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: #333;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── MISC ── */
+    .spacer-sm { height: 20px; }
+    .spacer-md { height: 40px; }
+
+    @media (max-width: 860px) {
+      .palette-grid { grid-template-columns: 1fr; }
+      .type-grid { grid-template-columns: 1fr; }
+      .logo-grid { grid-template-columns: 1fr; }
+      .innovative-logo-grid { grid-template-columns: 1fr; }
+      .ui-preview-grid { grid-template-columns: 1fr; }
+      .tokens-grid { grid-template-columns: repeat(2, 1fr); }
+      .recommendation { grid-template-columns: 1fr; }
+      .page { padding: 40px 20px 80px; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ── PAGE HEADER ── -->
+  <div class="page-header">
+    <div class="page-header-meta">Briefing · Brand Identity Document · v1.0</div>
+    <h1>Brand Identity</h1>
+    <p>Three colour directions for review. Each is inspired by leading editorial and technology brands — clean, credible, and built for daily reading at speed.</p>
+  </div>
+
+  <!-- ════════════════════════════════
+       01 — COLOUR DIRECTIONS
+  ═════════════════════════════════ -->
+  <section>
+    <div class="section-head"><h2>01 — Colour directions</h2></div>
+
+    <div class="palette-grid">
+
+      <!-- Option A: Night Signal -->
+      <div class="palette-card a">
+        <div class="palette-preview">
+          <div class="a prev-nav">
+            <div class="a prev-wordmark">Briefing</div>
+            <div class="a prev-cta">Get started</div>
+          </div>
+          <div>
+            <div class="a prev-meta">Intelligence · Daily</div>
+            <div class="a prev-headline">Your business,<br><em>briefed</em> every morning.</div>
+          </div>
+          <div class="a prev-tag">
+            <span style="width:4px;height:4px;background:#4F80FF;border-radius:50%;display:inline-block;"></span>
+            AI-powered · Verified sources
+          </div>
+        </div>
+        <div class="palette-info">
+          <div class="palette-info-header">
+            <div>
+              <div class="palette-option-label">Option A</div>
+              <div class="palette-name">Night Signal</div>
+              <div class="palette-inspired">Bloomberg Terminal × Anthropic</div>
+            </div>
+            <div class="palette-recommended">Recommended</div>
+          </div>
+          <div class="palette-swatches">
+            <div>
+              <div class="swatch" style="background:#0A0A0F;border:1px solid #222;"></div>
+              <span class="swatch-label">#0A0A0F</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#111118;border:1px solid #222;"></div>
+              <span class="swatch-label">#111118</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#4F80FF;"></div>
+              <span class="swatch-label">#4F80FF</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#EAEAF2;"></div>
+              <span class="swatch-label">#EAEAF2</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#E8C75A;"></div>
+              <span class="swatch-label">#E8C75A</span>
+            </div>
+          </div>
+          <div class="palette-desc">Electric blue replaces the current yellow. Authority without aggression — feels like a digital intelligence terminal. The gold (#E8C75A) accents importance markers only.</div>
+          <div class="palette-feel-tags">
+            <span class="feel-tag">Authoritative</span>
+            <span class="feel-tag">Digital-first</span>
+            <span class="feel-tag">Premium Dark</span>
+            <span class="feel-tag">Trustworthy</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option B: Paper Edition -->
+      <div class="palette-card b">
+        <div class="palette-preview">
+          <div class="b prev-nav">
+            <div class="b prev-wordmark">Briefing</div>
+            <div class="b prev-cta">Start free</div>
+          </div>
+          <div class="b prev-divider"></div>
+          <div>
+            <div class="b prev-meta">Intelligence · Feb 26, 2026</div>
+            <div class="b prev-headline">Your business,<br>briefed every morning.</div>
+          </div>
+          <div class="b prev-tag">AI-powered · Verified sources</div>
+        </div>
+        <div class="palette-info">
+          <div class="palette-info-header">
+            <div>
+              <div class="palette-option-label">Option B</div>
+              <div class="palette-name">Paper Edition</div>
+              <div class="palette-inspired">The Information × Financial Times</div>
+            </div>
+          </div>
+          <div class="palette-swatches">
+            <div>
+              <div class="swatch" style="background:#F9F8F5;border:1px solid #E5E7EB;"></div>
+              <span class="swatch-label">#F9F8F5</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#EFEDE8;border:1px solid #E5E7EB;"></div>
+              <span class="swatch-label">#EFEDE8</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#0F172A;"></div>
+              <span class="swatch-label">#0F172A</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#DC2626;"></div>
+              <span class="swatch-label">#DC2626</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#9CA3AF;border:1px solid #E5E7EB;"></div>
+              <span class="swatch-label">#9CA3AF</span>
+            </div>
+          </div>
+          <div class="palette-desc">Warm cream background with deep navy and a bold crimson CTA. Feels like a premium print publication that lives online. Serif headline treatment adds gravitas.</div>
+          <div class="palette-feel-tags">
+            <span class="feel-tag">Editorial</span>
+            <span class="feel-tag">Print-inspired</span>
+            <span class="feel-tag">Premium Light</span>
+            <span class="feel-tag">Established</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Option C: Ember Dark -->
+      <div class="palette-card c">
+        <div class="palette-preview">
+          <div class="c prev-nav">
+            <div class="c prev-wordmark">Briefing</div>
+            <div class="c prev-cta">Get started</div>
+          </div>
+          <div>
+            <div class="c prev-meta">Intelligence · Daily</div>
+            <div class="c prev-headline">Your business,<br><em>briefed</em> every morning.</div>
+          </div>
+          <div class="c prev-tag">AI-powered · Verified sources</div>
+        </div>
+        <div class="palette-info">
+          <div class="palette-info-header">
+            <div>
+              <div class="palette-option-label">Option C</div>
+              <div class="palette-name">Ember Dark</div>
+              <div class="palette-inspired">Y Combinator × TechCrunch</div>
+            </div>
+          </div>
+          <div class="palette-swatches">
+            <div>
+              <div class="swatch" style="background:#0F0E0C;border:1px solid #222;"></div>
+              <span class="swatch-label">#0F0E0C</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#1A1916;border:1px solid #222;"></div>
+              <span class="swatch-label">#1A1916</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#F97316;"></div>
+              <span class="swatch-label">#F97316</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#F5F0E8;"></div>
+              <span class="swatch-label">#F5F0E8</span>
+            </div>
+            <div>
+              <div class="swatch" style="background:#2A2820;border:1px solid #3A3830;"></div>
+              <span class="swatch-label">#2A2820</span>
+            </div>
+          </div>
+          <div class="palette-desc">Bold orange on a warm-tinted near-black. More energetic and startup-adjacent — closer to your current yellow but with more punch and warmth. High contrast, direct.</div>
+          <div class="palette-feel-tags">
+            <span class="feel-tag">Energetic</span>
+            <span class="feel-tag">Startup-bold</span>
+            <span class="feel-tag">High Contrast</span>
+            <span class="feel-tag">Direct</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /palette-grid -->
+  </section>
+
+  <!-- ════════════════════════════════
+       02 — RECOMMENDATION
+  ═════════════════════════════════ -->
+  <section>
+    <div class="section-head"><h2>02 — Recommendation</h2></div>
+
+    <div class="recommendation">
+      <div>
+        <div class="rec-label">Recommended direction</div>
+        <div class="rec-title">Option A — Night Signal</div>
+        <p class="rec-body">For a business intelligence product aimed at executives and decision-makers, the electric blue signals digital authority and precision — the same language spoken by Bloomberg, Reuters, and Anthropic. It retains the dark-first philosophy of the current design (dark is right for a morning reading experience) while replacing the yellow with a colour that reads as credible intelligence rather than startup energy.</p>
+        <ul class="rec-points">
+          <li>Electric blue (#4F80FF) is instantly associated with data, trust, and precision</li>
+          <li>Warm gold (#E8C75A) is reserved for importance markers in the briefing itself</li>
+          <li>The slight blue tint in the background (#0A0A0F) creates depth vs flat black</li>
+          <li>Works identically in dark mode — no light-mode compromise needed</li>
+          <li>Strong contrast ratios: fully WCAG AA accessible</li>
+        </ul>
+      </div>
+      <div class="rec-badge">
+        <div class="rec-badge-label">Recommended</div>
+        <div class="rec-badge-letter">A</div>
+        <div class="rec-badge-name">Night Signal</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════
+       03 — COLOUR TOKENS (Option A)
+  ═════════════════════════════════ -->
+  <section>
+    <div class="section-head"><h2>03 — Colour tokens · Option A</h2></div>
+
+    <div class="tokens-grid">
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#0A0A0F;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Background</div>
+          <div class="token-chip-hex">#0A0A0F</div>
+          <div class="token-chip-role">Page base, fullscreen bg</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#111118;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Surface</div>
+          <div class="token-chip-hex">#111118</div>
+          <div class="token-chip-role">Cards, form containers</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#1B1B24;border:1px solid #2A2A35;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Surface Hi</div>
+          <div class="token-chip-hex">#1B1B24</div>
+          <div class="token-chip-role">Hovered/active cards</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#222232;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Border</div>
+          <div class="token-chip-hex">#222232</div>
+          <div class="token-chip-role">Default dividers, outlines</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#2E2E44;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Border Hi</div>
+          <div class="token-chip-hex">#2E2E44</div>
+          <div class="token-chip-role">Hover states, focus rings</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#4F80FF;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Accent / Brand</div>
+          <div class="token-chip-hex">#4F80FF</div>
+          <div class="token-chip-role">CTAs, links, highlights</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:rgba(79,128,255,0.1);border:1px solid rgba(79,128,255,0.15);"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Accent Dim</div>
+          <div class="token-chip-hex">rgba(79,128,255,.10)</div>
+          <div class="token-chip-role">Selected states, tinted bg</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#E8C75A;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Gold</div>
+          <div class="token-chip-hex">#E8C75A</div>
+          <div class="token-chip-role">Importance markers, briefing accents only</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#EAEAF2;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Text Primary</div>
+          <div class="token-chip-hex">#EAEAF2</div>
+          <div class="token-chip-role">Headlines, body text</div>
+        </div>
+      </div>
+      <div class="token-chip">
+        <div class="token-chip-swatch" style="background:#7878A0;border:1px solid #2A2A35;"></div>
+        <div class="token-chip-info">
+          <div class="token-chip-name">Text Secondary</div>
+          <div class="token-chip-hex">#7878A0</div>
+          <div class="token-chip-role">Subtitles, meta, captions</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════
+       04 — TYPOGRAPHY
+  ═════════════════════════════════ -->
+  <section>
+    <div class="section-head"><h2>04 — Typography</h2></div>
+
+    <div class="type-grid">
+      <div class="type-card type-specimen-a">
+        <div class="type-card-label">Primary · Inter (Display)</div>
+        <div class="ts-display">Briefed.<br>Every morning.</div>
+        <div class="ts-sub">Personalised intelligence for people who need to move fast. Clear, sourced, concise.</div>
+        <div class="ts-mono">Macro &amp; Markets → 07:30</div>
+      </div>
+
+      <div class="type-card">
+        <div class="type-card-label">Type scale</div>
+        <div class="type-scale">
+          <div class="ts-row">
+            <span class="ts-row-label">Display</span>
+            <span class="ts-row-sample" style="font-size:32px;font-weight:800;letter-spacing:-0.04em;line-height:1.1;">Intelligence</span>
+          </div>
+          <div class="ts-row">
+            <span class="ts-row-label">H1</span>
+            <span class="ts-row-sample" style="font-size:22px;font-weight:700;letter-spacing:-0.03em;">Morning Briefing</span>
+          </div>
+          <div class="ts-row">
+            <span class="ts-row-label">H2</span>
+            <span class="ts-row-sample" style="font-size:16px;font-weight:700;letter-spacing:-0.02em;">Macro &amp; Markets</span>
+          </div>
+          <div class="ts-row">
+            <span class="ts-row-label">Body</span>
+            <span class="ts-row-sample" style="font-size:14px;color:#888;">ECB holds rates amid inflation data</span>
+          </div>
+          <div class="ts-row">
+            <span class="ts-row-label">Caption</span>
+            <span class="ts-row-sample" style="font-size:11px;color:#555;">Reuters · Feb 26, 2026</span>
+          </div>
+          <div class="ts-row">
+            <span class="ts-row-label">Mono UI</span>
+            <span class="ts-row-sample" style="font-size:11px;font-family:'JetBrains Mono',monospace;color:#4F80FF;letter-spacing:0.08em;text-transform:uppercase;">07 — Delivery · 07:30</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════
+       05 — LOGO TREATMENTS
+  ═════════════════════════════════ -->
+  <section>
+    <div class="section-head"><h2>05 — Logo treatments</h2></div>
+
+    <div class="logo-grid">
+      <div class="logo-card logo-a-wrap">
+        <div class="logo-a">
+          <span class="logo-a-dot"></span>
+          Briefing
+        </div>
+        <div class="logo-label">A1 — Monospace + dot mark<br>Recommended. Terminal / precision feel.</div>
+      </div>
+
+      <div class="logo-card" style="background:#0A0A0F;border-color:#1E1E20;">
+        <div style="display:flex;align-items:center;gap:10px;font-family:'Inter',sans-serif;font-size:20px;font-weight:900;letter-spacing:-0.04em;color:#EAEAF2;">
+          <span style="color:#4F80FF;">B</span>riefing
+        </div>
+        <div class="logo-label">A2 — Initial accent<br>Subtle brand mark through typography.</div>
+      </div>
+
+      <div class="logo-card" style="background:#0A0A0F;border-color:#1E1E20;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:30px;height:30px;background:#4F80FF;border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:#fff;">B</div>
+          <span style="font-family:'Inter',sans-serif;font-size:18px;font-weight:800;letter-spacing:-0.03em;color:#EAEAF2;">Briefing</span>
+        </div>
+        <div class="logo-label">A3 — Icon + wordmark<br>Good for email headers and favicons.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════
+       06 — INNOVATIVE LOGO PROPOSAL
+  ═════════════════════════════════ -->
+  <section>
+    <div class="section-head"><h2>06 — Innovative logo proposal · Option B</h2></div>
+
+    <div class="innovative-logo-grid">
+      <div class="innovative-logo-card">
+        <div class="innovative-logo-label">Primary lockup</div>
+        <div class="innovative-logo-lockup">
+          <div class="signal-mark">
+            <span class="glyph-letter">I.</span>
+          </div>
+          <div class="innovative-logo-wordmark">Intel<span class="io-accent">io</span>.</div>
+        </div>
+        <p class="innovative-logo-desc">Concept: <strong>Editorial Initial</strong>. The icon now uses the same Playfair "I" as the Intelio wordmark for direct brand consistency across favicon, app icon, and masthead usage.</p>
+        <div class="innovative-logo-meta">
+          <span class="innovative-logo-chip">Distinctive mark</span>
+          <span class="innovative-logo-chip">Scales to favicon</span>
+          <span class="innovative-logo-chip">Readable at 16px</span>
+          <span class="innovative-logo-chip">Ownable silhouette</span>
+        </div>
+      </div>
+
+      <div class="innovative-logo-card light">
+        <div class="innovative-logo-label">Icon only</div>
+        <div class="innovative-logo-lockup">
+          <div class="signal-mark">
+            <span class="glyph-letter">I.</span>
+          </div>
+        </div>
+        <p class="innovative-logo-desc">App icon, social avatar, browser tab, and mobile launcher use.</p>
+      </div>
+
+      <div class="innovative-logo-card light">
+        <div class="innovative-logo-label">Mono fallback</div>
+        <div class="innovative-logo-lockup">
+          <div class="signal-mark mono">
+            <span class="glyph-letter">I.</span>
+          </div>
+          <div class="innovative-logo-wordmark">Intel<span class="io-accent">io</span>.</div>
+        </div>
+        <p class="innovative-logo-desc">Single-ink compatible for print docs, invoices, and embossing.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════
+       07 — UI COMPONENT PREVIEWS
+  ═════════════════════════════════ -->
+  <section>
+    <div class="section-head"><h2>07 — UI previews · Option A applied</h2></div>
+
+    <div class="ui-preview-grid">
+
+      <div class="ui-card">
+        <div class="ui-card-label">Navigation + Hero (Signup page)</div>
+        <div class="demo-nav-a">
+          <div class="wm">Briefing</div>
+          <div class="links">
+            <span>How it works</span>
+            <span>Sample</span>
+          </div>
+          <div class="btn">Get started</div>
+        </div>
+        <div class="demo-hero-a">
+          <div class="badge">AI-powered · Daily delivery</div>
+          <h2>Your business,<br><em>briefed</em> every morning.</h2>
+          <p>Personalised daily intelligence — built for your industry, your region, your decisions.</p>
+          <div class="cta-row">
+            <div class="cta-primary">Start free trial →</div>
+            <div class="cta-secondary">View sample</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="ui-card-label">Briefing story card</div>
+        <div class="demo-story-a">
+          <div class="story-meta">
+            <div class="section-tag">Macro &amp; Markets</div>
+            <div class="sentiment">
+              <span class="sentiment-dot"></span>
+              Positive signal
+            </div>
+          </div>
+          <h3>ECB holds benchmark rate at 2.75% — signals flexibility for Q2 cuts</h3>
+          <p>The European Central Bank left its deposit facility rate unchanged, citing easing core inflation and stabilising energy prices across the eurozone as conditions approach the 2% target.</p>
+          <div class="implication">
+            <strong>Business implication:</strong> Borrowing costs for variable-rate facilities likely stable through April. Review refinancing windows if rates ease in Q2 as signalled.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ════════════════════════════════
+       08 — UI COMPONENT PREVIEWS (Option B)
+  ═════════════════════════════════ -->
+  <section>
+    <div class="section-head"><h2>08 — UI previews · Option B applied</h2></div>
+
+    <div class="ui-preview-grid">
+
+      <div class="ui-card">
+        <div class="ui-card-label">Navigation + Hero (Signup page)</div>
+        <div class="demo-nav-b">
+          <div class="wm">Briefing</div>
+          <div class="links">
+            <span>How it works</span>
+            <span>Sample</span>
+          </div>
+          <div class="btn">Start free</div>
+        </div>
+        <div class="demo-hero-b">
+          <div class="badge">AI-powered · Daily delivery</div>
+          <h2>Your business,<br><em>briefed</em> every morning.</h2>
+          <p>Personalised daily intelligence - built for your industry, your region, your decisions.</p>
+          <div class="cta-row">
+            <div class="cta-primary">Start free trial -></div>
+            <div class="cta-secondary">View sample</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="ui-card">
+        <div class="ui-card-label">Briefing story card</div>
+        <div class="demo-story-b">
+          <div class="story-meta">
+            <div class="section-tag">Macro &amp; Markets</div>
+            <div class="sentiment">
+              <span class="sentiment-dot"></span>
+              Positive signal
+            </div>
+          </div>
+          <h3>ECB holds benchmark rate at 2.75% as disinflation trend stabilises</h3>
+          <p>The European Central Bank kept the deposit facility rate unchanged, noting moderating core inflation and a steadier energy backdrop across the eurozone in the latest policy cycle.</p>
+          <div class="implication">
+            <strong>Business implication:</strong> Financing conditions remain predictable in the near term. Monitor Q2 guidance for refinancing windows if policy easing gains momentum.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ── FOOTER ── -->
+  <div class="page-footer">
+    <p>Briefing · Brand Identity v1.0 · February 2026</p>
+    <p>For review — not yet applied to files</p>
+  </div>
+
+</div>
+</body>
+</html>

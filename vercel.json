@@ -1,0 +1,35 @@
+{
+  "version": 2,
+  "framework": null,
+  "buildCommand": null,
+  "outputDirectory": "briefing-app",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/monthly",
+      "schedule": "0 4 1 * *"
+    }
+  ],
+  "functions": {
+    "api/cron/daily.js":    { "maxDuration": 300 },
+    "api/cron/monthly.js":  { "maxDuration": 300 },
+    "api/register.js":      { "maxDuration": 60 },
+    "api/agents/runner.js": { "maxDuration": 300 }
+  },
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, POST, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "Content-Type, Authorization" }
+      ]
+    }
+  ]
+}

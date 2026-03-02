@@ -1,0 +1,2054 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelio · Morning Briefing · 26 February 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       INTELIO · Morning Briefing
+       Brand: Option B — Paper Edition
+       UX: Single-section focused reading, one section at a time
+    ═══════════════════════════════════════════════════════════ */
+
+    /* ── DESIGN TOKENS ── */
+    [data-theme="light"] {
+      --bg:           #F9F8F5;
+      --surface:      #FFFFFF;
+      --surface-hi:   #F3F0EB;
+      --border:       #E2DFD8;
+      --border-hi:    #C8C5BC;
+      --text:         #0F172A;
+      --text-2:       #475569;
+      --text-3:       #94A3B8;
+      --accent:       #C41E3A;
+      --accent-dim:   rgba(196, 30, 58, 0.07);
+      --accent-glow:  rgba(196, 30, 58, 0.18);
+      --pos:          #166534;
+      --pos-bg:       rgba(22, 101, 52, 0.09);
+      --neg:          #991B1B;
+      --neg-bg:       rgba(153, 27, 27, 0.09);
+      --neu:          #64748B;
+      --shadow-sm:    0 1px 4px rgba(15, 23, 42, 0.06);
+      --shadow-md:    0 4px 20px rgba(15, 23, 42, 0.10);
+    }
+    [data-theme="dark"] {
+      --bg:           #0E0C0A;
+      --surface:      #161310;
+      --surface-hi:   #1E1B17;
+      --border:       #2C2820;
+      --border-hi:    #3C3830;
+      --text:         #EDE9E0;
+      --text-2:       #887E6E;
+      --text-3:       #4A4438;
+      --accent:       #E53535;
+      --accent-dim:   rgba(229, 53, 53, 0.09);
+      --accent-glow:  rgba(229, 53, 53, 0.22);
+      --pos:          #4ADE80;
+      --pos-bg:       rgba(74, 222, 128, 0.10);
+      --neg:          #F87171;
+      --neg-bg:       rgba(248, 113, 113, 0.10);
+      --neu:          #78716C;
+      --shadow-sm:    0 1px 4px rgba(0, 0, 0, 0.35);
+      --shadow-md:    0 4px 20px rgba(0, 0, 0, 0.45);
+    }
+
+    /* ── RESET ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; font-size: 16px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.38s ease, color 0.38s ease;
+      overflow-x: hidden;
+    }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ════════════════════════════════════
+       READING PROGRESS BAR
+       (tracks scroll within active section)
+    ════════════════════════════════════ */
+    #progress {
+      position: fixed;
+      top: 0; left: 0;
+      height: 3px;
+      width: 0%;
+      background: var(--accent);
+      z-index: 9999;
+      transition: width 0.08s linear;
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    /* ════════════════════════════════════
+       MASTHEAD
+    ════════════════════════════════════ */
+    .masthead {
+      position: sticky;
+      top: 0;
+      z-index: 500;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      padding: 0 48px;
+      height: 76px;
+      transition: background 0.38s ease, border-color 0.38s ease;
+    }
+    .masthead-left { display: flex; align-items: center; gap: 10px; }
+    .edition-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px; font-weight: 600;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--text-3);
+      padding: 3px 9px;
+      border: 1px solid var(--border); border-radius: 4px;
+      transition: color 0.38s ease, border-color 0.38s ease;
+    }
+    .masthead-center { text-align: center; }
+    .wordmark {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 34px; font-weight: 700;
+      color: var(--text); letter-spacing: -0.025em; line-height: 1;
+      transition: color 0.38s ease;
+    }
+    .wordmark .io { color: var(--accent); transition: color 0.38s ease; }
+    .masthead-byline {
+      font-size: 9.5px; color: var(--text-3);
+      margin-top: 4px; font-weight: 400; letter-spacing: 0.01em;
+      transition: color 0.38s ease;
+    }
+    .masthead-byline strong { color: var(--text-2); font-weight: 600; transition: color 0.38s ease; }
+    .masthead-right { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+    .masthead-date {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px; color: var(--text-3); letter-spacing: 0.04em;
+      transition: color 0.38s ease;
+    }
+
+    /* Theme & print buttons */
+    .theme-btn {
+      width: 34px; height: 34px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: var(--text-2);
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .print-btn {
+      padding: 6px 14px; background: transparent;
+      border: 1px solid var(--border); border-radius: 8px; cursor: pointer;
+      font-size: 10.5px; font-weight: 600; color: var(--text-2);
+      font-family: 'Inter', sans-serif; letter-spacing: 0.02em;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .print-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ════════════════════════════════════
+       MARKET SIGNALS STRIP
+    ════════════════════════════════════ */
+    .signals-bar {
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 0 48px; overflow-x: auto; scrollbar-width: none;
+      transition: background 0.38s ease, border-color 0.38s ease;
+    }
+    .signals-bar::-webkit-scrollbar { display: none; }
+    .signals-inner {
+      display: flex; align-items: center; height: 44px;
+      gap: 0; min-width: max-content;
+    }
+    .sig-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 0 20px; border-right: 1px solid var(--border);
+      height: 100%; white-space: nowrap;
+      transition: border-color 0.38s ease;
+    }
+    .sig-item:first-child { padding-left: 0; }
+    .sig-lbl {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--text-3); transition: color 0.38s ease;
+    }
+    .sig-val { font-size: 13px; font-weight: 700; color: var(--text); letter-spacing: -0.01em; transition: color 0.38s ease; }
+    .sig-chg { font-size: 11px; font-weight: 600; padding: 2px 6px; border-radius: 3px; }
+    .s-pos .sig-chg { color: var(--pos); background: var(--pos-bg); }
+    .s-neg .sig-chg { color: var(--neg); background: var(--neg-bg); }
+    .s-neu .sig-chg { color: var(--neu); }
+    .signals-ts {
+      margin-left: auto; padding-left: 20px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px; color: var(--text-3); letter-spacing: 0.06em; white-space: nowrap;
+      transition: color 0.38s ease;
+    }
+
+    /* ════════════════════════════════════
+       SECTION NAVIGATION
+       Redesigned: pills + section counter
+    ════════════════════════════════════ */
+    .sec-nav {
+      position: sticky;
+      top: 76px;
+      z-index: 400;
+      background: var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 0 48px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      transition: background 0.38s ease, border-color 0.38s ease, box-shadow 0.25s;
+    }
+    .sec-nav::-webkit-scrollbar { display: none; }
+    .sec-nav.elevated { box-shadow: var(--shadow-md); }
+
+    .sec-nav-inner {
+      display: flex;
+      align-items: center;
+      height: 48px;
+      gap: 2px;
+      min-width: max-content;
+    }
+
+    .nav-pill {
+      padding: 6px 15px; border: none; border-radius: 6px;
+      background: transparent; font-family: 'Inter', sans-serif;
+      font-size: 12.5px; font-weight: 500; color: var(--text-2);
+      cursor: pointer; white-space: nowrap;
+      transition: background 0.18s, color 0.18s;
+    }
+    .nav-pill:hover  { background: var(--surface); color: var(--text); }
+    .nav-pill.active { background: var(--accent-dim); color: var(--accent); font-weight: 700; }
+
+    /* Section counter — right side of nav bar */
+    .sec-counter-wrap {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-left: 20px;
+      flex-shrink: 0;
+    }
+    .sec-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--text-3);
+      white-space: nowrap;
+      transition: color 0.38s ease;
+    }
+    .sec-counter .counter-name {
+      color: var(--accent);
+      transition: color 0.38s ease;
+    }
+
+    /* ════════════════════════════════════
+       CONTENT AREA
+    ════════════════════════════════════ */
+    .content {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 48px 80px;
+    }
+
+    /* ════════════════════════════════════
+       BRIEFING SECTIONS
+       ONE visible at a time
+    ════════════════════════════════════ */
+    .bsec {
+      display: none;          /* hidden by default */
+      padding-top: 56px;
+    }
+
+    /* Active section — slide up + fade in */
+    .bsec.active {
+      display: block;
+      animation: secEnter 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+
+    /* Exit transition — fade + slide up slightly */
+    .bsec.exiting {
+      display: block !important;
+      animation: secExit 0.2s ease forwards;
+      pointer-events: none;
+    }
+
+    @keyframes secEnter {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes secExit {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-10px); }
+    }
+
+    /* ── Section header ── */
+    .sec-head { margin-bottom: 26px; }
+    .sec-title-row {
+      display: flex; align-items: baseline;
+      justify-content: space-between; margin-bottom: 11px;
+    }
+    .sec-title {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px; font-weight: 800;
+      letter-spacing: 0.16em; text-transform: uppercase;
+      color: var(--accent); transition: color 0.38s ease;
+    }
+    .sec-meta { display: flex; align-items: center; gap: 14px; }
+    .sec-meta span {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px; color: var(--text-3); letter-spacing: 0.05em;
+      transition: color 0.38s ease;
+    }
+    .sec-rule { height: 1px; background: var(--border); transition: background 0.38s ease; }
+
+    /* ════════════════════════════════════
+       EXECUTIVE SUMMARY
+    ════════════════════════════════════ */
+    .summary-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 0 10px 10px 0;
+      padding: 28px 32px;
+      box-shadow: var(--shadow-sm);
+      transition: background 0.38s ease, border-color 0.38s ease;
+    }
+    .summary-prep {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px; color: var(--text-3); letter-spacing: 0.04em;
+      margin-bottom: 22px; transition: color 0.38s ease;
+    }
+    .sum-list { list-style: none; display: flex; flex-direction: column; gap: 16px; }
+    .sum-item { display: grid; grid-template-columns: 30px 1fr; align-items: baseline; gap: 12px; }
+    .sum-num {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 16px; font-weight: 700; color: var(--accent);
+      line-height: 1.55; transition: color 0.38s ease;
+    }
+    .sum-text { font-size: 14px; color: var(--text-2); line-height: 1.72; transition: color 0.38s ease; }
+    .sum-text strong { color: var(--text); font-weight: 600; transition: color 0.38s ease; }
+
+    /* ════════════════════════════════════
+       STORY ELEMENTS
+    ════════════════════════════════════ */
+    .story-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .story-tags { display: flex; align-items: center; gap: 9px; }
+
+    /* Sentiment dot */
+    .sdot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; cursor: default; }
+    .sdot.pos { background: var(--pos); }
+    .sdot.neg { background: var(--neg); }
+    .sdot.neu { background: var(--neu); }
+
+    .story-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+      color: var(--text-3); transition: color 0.38s ease;
+    }
+    .story-rt { font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: var(--text-3); letter-spacing: 0.05em; transition: color 0.38s ease; }
+
+    /* Headline */
+    .story-hl {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-weight: 700; letter-spacing: -0.015em; line-height: 1.25;
+      color: var(--text); margin-bottom: 13px; transition: color 0.38s ease;
+    }
+    /* Lede */
+    .story-lede {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 15px; font-style: italic;
+      color: var(--text-2); line-height: 1.68;
+      margin-bottom: 14px; transition: color 0.38s ease;
+    }
+    /* Body */
+    .story-body {
+      font-size: 14.5px; color: var(--text-2); line-height: 1.82;
+      margin-bottom: 22px; transition: color 0.38s ease;
+    }
+
+    /* Key stat */
+    .key-stat {
+      display: inline-flex; flex-direction: column;
+      background: var(--surface-hi); border: 1px solid var(--border);
+      border-radius: 8px; padding: 15px 24px; margin-bottom: 22px;
+      transition: background 0.38s ease, border-color 0.38s ease;
+    }
+    .ks-val {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 36px; font-weight: 700; color: var(--text);
+      line-height: 1; margin-bottom: 7px; letter-spacing: -0.02em;
+      transition: color 0.38s ease;
+    }
+    .ks-lbl { font-size: 11px; color: var(--text-3); line-height: 1.55; transition: color 0.38s ease; }
+
+    /* Implication block */
+    .impl-block { margin-bottom: 18px; }
+    .impl-toggle {
+      display: inline-flex; align-items: center; gap: 7px;
+      padding: 0; border: none; background: transparent;
+      font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 800;
+      letter-spacing: 0.12em; text-transform: uppercase;
+      color: var(--accent); cursor: pointer; transition: opacity 0.2s, color 0.38s ease;
+    }
+    .impl-toggle:hover { opacity: 0.72; }
+    .impl-arrow { font-size: 13px; font-weight: 400; display: inline-block; transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); }
+    .impl-toggle.open .impl-arrow { transform: rotate(90deg); }
+    .impl-body { overflow: hidden; max-height: 0; transition: max-height 0.38s cubic-bezier(0.4,0,0.2,1); }
+    .impl-body.open { max-height: 260px; }
+    .impl-inner {
+      margin-top: 10px; padding: 15px 18px;
+      background: var(--accent-dim); border-left: 2px solid var(--accent);
+      border-radius: 0 6px 6px 0;
+      font-size: 13.5px; color: var(--text-2); line-height: 1.78;
+      transition: background 0.38s ease, border-color 0.38s ease, color 0.38s ease;
+    }
+
+    /* ── Full story expand ── */
+    .full-story-block { margin-bottom: 22px; }
+    .full-story-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 7px 14px 7px 12px;
+      border: 1px solid var(--border); border-radius: 20px;
+      background: var(--surface);
+      font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      color: var(--text-2); cursor: pointer;
+      transition: all 0.22s;
+      box-shadow: var(--shadow-sm);
+    }
+    .full-story-btn:hover {
+      border-color: var(--text-2); color: var(--text);
+      box-shadow: var(--shadow-md); transform: translateY(-1px);
+    }
+    .full-story-btn.open { border-color: var(--border-hi); color: var(--text-3); }
+    .fs-chevron {
+      width: 16px; height: 16px; border-radius: 50%;
+      background: var(--surface-hi); display: inline-flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 900; line-height: 1;
+      transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), background 0.2s;
+    }
+    .full-story-btn.open .fs-chevron { transform: rotate(45deg); background: var(--border-hi); }
+    .full-story-body {
+      overflow: hidden; max-height: 0;
+      transition: max-height 0.5s cubic-bezier(0.4,0,0.2,1);
+    }
+    .full-story-body.open { max-height: 1200px; }
+    .full-story-inner {
+      padding: 22px 0 4px;
+      border-top: 1px dashed var(--border);
+      margin-top: 14px;
+    }
+    .full-story-inner p {
+      font-size: 14px; color: var(--text-2); line-height: 1.88;
+      margin-bottom: 16px; transition: color 0.38s ease;
+    }
+    .full-story-inner p:last-child { margin-bottom: 0; }
+    .full-story-inner blockquote {
+      margin: 18px 0; padding: 14px 20px;
+      border-left: 2px solid var(--border-hi);
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 14.5px; color: var(--text-2); line-height: 1.72;
+    }
+    .full-story-inner blockquote cite {
+      display: block; margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px; font-style: normal; color: var(--text-3); letter-spacing: 0.05em;
+    }
+    .full-story-inner .fs-data-row {
+      display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px;
+    }
+    .full-story-inner .fs-chip {
+      padding: 4px 10px; border-radius: 4px;
+      background: var(--surface-hi); border: 1px solid var(--border);
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-2);
+      letter-spacing: 0.04em;
+    }
+
+    /* Source */
+    .story-src {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9.5px; color: var(--text-3); text-decoration: none; letter-spacing: 0.04em;
+      transition: color 0.2s;
+    }
+    .story-src:hover { color: var(--accent); text-decoration: none; }
+
+    /* ════════════════════════════════════
+       LEAD STORY
+    ════════════════════════════════════ */
+    .story-lead {
+      padding: 30px 0; border-bottom: 1px solid var(--border);
+      margin-bottom: 4px; transition: border-color 0.38s ease;
+    }
+    .story-lead .story-hl { font-size: 30px; }
+
+    /* ════════════════════════════════════
+       SECONDARY STORY GRID
+    ════════════════════════════════════ */
+    .story-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-top: 4px;
+    }
+    .story-card {
+      padding: 24px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 0.2s, transform 0.22s ease, box-shadow 0.22s ease, background 0.38s ease;
+      cursor: default;
+    }
+    .story-card:hover { border-color: var(--border-hi); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .story-card .story-hl { font-size: 18px; margin-bottom: 10px; }
+    .story-card .story-body { font-size: 13.5px; margin-bottom: 16px; }
+    .story-card .key-stat { width: 100%; margin-bottom: 16px; }
+    .story-card .ks-val { font-size: 28px; }
+
+    /* ════════════════════════════════════
+       SECTION-END NAVIGATION
+       — appears at the bottom of every section
+    ════════════════════════════════════ */
+    .sec-end-nav {
+      margin-top: 60px;
+      padding: 28px 0 8px;
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 20px;
+      transition: border-color 0.38s ease;
+    }
+
+    .sec-end-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 11px 20px;
+      cursor: pointer;
+      color: var(--text-2);
+      transition: all 0.22s;
+      white-space: nowrap;
+    }
+
+    /* Prev button — left aligned, secondary */
+    .sec-end-prev {
+      text-align: left;
+      justify-self: start;
+    }
+    .sec-end-prev:not([disabled]):hover {
+      border-color: var(--border-hi);
+      color: var(--text);
+    }
+    .sec-end-prev[disabled] {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    /* Next button — right aligned, primary action */
+    .sec-end-next {
+      text-align: right;
+      justify-self: end;
+      background: var(--surface);
+      color: var(--text);
+      font-weight: 700;
+    }
+    .sec-end-next:not(.is-complete):hover {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+    .sec-end-next.is-complete {
+      background: var(--surface-hi);
+      border-color: var(--border);
+      color: var(--text-3);
+      cursor: default;
+      font-weight: 600;
+    }
+
+    /* Progress dots */
+    .dots-bar {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--border-hi);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+    }
+    .dot:hover { background: var(--text-3); }
+    .dot.dot-active {
+      background: var(--accent);
+      transform: scale(1.3);
+      box-shadow: 0 0 0 3px var(--accent-dim);
+      cursor: default;
+    }
+
+    /* ════════════════════════════════════
+       BACK TO TOP
+    ════════════════════════════════════ */
+    .back-top {
+      position: fixed; bottom: 36px; right: 36px;
+      width: 42px; height: 42px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 50%; cursor: pointer;
+      font-size: 17px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transform: translateY(12px) scale(0.88);
+      transition: opacity 0.3s, transform 0.3s;
+      box-shadow: 0 4px 18px var(--accent-glow);
+      z-index: 600;
+    }
+    .back-top.show { opacity: 1; transform: none; }
+    .back-top:hover { transform: translateY(-2px) scale(1.06); }
+
+    /* ════════════════════════════════════
+       FOOTER
+       Icon "I." used here (separately from wordmark)
+    ════════════════════════════════════ */
+    .page-footer {
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 40px 48px;
+      transition: background 0.38s ease, border-color 0.38s ease;
+    }
+    .footer-inner {
+      max-width: 780px; margin: 0 auto;
+      display: grid; grid-template-columns: auto 1fr auto;
+      gap: 44px; align-items: center;
+    }
+    .footer-icon {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 30px; font-weight: 700;
+      color: var(--text); letter-spacing: -0.02em; line-height: 1;
+      transition: color 0.38s ease;
+    }
+    .footer-meta { font-size: 11.5px; color: var(--text-3); line-height: 1.82; transition: color 0.38s ease; }
+    .footer-links { display: flex; flex-direction: column; gap: 5px; align-items: flex-end; }
+    .footer-links a { font-size: 11px; color: var(--text-3); text-decoration: none; transition: color 0.2s; }
+    .footer-links a:hover { color: var(--accent); }
+
+    /* ════════════════════════════════════
+       HIGHLIGHT TOOLTIP
+       Appears near selected text
+    ════════════════════════════════════ */
+    .hl-tooltip {
+      position: fixed;
+      z-index: 9000;
+      background: var(--text);
+      color: var(--bg);
+      border-radius: 8px;
+      padding: 7px 14px;
+      display: flex; align-items: center; gap: 8px;
+      font-family: 'Inter', sans-serif; font-size: 11.5px; font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+      opacity: 0; transform: translateY(6px) scale(0.95);
+      transition: opacity 0.18s, transform 0.18s;
+      pointer-events: none;
+      white-space: nowrap;
+      user-select: none;
+    }
+    .hl-tooltip.visible {
+      opacity: 1; transform: translateY(0) scale(1); pointer-events: all;
+    }
+    .hl-tooltip.processing { opacity: 0.65; pointer-events: none; }
+    .hl-spark { font-size: 13px; animation: sparkSpin 1.2s linear infinite; display: inline-block; }
+    @keyframes sparkSpin {
+      0%   { transform: rotate(0deg)   scale(1);    opacity: 1; }
+      50%  { transform: rotate(180deg) scale(1.2);  opacity: 0.7; }
+      100% { transform: rotate(360deg) scale(1);    opacity: 1; }
+    }
+    .hl-tooltip:not(.processing) .hl-spark { animation: none; }
+    .hl-tooltip.processing .hl-spark { animation: sparkSpin 1s linear infinite; }
+
+    /* ════════════════════════════════════
+       NOTEPAD FAB
+    ════════════════════════════════════ */
+    .np-fab {
+      position: fixed; bottom: 36px; left: 36px;
+      width: 50px; height: 50px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 14px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+      box-shadow: var(--shadow-md);
+      z-index: 700;
+      transition: border-color 0.2s, transform 0.22s, box-shadow 0.22s, background 0.38s ease;
+    }
+    .np-fab:hover {
+      border-color: var(--accent); transform: translateY(-2px) scale(1.06);
+      box-shadow: 0 8px 28px var(--accent-glow);
+    }
+    .np-fab-icon {
+      font-size: 18px; color: var(--accent); line-height: 1;
+      transition: color 0.38s ease;
+    }
+    .np-fab-badge {
+      position: absolute; top: -6px; right: -6px;
+      min-width: 18px; height: 18px; border-radius: 9px;
+      background: var(--accent); color: #fff;
+      font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 800;
+      display: none; align-items: center; justify-content: center; padding: 0 4px;
+      box-shadow: 0 2px 8px var(--accent-glow);
+    }
+    .np-fab-badge.show { display: flex; }
+
+    /* ════════════════════════════════════
+       NOTEPAD PANEL
+    ════════════════════════════════════ */
+    .np-panel {
+      position: fixed; top: 0; right: 0;
+      width: 380px; height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      z-index: 800;
+      display: flex; flex-direction: column;
+      transform: translateX(100%);
+      transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1), background 0.38s ease, border-color 0.38s ease;
+      box-shadow: -12px 0 40px rgba(0,0,0,0.12);
+    }
+    .np-panel.open { transform: translateX(0); }
+
+    .np-panel-head {
+      padding: 20px 22px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+      transition: border-color 0.38s ease;
+    }
+    .np-head-left { display: flex; align-items: center; gap: 10px; }
+    .np-head-logo {
+      font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700;
+      color: var(--accent); letter-spacing: -0.02em; line-height: 1;
+    }
+    .np-head-title {
+      font-family: 'Inter', sans-serif; font-size: 12px; font-weight: 700;
+      color: var(--text); letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .np-head-count {
+      font-family: 'JetBrains Mono', monospace; font-size: 10px; font-weight: 600;
+      color: var(--text-3); letter-spacing: 0.06em;
+      transition: color 0.38s ease;
+    }
+    .np-head-right { display: flex; align-items: center; gap: 8px; }
+    .np-export-btn {
+      padding: 5px 12px; border: 1px solid var(--border); border-radius: 6px;
+      background: transparent; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 10.5px; font-weight: 600;
+      color: var(--text-2); letter-spacing: 0.03em;
+      transition: all 0.2s;
+    }
+    .np-export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .np-close-btn {
+      width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px;
+      background: transparent; cursor: pointer;
+      font-size: 13px; color: var(--text-3);
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .np-close-btn:hover { border-color: var(--text-2); color: var(--text); }
+
+    /* Notes body */
+    .np-body {
+      flex: 1; overflow-y: auto; padding: 18px 22px;
+      display: flex; flex-direction: column; gap: 14px;
+      scrollbar-width: thin; scrollbar-color: var(--border) transparent;
+    }
+    .np-body::-webkit-scrollbar { width: 4px; }
+    .np-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    /* Empty state */
+    .np-empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      text-align: center; padding: 40px 20px;
+      color: var(--text-3);
+    }
+    .np-empty-spark {
+      font-size: 32px; margin-bottom: 16px; opacity: 0.5;
+      animation: emptyPulse 3s ease-in-out infinite;
+    }
+    @keyframes emptyPulse {
+      0%, 100% { transform: scale(1); opacity: 0.4; }
+      50%       { transform: scale(1.12); opacity: 0.7; }
+    }
+    .np-empty p {
+      font-size: 13px; line-height: 1.72; color: var(--text-3);
+      transition: color 0.38s ease;
+    }
+    .np-empty strong { color: var(--text-2); font-weight: 600; }
+
+    /* Individual note card */
+    .note-card {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      animation: noteIn 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
+      transition: border-color 0.2s, background 0.38s ease;
+    }
+    .note-card:hover { border-color: var(--border-hi); }
+    @keyframes noteIn {
+      from { opacity: 0; transform: translateX(16px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    .note-category-bar {
+      height: 3px; width: 100%;
+    }
+    .note-card-body { padding: 14px 16px; }
+    .note-cat-row {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .note-cat-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+      padding: 2px 7px; border-radius: 3px;
+    }
+    .note-delete {
+      width: 22px; height: 22px; border: none; background: transparent; cursor: pointer;
+      font-size: 11px; color: var(--text-3); border-radius: 4px;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.18s, color 0.18s; line-height: 1;
+    }
+    .note-delete:hover { background: var(--neg-bg); color: var(--neg); }
+    .note-insight {
+      font-family: 'Playfair Display', serif; font-style: italic;
+      font-size: 13.5px; color: var(--text); line-height: 1.58;
+      margin-bottom: 10px; transition: color 0.38s ease;
+    }
+    .note-quote {
+      font-size: 11.5px; color: var(--text-3); line-height: 1.62;
+      padding: 8px 12px; background: var(--surface-hi);
+      border-radius: 5px; border-left: 2px solid var(--border-hi);
+      margin-bottom: 10px;
+      font-style: normal; transition: all 0.38s ease;
+      overflow: hidden;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+    }
+    .note-meta {
+      font-family: 'JetBrains Mono', monospace; font-size: 9px;
+      color: var(--text-3); letter-spacing: 0.05em;
+      transition: color 0.38s ease;
+    }
+
+    /* Panel footer */
+    .np-panel-foot {
+      padding: 14px 22px; border-top: 1px solid var(--border);
+      flex-shrink: 0; transition: border-color 0.38s ease;
+    }
+    .np-clear-btn {
+      width: 100%; padding: 9px; border: 1px solid var(--border); border-radius: 8px;
+      background: transparent; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+      color: var(--text-3); letter-spacing: 0.04em;
+      transition: all 0.2s;
+    }
+    .np-clear-btn:hover { border-color: var(--neg); color: var(--neg); background: var(--neg-bg); }
+
+    /* ════════════════════════════════════
+       PRINT STYLES
+    ════════════════════════════════════ */
+    @media print {
+      #progress, .masthead, .signals-bar, .sec-nav, .back-top,
+      .theme-btn, .print-btn, .sec-end-nav, .impl-toggle,
+      .np-panel, .np-fab, .hl-tooltip, .full-story-btn { display: none !important; }
+      .bsec { display: block !important; padding-top: 24px; }
+      .impl-body { max-height: none !important; }
+      .impl-inner { display: block !important; }
+      .story-card { break-inside: avoid; box-shadow: none !important; }
+      body { background: white !important; color: black !important; }
+      .wordmark, .footer-icon { color: black !important; }
+      .wordmark .io { color: #C41E3A !important; }
+      .page-footer { background: white !important; }
+    }
+
+    /* ════════════════════════════════════
+       RESPONSIVE
+    ════════════════════════════════════ */
+    @media (max-width: 700px) {
+      .masthead { padding: 0 20px; grid-template-columns: 1fr auto; }
+      .masthead-left { display: none; }
+      .masthead-center { text-align: left; }
+      .masthead-date { display: none; }
+      .signals-bar, .sec-nav { padding: 0 20px; }
+      .sec-counter-wrap { display: none; }
+      .content { padding: 0 20px 60px; }
+      .story-grid { grid-template-columns: 1fr; }
+      .story-lead .story-hl { font-size: 24px; }
+      .sec-end-nav { grid-template-columns: 1fr; gap: 14px; }
+      .sec-end-prev, .sec-end-next { text-align: center; justify-self: stretch; }
+      .dots-bar { order: -1; }
+      .footer-inner { grid-template-columns: 1fr; gap: 20px; }
+      .footer-links { align-items: flex-start; }
+      .page-footer { padding: 32px 20px; }
+      .back-top { bottom: 20px; right: 20px; }
+      .np-fab { bottom: 20px; left: 20px; }
+      .np-panel { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- READING PROGRESS BAR -->
+  <div id="progress"></div>
+
+  <!-- MASTHEAD — Wordmark "Intelio." -->
+  <header class="masthead">
+    <div class="masthead-left">
+      <span class="edition-tag">Issue #47 · Week 9</span>
+    </div>
+    <div class="masthead-center">
+      <div class="wordmark">Intel<span class="io">io</span>.</div>
+      <div class="masthead-byline">Personalised intelligence for <strong>[Company Name]</strong></div>
+    </div>
+    <div class="masthead-right">
+      <span class="masthead-date">Thursday, 26 Feb 2026</span>
+      <button class="theme-btn" id="themeBtn" title="Switch to dark mode">☽</button>
+      <button class="print-btn" onclick="window.print()">↓ Save PDF</button>
+    </div>
+  </header>
+
+  <!-- MARKET SIGNALS STRIP -->
+  <div class="signals-bar">
+    <div class="signals-inner">
+      <div class="sig-item s-pos">
+        <span class="sig-lbl">DAX</span><span class="sig-val">18,420</span><span class="sig-chg">+0.41%</span>
+      </div>
+      <div class="sig-item s-neg">
+        <span class="sig-lbl">EUR/USD</span><span class="sig-val">1.0821</span><span class="sig-chg">−0.18%</span>
+      </div>
+      <div class="sig-item s-neg">
+        <span class="sig-lbl">Brent</span><span class="sig-val">$78.40</span><span class="sig-chg">−0.82%</span>
+      </div>
+      <div class="sig-item s-pos">
+        <span class="sig-lbl">10Y Bund</span><span class="sig-val">2.31%</span><span class="sig-chg">+3bp</span>
+      </div>
+      <div class="sig-item s-neu">
+        <span class="sig-lbl">ECB Rate</span><span class="sig-val">2.75%</span><span class="sig-chg">→ Held</span>
+      </div>
+      <div class="sig-item s-pos">
+        <span class="sig-lbl">Gold</span><span class="sig-val">$2,048</span><span class="sig-chg">+0.31%</span>
+      </div>
+      <div class="sig-item s-neg">
+        <span class="sig-lbl">ATX</span><span class="sig-val">3,641</span><span class="sig-chg">−0.22%</span>
+      </div>
+      <div class="sig-item s-pos">
+        <span class="sig-lbl">SMI</span><span class="sig-val">11,882</span><span class="sig-chg">+0.14%</span>
+      </div>
+      <span class="signals-ts">Market data · 06:15 CET</span>
+    </div>
+  </div>
+
+  <!-- SECTION NAVIGATION -->
+  <nav class="sec-nav" id="secNav">
+    <div class="sec-nav-inner">
+      <button class="nav-pill active" data-sec="summary">Summary</button>
+      <button class="nav-pill" data-sec="macro">Macro &amp; Markets</button>
+      <button class="nav-pill" data-sec="energy">Energy &amp; Industry</button>
+      <button class="nav-pill" data-sec="pe">PE &amp; M&amp;A</button>
+      <button class="nav-pill" data-sec="realestate">Real Estate</button>
+      <button class="nav-pill" data-sec="regional">Regional</button>
+      <div class="sec-counter-wrap">
+        <span class="sec-counter" id="secCounter">
+          1 / 6 &nbsp;·&nbsp; <span class="counter-name">Executive Summary</span>
+        </span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- MAIN CONTENT -->
+  <main class="content">
+
+    <!-- ══ 01 · EXECUTIVE SUMMARY ══ -->
+    <section class="bsec" id="summary">
+      <div class="sec-head">
+        <div class="sec-title-row">
+          <h2 class="sec-title">Executive Summary</h2>
+          <div class="sec-meta">
+            <span>5 signals</span><span>2 min read</span><span>06:30 CET</span>
+          </div>
+        </div>
+        <div class="sec-rule"></div>
+      </div>
+
+      <div class="summary-card">
+        <p class="summary-prep">Prepared 06:30 CET · Thursday, 26 February 2026 · Sources: Reuters, Bloomberg, Financial Times, Handelsblatt, Der Standard, OeNB, WifO, Mergermarket, NZZ, CBRE Austria</p>
+        <ul class="sum-list">
+          <li class="sum-item">
+            <span class="sum-num">01</span>
+            <span class="sum-text"><strong>ECB holds rates at 2.75%</strong> for the third consecutive meeting; Lagarde signals conditional openness to Q2 easing if March disinflation data holds on track. Core inflation now at 2.6%.</span>
+          </li>
+          <li class="sum-item">
+            <span class="sum-num">02</span>
+            <span class="sum-text"><strong>German industrial output</strong> fell 1.2% MoM in January — steeper than the −0.7% consensus — driven by weak Asian export demand and persistent energy cost headwinds in chemicals and automotive.</span>
+          </li>
+          <li class="sum-item">
+            <span class="sum-num">03</span>
+            <span class="sum-text"><strong>Austrian RE transactions</strong> declined 18% YoY in Q4 2025; Vienna prime commercial holds at 4.2% yield as institutional demand remains stable, while logistics vacancy hits a five-year low of 2.8%.</span>
+          </li>
+          <li class="sum-item">
+            <span class="sum-num">04</span>
+            <span class="sum-text"><strong>DACH PE sets a monthly deal record</strong> — three transactions above €500m closed in February at average 11.2× EV/EBITDA, led by healthcare, B2B software, and industrial automation targets.</span>
+          </li>
+          <li class="sum-item">
+            <span class="sum-num">05</span>
+            <span class="sum-text"><strong>EU announces €12bn grid expansion</strong> framework covering Austria, Germany, and the Nordics through 2028; permitting timelines cut from 7 years to under 3 for priority cross-border projects.</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ══ 02 · MACRO & MARKETS ══ -->
+    <section class="bsec" id="macro">
+      <div class="sec-head">
+        <div class="sec-title-row">
+          <h2 class="sec-title">Macro &amp; Markets</h2>
+          <div class="sec-meta">
+            <span>3 stories</span><span>5 min read</span><span>Researched 05:48 CET</span>
+          </div>
+        </div>
+        <div class="sec-rule"></div>
+      </div>
+
+      <article class="story-lead">
+        <div class="story-header">
+          <div class="story-tags">
+            <span class="sdot pos" title="Positive signal"></span>
+            <span class="story-tag">Central Banks</span>
+          </div>
+          <span class="story-rt">2 min read</span>
+        </div>
+        <h3 class="story-hl">ECB holds benchmark rate at 2.75% — signals openness to Q2 easing as disinflation remains firmly on track</h3>
+        <p class="story-lede">The European Central Bank left its deposit facility rate unchanged for the third consecutive meeting, with President Lagarde citing "growing confidence" in returning inflation to the 2% target by mid-year.</p>
+        <p class="story-body">Governing Council members indicated that March CPI data will be decisive for a potential April cut. Markets are now pricing in 65 basis points of easing over 2026, with the first full cut expected by June. Core inflation fell to 2.6% in January from 2.8% in December — the third consecutive monthly decline — reinforcing the gradual disinflation narrative across the eurozone.</p>
+        <div class="key-stat">
+          <div class="ks-val">2.75%</div>
+          <div class="ks-lbl">ECB deposit rate · Held for 3rd consecutive meeting<br>Core CPI 2.6% ↓ from 2.8% in December</div>
+        </div>
+        <div class="full-story-block">
+          <button class="full-story-btn" onclick="toggleFullStory(this)">
+            <span class="fs-chevron">+</span> Read the full analysis
+          </button>
+          <div class="full-story-body">
+            <div class="full-story-inner">
+              <div class="fs-data-row">
+                <span class="fs-chip">Deposit rate: 2.75%</span>
+                <span class="fs-chip">Core CPI: 2.6%</span>
+                <span class="fs-chip">Market pricing: 65bp cuts in 2026</span>
+                <span class="fs-chip">First cut expected: June 2026</span>
+              </div>
+              <p>The Governing Council decision was unanimous, with members noting the "last mile" of disinflation remains on track but not yet guaranteed. Lagarde was careful to avoid pre-committing to April action, emphasising data-dependency — particularly the March flash CPI print due 2 April and Q1 wage settlements across the eurozone's larger economies.</p>
+              <blockquote>
+                "We are becoming more confident that inflation is returning to target on a sustained basis, but we are not yet sufficiently confident."
+                <cite>— Christine Lagarde, ECB President · Post-meeting press conference</cite>
+              </blockquote>
+              <p>Internal ECB models now put a Q2 cut at approximately 65% probability, contingent on services inflation — which remained sticky at 3.7% in January — declining meaningfully in the March data. The hawks on the Governing Council (led by Bundesbank President Nagel) pushed for a later cut window, while doves from southern member states pushed for April action. The March data will effectively cast the deciding vote.</p>
+              <p>For fixed income markets, the short end of the German Bund curve has already priced in two full cuts by September 2026. Spread compression in periphery bonds (Italy, Spain) reflects growing confidence in the easing cycle, with BTPs trading at their tightest spread to Bunds since early 2022.</p>
+            </div>
+          </div>
+        </div>
+        <div class="impl-block">
+          <button class="impl-toggle" onclick="toggleImpl(this)">
+            <span class="impl-arrow">→</span> Business implication
+          </button>
+          <div class="impl-body">
+            <div class="impl-inner">Variable-rate borrowing costs remain stable through at least April, providing a predictable window for capex planning. If March data confirms the easing path, refinancing conversations should begin now — new facilities could benefit from a 50–75bp reduction by Q3. Review any floating-rate debt exposure before the April Governing Council meeting.</div>
+          </div>
+        </div>
+        <a class="story-src" href="#" target="_blank">→ Reuters · 26 Feb 2026</a>
+      </article>
+
+      <div class="story-grid">
+        <article class="story-card">
+          <div class="story-header">
+            <div class="story-tags">
+              <span class="sdot neg" title="Negative signal"></span>
+              <span class="story-tag">Germany</span>
+            </div>
+            <span class="story-rt">1.5 min</span>
+          </div>
+          <h3 class="story-hl">German industrial output falls 1.2% in January — seventh consecutive monthly contraction</h3>
+          <p class="story-body">Factory orders and production missed estimates as weak Asian demand and elevated energy costs weighed on chemicals, automotive, and machinery. Destatis data flags structural weakness heading into Q1 2026.</p>
+          <div class="key-stat">
+            <div class="ks-val">−1.2%</div>
+            <div class="ks-lbl">German output MoM · Jan 2026<br>vs −0.7% consensus · 7th consecutive decline</div>
+          </div>
+          <div class="full-story-block">
+            <button class="full-story-btn" onclick="toggleFullStory(this)">
+              <span class="fs-chevron">+</span> Read full analysis
+            </button>
+            <div class="full-story-body">
+              <div class="full-story-inner">
+                <p>Sector-level data shows the steepest declines in chemicals (−2.4% MoM) and automotive (−1.8%), both facing a double squeeze from weak Chinese end-demand and persistently high domestic energy input costs. Machinery held slightly better at −0.6%, supported by domestic infrastructure order backlogs from the German government's delayed €50bn infrastructure programme.</p>
+                <p>The structural nature of the decline is increasingly difficult to dismiss as cyclical. Germany's export model — built on automotive, capital goods, and chemicals sold into China, the US, and Eastern Europe — faces simultaneous headwinds in all three markets. Destatis revised December's output figure down to −0.9% (from −0.7% initially), suggesting the underlying trend is worse than reported in real-time.</p>
+              </div>
+            </div>
+          </div>
+          <div class="impl-block">
+            <button class="impl-toggle" onclick="toggleImpl(this)">
+              <span class="impl-arrow">→</span> Business implication
+            </button>
+            <div class="impl-body">
+              <div class="impl-inner">Downstream pressure on Austrian and Swiss industrial suppliers is likely. Watch for order pipeline softening in Q1 and consider pricing reviews if raw material costs ease alongside demand.</div>
+            </div>
+          </div>
+          <a class="story-src" href="#" target="_blank">→ Handelsblatt · 26 Feb 2026</a>
+        </article>
+
+        <article class="story-card">
+          <div class="story-header">
+            <div class="story-tags">
+              <span class="sdot neu" title="Neutral"></span>
+              <span class="story-tag">FX</span>
+            </div>
+            <span class="story-rt">1 min</span>
+          </div>
+          <h3 class="story-hl">EUR/USD eases to 1.0821 as US PCE data pushes back Fed cut expectations</h3>
+          <p class="story-body">The dollar strengthened modestly after US personal consumption expenditure data came in above forecast, reducing market expectations for a March Fed cut. EUR/USD remains within the 1.07–1.10 range that has defined Q1 2026, with analysts seeing limited breakout potential near-term.</p>
+          <div class="full-story-block">
+            <button class="full-story-btn" onclick="toggleFullStory(this)">
+              <span class="fs-chevron">+</span> Read full analysis
+            </button>
+            <div class="full-story-body">
+              <div class="full-story-inner">
+                <div class="fs-data-row">
+                  <span class="fs-chip">EUR/USD: 1.0821</span>
+                  <span class="fs-chip">Q1 range: 1.07–1.10</span>
+                  <span class="fs-chip">US PCE: +0.4% MoM (est. +0.3%)</span>
+                </div>
+                <p>January's US PCE deflator printed at 0.4% MoM — a full tenth above consensus — driven by services categories including insurance and healthcare. The data pushed the implied probability of a March Fed cut from 28% to below 12% overnight. Fed Chair Powell's February testimony had already signalled patience, and the PCE data validates that stance through at least May.</p>
+                <p>For EUR/USD, the structural ceiling remains 1.10 given the diverging monetary policy trajectories: the ECB is likely to cut before the Fed, which is inherently EUR-negative. Conversely, the structural floor near 1.07 reflects dollar overvaluation on purchasing power parity metrics. Consensus bank forecasts place year-end EUR/USD at 1.08–1.12, suggesting limited directional risk for businesses with EUR/USD hedging programmes through H2.</p>
+              </div>
+            </div>
+          </div>
+          <div class="impl-block">
+            <button class="impl-toggle" onclick="toggleImpl(this)">
+              <span class="impl-arrow">→</span> Business implication
+            </button>
+            <div class="impl-body">
+              <div class="impl-inner">USD-denominated imports — energy, commodities, US technology — remain modestly elevated. Review hedging positions on USD-invoiced contracts for Q2. No material shift is expected near-term; the current range offers reasonable planning certainty.</div>
+            </div>
+          </div>
+          <a class="story-src" href="#" target="_blank">→ Bloomberg · 26 Feb 2026</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ══ 03 · ENERGY & INDUSTRY ══ -->
+    <section class="bsec" id="energy">
+      <div class="sec-head">
+        <div class="sec-title-row">
+          <h2 class="sec-title">Energy &amp; Industry</h2>
+          <div class="sec-meta">
+            <span>2 stories</span><span>3 min read</span><span>Researched 05:52 CET</span>
+          </div>
+        </div>
+        <div class="sec-rule"></div>
+      </div>
+
+      <article class="story-lead">
+        <div class="story-header">
+          <div class="story-tags">
+            <span class="sdot pos" title="Positive signal"></span>
+            <span class="story-tag">Policy · Infrastructure</span>
+          </div>
+          <span class="story-rt">2 min read</span>
+        </div>
+        <h3 class="story-hl">EU announces €12bn accelerated grid expansion framework — Austria and Germany named priority corridors through 2028</h3>
+        <p class="story-lede">The European Commission unveiled a fast-tracked transmission infrastructure plan, cutting permitting timelines from seven years to under three for priority cross-border grid projects in the DACH region and Nordics.</p>
+        <p class="story-body">The framework targets 8,500km of new high-voltage transmission lines, with Austrian grid operator Verbund and Germany's 50Hertz as lead implementers. Projects qualify for EU Connecting Europe Facility co-financing at up to 50% of eligible capex, with first tender rounds expected in Q3 2026.</p>
+        <div class="key-stat">
+          <div class="ks-val">€12bn</div>
+          <div class="ks-lbl">EU grid investment · 2026–2028<br>8,500km new HV transmission · DACH + Nordics</div>
+        </div>
+        <div class="full-story-block">
+          <button class="full-story-btn" onclick="toggleFullStory(this)">
+            <span class="fs-chevron">+</span> Read the full analysis
+          </button>
+          <div class="full-story-body">
+            <div class="full-story-inner">
+              <div class="fs-data-row">
+                <span class="fs-chip">Total investment: €12bn</span>
+                <span class="fs-chip">New lines: 8,500km</span>
+                <span class="fs-chip">Permitting: 7 years → under 3</span>
+                <span class="fs-chip">CEF co-financing: up to 50%</span>
+              </div>
+              <p>The European Commission's grid framework is structurally different from previous infrastructure initiatives in one critical respect: it designates specific "Priority Project Corridors" where member states are legally obligated to accelerate permitting. For the Austria–Germany corridor, this means environmental impact assessments will be conducted in parallel with planning rather than sequentially — the primary driver of the timeline compression from seven to under three years.</p>
+              <blockquote>
+                "This is not an aspiration — it is a binding directive. Member states that fail to meet permitting timelines will face infringement proceedings."
+                <cite>— EU Energy Commissioner · Brussels press conference, 25 Feb 2026</cite>
+              </blockquote>
+              <p>Verbund has confirmed it will lead the Austrian corridor as primary transmission system operator, with a preliminary capex budget of €2.8bn for the Austrian segments alone. First tenders — focused on substation upgrades and cable supply — are expected in Q3 2026. For businesses in engineering, construction, electrical equipment, or project finance, the procurement pipeline will be among the largest in Austria this decade. Registration as a Verbund approved supplier is the critical first step; the vendor qualification process typically takes 4–6 months.</p>
+            </div>
+          </div>
+        </div>
+        <div class="impl-block">
+          <button class="impl-toggle" onclick="toggleImpl(this)">
+            <span class="impl-arrow">→</span> Business implication
+          </button>
+          <div class="impl-body">
+            <div class="impl-inner">Large-scale grid projects typically generate 3–5× ancillary procurement volume — a significant opportunity for industrial, electrical, and infrastructure businesses. Begin positioning with Verbund and 50Hertz procurement teams in H1 2026 ahead of expected Q3 tender launches.</div>
+          </div>
+        </div>
+        <a class="story-src" href="#" target="_blank">→ Financial Times · 25 Feb 2026</a>
+      </article>
+
+      <div class="story-grid">
+        <article class="story-card">
+          <div class="story-header">
+            <div class="story-tags">
+              <span class="sdot neg" title="Negative signal"></span>
+              <span class="story-tag">Steel · Austria</span>
+            </div>
+            <span class="story-rt">1 min</span>
+          </div>
+          <h3 class="story-hl">Austrian steel output down 6.1% YoY in January as construction demand softens</h3>
+          <p class="story-body">voestalpine reported a 6.1% year-on-year decline in crude steel production amid weakening construction sector demand. Export volumes to Germany and Italy both contracted. Management maintains full-year guidance pending Q2 infrastructure spend clarity.</p>
+          <div class="full-story-block">
+            <button class="full-story-btn" onclick="toggleFullStory(this)">
+              <span class="fs-chevron">+</span> Read full analysis
+            </button>
+            <div class="full-story-body">
+              <div class="full-story-inner">
+                <p>voestalpine's January figures reflect a continuation of the demand trough that began in Q3 2025, driven by construction sector hesitation on financing costs and delayed public infrastructure projects in Germany. The company's high-value steel rail and specialty wire divisions held better (down 2.1% YoY), partially offsetting the steeper declines in structural construction steel segments. Management's decision to maintain full-year guidance signals confidence in a H2 recovery tied to infrastructure spend and the EU grid expansion programme — a significant potential steel consumer.</p>
+                <p>Spot hot-rolled coil prices in the DACH region fell to €580/t in February, the lowest since Q1 2024. While this creates a buying opportunity for steel-consuming businesses, it also signals weak underlying demand. Monitor for the inflection point in construction starts data — historically, steel prices lead construction activity by 6–8 weeks.</p>
+              </div>
+            </div>
+          </div>
+          <div class="impl-block">
+            <button class="impl-toggle" onclick="toggleImpl(this)">
+              <span class="impl-arrow">→</span> Business implication
+            </button>
+            <div class="impl-body">
+              <div class="impl-inner">Steel input cost deflation likely through Q2 — a buying opportunity for businesses with construction or manufacturing exposure. Monitor voestalpine Q1 results in April for forward pricing signals.</div>
+            </div>
+          </div>
+          <a class="story-src" href="#" target="_blank">→ Der Standard · 26 Feb 2026</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ══ 04 · PE & M&A ══ -->
+    <section class="bsec" id="pe">
+      <div class="sec-head">
+        <div class="sec-title-row">
+          <h2 class="sec-title">Private Equity &amp; M&amp;A</h2>
+          <div class="sec-meta">
+            <span>2 stories</span><span>3 min read</span><span>Researched 05:55 CET</span>
+          </div>
+        </div>
+        <div class="sec-rule"></div>
+      </div>
+
+      <article class="story-lead">
+        <div class="story-header">
+          <div class="story-tags">
+            <span class="sdot pos" title="Positive signal"></span>
+            <span class="story-tag">DACH · Deal Flow</span>
+          </div>
+          <span class="story-rt">2 min read</span>
+        </div>
+        <h3 class="story-hl">DACH PE volume hits monthly record — three deals close above €500m in February at average 11.2× EV/EBITDA</h3>
+        <p class="story-lede">Private equity activity rebounded sharply in the German-speaking region, driven by healthcare, B2B software, and industrial automation targets — signalling renewed sponsor confidence after a subdued 2025.</p>
+        <p class="story-body">Notable closings include EQT's acquisition of a Munich medical diagnostics platform (est. €680m EV), KKR's carve-out of an Austrian industrial controls business (est. €520m), and Advent International's B2B SaaS roll-up in Switzerland. Average EV/EBITDA multiples rose to 11.2×, up from 9.8× in Q4 2025, reflecting improving seller-buyer alignment on valuations.</p>
+        <div class="key-stat">
+          <div class="ks-val">11.2×</div>
+          <div class="ks-lbl">Average EV/EBITDA · DACH PE · Feb 2026<br>Up from 9.8× in Q4 2025 · Three deals &gt;€500m</div>
+        </div>
+        <div class="full-story-block">
+          <button class="full-story-btn" onclick="toggleFullStory(this)">
+            <span class="fs-chevron">+</span> Read the full analysis
+          </button>
+          <div class="full-story-body">
+            <div class="full-story-inner">
+              <div class="fs-data-row">
+                <span class="fs-chip">EQT / Diagnostics: est. €680m EV</span>
+                <span class="fs-chip">KKR / Industrial controls: est. €520m</span>
+                <span class="fs-chip">Advent / B2B SaaS: est. €610m</span>
+              </div>
+              <p>EQT's Munich diagnostics acquisition is the largest healthcare-tech PE deal in the DACH region since 2023, targeting a diagnostics-as-a-service platform with recurring lab processing contracts across 320 German hospital and clinic clients. The platform is valued on a revenue multiple of approximately 4.2× — aggressive by historical standards but justified by 92% revenue retention and a multi-year public health contract backlog.</p>
+              <p>KKR's Austrian carve-out represents a classic operational improvement play: the target's industrial controls division was underperforming within a larger conglomerate, with margins running 400–500bp below direct peers. KKR expects to reach 19% EBITDA margins within 36 months through procurement standardisation and product line rationalisation. The Advent B2B SaaS transaction — a roll-up of three complementary Swiss and German HR software businesses — reflects the continuation of the consolidation theme that dominated European tech PE through 2024.</p>
+              <blockquote>
+                "We are seeing genuine seller-buyer alignment for the first time since mid-2023. The gap on valuation expectations has closed materially."
+                <cite>— Partner, pan-European PE fund · Mergermarket, Feb 2026</cite>
+              </blockquote>
+              <p>Dry powder across DACH-focused PE funds currently stands at approximately €28bn, the highest level since 2022. With deployment pressure building, mid-market businesses (€20–150m EBITDA) in the target sectors face a historically favourable seller environment through at least H1 2026.</p>
+            </div>
+          </div>
+        </div>
+        <div class="impl-block">
+          <button class="impl-toggle" onclick="toggleImpl(this)">
+            <span class="impl-arrow">→</span> Business implication
+          </button>
+          <div class="impl-body">
+            <div class="impl-inner">Rising multiples indicate improving exit conditions for owners in healthcare services, industrial automation, and B2B SaaS. If a strategic review or exit is within a 2–3 year horizon, now is an appropriate time to begin positioning — advisors report strong sponsor inbound interest with significant dry powder deployed.</div>
+          </div>
+        </div>
+        <a class="story-src" href="#" target="_blank">→ Mergermarket · 25 Feb 2026</a>
+      </article>
+
+      <div class="story-grid">
+        <article class="story-card">
+          <div class="story-header">
+            <div class="story-tags">
+              <span class="sdot neu" title="Neutral"></span>
+              <span class="story-tag">Healthcare · Germany</span>
+            </div>
+            <span class="story-rt">1 min</span>
+          </div>
+          <h3 class="story-hl">German healthcare consolidation continues as two regional clinic groups merge under Fresenius backing</h3>
+          <p class="story-body">Fresenius SE facilitated the merger of two regional German clinic operators, creating an entity with €340m revenue and 12 facilities. The deal reflects continued consolidation pressure amid rising costs and staff shortages across German healthcare.</p>
+          <div class="full-story-block">
+            <button class="full-story-btn" onclick="toggleFullStory(this)">
+              <span class="fs-chevron">+</span> Read full analysis
+            </button>
+            <div class="full-story-body">
+              <div class="full-story-inner">
+                <p>The two merging groups — Klinikgruppe Rhein-Ruhr (7 facilities, €195m revenue) and Mitteldeutsche Gesundheitsverbund (5 facilities, €145m revenue) — will operate under a unified management holding with Fresenius holding a 34% strategic stake. The merger is primarily defensive: both groups were facing unsustainable standalone cost structures, with labour costs at 68–72% of revenue versus a sustainable target of 58–62% for clinic operators of their size.</p>
+                <p>Fresenius's involvement signals the strategic rationale beyond cost — it gives the company preferred supplier positioning across 12 facilities for its Kabi medical nutrition and IV drug businesses. This supplier capture play is increasingly common in German healthcare M&A: strategic investors use consolidation transactions to secure long-term offtake rather than pure financial returns.</p>
+              </div>
+            </div>
+          </div>
+          <div class="impl-block">
+            <button class="impl-toggle" onclick="toggleImpl(this)">
+              <span class="impl-arrow">→</span> Business implication
+            </button>
+            <div class="impl-body">
+              <div class="impl-inner">Healthcare consolidation creates centralised procurement decisions. Engage early with new procurement leads at merged entities to protect existing supplier contracts and position for expanded volumes under unified management.</div>
+            </div>
+          </div>
+          <a class="story-src" href="#" target="_blank">→ Handelsblatt · 25 Feb 2026</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ══ 05 · REAL ESTATE ══ -->
+    <section class="bsec" id="realestate">
+      <div class="sec-head">
+        <div class="sec-title-row">
+          <h2 class="sec-title">Real Estate</h2>
+          <div class="sec-meta">
+            <span>2 stories</span><span>3 min read</span><span>Researched 05:58 CET</span>
+          </div>
+        </div>
+        <div class="sec-rule"></div>
+      </div>
+
+      <article class="story-lead">
+        <div class="story-header">
+          <div class="story-tags">
+            <span class="sdot neg" title="Negative signal"></span>
+            <span class="story-tag">Austria · Transactions</span>
+          </div>
+          <span class="story-rt">2 min read</span>
+        </div>
+        <h3 class="story-hl">Austrian RE transactions down 18% YoY in Q4 2025 — Vienna prime commercial holds at 4.2% yield</h3>
+        <p class="story-lede">Overall deal volume declined sharply as financing costs and valuation uncertainty persisted, though Vienna's prime office and mixed-use segment demonstrated resilience with stable institutional demand.</p>
+        <p class="story-body">OeNB data shows residential transactions fell to a decade low while commercial volumes contracted less severely. Core Vienna assets (1st, 3rd, and 9th districts) continue to attract long-term capital at yields of 4.0–4.4%, underpinned by structural supply constraints and sub-5% vacancy in grade-A stock.</p>
+        <div class="key-stat">
+          <div class="ks-val">4.2%</div>
+          <div class="ks-lbl">Vienna prime commercial yield · Q4 2025<br>Stable QoQ · Transactions overall −18% YoY</div>
+        </div>
+        <div class="full-story-block">
+          <button class="full-story-btn" onclick="toggleFullStory(this)">
+            <span class="fs-chevron">+</span> Read the full analysis
+          </button>
+          <div class="full-story-body">
+            <div class="full-story-inner">
+              <div class="fs-data-row">
+                <span class="fs-chip">Total transactions −18% YoY</span>
+                <span class="fs-chip">Residential: decade low</span>
+                <span class="fs-chip">Prime office yield: 4.0–4.4%</span>
+                <span class="fs-chip">Grade-A vacancy: sub-5%</span>
+              </div>
+              <p>OeNB transaction data shows a two-tier market that is widening rather than converging. Vienna's 1st, 3rd, and 9th districts — the "institutional core" — continued to attract long-term capital from German open-ended funds, Austrian pension funds, and select Middle Eastern sovereign wealth vehicles, keeping prime yields in the 4.0–4.4% range. The sharp 18% aggregate decline was concentrated in non-prime residential and secondary commercial assets outside this core, where buyer financing conditions remain restrictive and seller expectations have not yet fully adjusted.</p>
+              <blockquote>
+                "The bifurcation is sharper than at any point since 2012. Core Vienna is liquid; everything else requires patience and realistic pricing."
+                <cite>— Senior Advisor, CBRE Austria · Market Update, Feb 2026</cite>
+              </blockquote>
+              <p>The refinancing wall is the key risk for H1 2026: approximately €2.4bn of Austrian commercial real estate debt matures by June, with an estimated 35–40% of this volume facing negative equity positions at current valuations. Lenders — predominantly Austrian domestic banks — are managing these situations through loan extensions rather than forced sales, but the pressure will intensify if ECB cuts do not materialise before Q3.</p>
+            </div>
+          </div>
+        </div>
+        <div class="impl-block">
+          <button class="impl-toggle" onclick="toggleImpl(this)">
+            <span class="impl-arrow">→</span> Business implication
+          </button>
+          <div class="impl-body">
+            <div class="impl-inner">For businesses with Vienna prime commercial holdings, current valuations are holding — but refinancing risk remains elevated for 2026 debt maturities. Review maturity schedules now and begin lender conversations ahead of anticipated rate stabilisation. Non-prime assets may require patience through H1 before buyer conviction returns.</div>
+          </div>
+        </div>
+        <a class="story-src" href="#" target="_blank">→ OeNB / Der Standard · 25 Feb 2026</a>
+      </article>
+
+      <div class="story-grid">
+        <article class="story-card">
+          <div class="story-header">
+            <div class="story-tags">
+              <span class="sdot pos" title="Positive signal"></span>
+              <span class="story-tag">Logistics · Vienna</span>
+            </div>
+            <span class="story-rt">1 min</span>
+          </div>
+          <h3 class="story-hl">Vienna logistics vacancy hits five-year low at 2.8% — rents up 6.2% YoY</h3>
+          <p class="story-body">E-commerce growth and supply chain near-shoring drove sustained demand for last-mile and urban logistics assets in the Vienna basin. Developer pipeline remains constrained by land scarcity and permitting delays, supporting further rent appreciation.</p>
+          <div class="full-story-block">
+            <button class="full-story-btn" onclick="toggleFullStory(this)">
+              <span class="fs-chevron">+</span> Read full analysis
+            </button>
+            <div class="full-story-body">
+              <div class="full-story-inner">
+                <p>Prime Vienna logistics rents now stand at €8.40/m²/month — up from €7.90 a year ago and €6.20 in early 2023. The most acute shortage is in the 5,000–15,000m² segment, where take-up in 2025 exceeded new supply by a factor of 3.1×. Three speculative development schemes that broke ground in 2024 have all been pre-leased before completion, reflecting the depth of occupier demand.</p>
+                <p>The constrained supply side is structural: Vienna's industrial zoning is highly restrictive, with few sites larger than 5ha available in the eastern logistics corridor (Schwechat–Lanzendorf–Fischamend). Development lead times from land identification to occupancy average 3.8 years in this market. For occupiers, this means accepting longer commitment periods (7–10 year leases with limited break options) as the price of securing space — a significant operational planning consideration.</p>
+              </div>
+            </div>
+          </div>
+          <div class="impl-block">
+            <button class="impl-toggle" onclick="toggleImpl(this)">
+              <span class="impl-arrow">→</span> Business implication
+            </button>
+            <div class="impl-body">
+              <div class="impl-inner">Businesses with Vienna logistics lease renewals due in 2026 should initiate negotiations immediately — landlords are in a strong position. Consider 5-year+ terms to lock in before further rent appreciation. If you hold logistics assets, current market conditions represent a strong sale window.</div>
+            </div>
+          </div>
+          <a class="story-src" href="#" target="_blank">→ CBRE Austria · 25 Feb 2026</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- ══ 06 · REGIONAL INTELLIGENCE ══ -->
+    <section class="bsec" id="regional">
+      <div class="sec-head">
+        <div class="sec-title-row">
+          <h2 class="sec-title">Regional Intelligence</h2>
+          <div class="sec-meta">
+            <span>2 stories</span><span>3 min read</span><span>Researched 06:05 CET</span>
+          </div>
+        </div>
+        <div class="sec-rule"></div>
+      </div>
+
+      <article class="story-lead">
+        <div class="story-header">
+          <div class="story-tags">
+            <span class="sdot pos" title="Positive signal"></span>
+            <span class="story-tag">Austria · Business Climate</span>
+          </div>
+          <span class="story-rt">2 min read</span>
+        </div>
+        <h3 class="story-hl">Austrian business confidence rises for the second consecutive month — hiring intentions turn positive for the first time since Q3 2024</h3>
+        <p class="story-lede">The WifO economic confidence index rose to 98.4 in February (from 97.1 in January), with manufacturing, business services, and export-oriented sectors showing the strongest improvement in twelve months.</p>
+        <p class="story-body">Survey respondents cited easing energy costs, improved financing conditions, and recovering demand from German and Italian trading partners. Employment intentions turned positive for the first time since Q3 2024, with 23% of surveyed companies planning to add headcount in H1 2026 — a meaningful shift from the broadly cautious stance of 2025.</p>
+        <div class="key-stat">
+          <div class="ks-val">98.4</div>
+          <div class="ks-lbl">WifO Confidence Index · Feb 2026<br>Second consecutive monthly rise · Hiring intentions positive</div>
+        </div>
+        <div class="full-story-block">
+          <button class="full-story-btn" onclick="toggleFullStory(this)">
+            <span class="fs-chevron">+</span> Read the full analysis
+          </button>
+          <div class="full-story-body">
+            <div class="full-story-inner">
+              <div class="fs-data-row">
+                <span class="fs-chip">WifO index: 98.4 (from 97.1)</span>
+                <span class="fs-chip">Hiring intent positive: first since Q3 2024</span>
+                <span class="fs-chip">23% of firms plan H1 headcount adds</span>
+              </div>
+              <p>The sector breakdown of the WifO survey reveals that manufacturing and B2B services are leading the recovery in confidence, while consumer-facing businesses remain cautious. Export-oriented manufacturers registered the strongest sentiment improvement (+3.1 index points), driven primarily by expectations of recovering German demand and stabilising energy input costs. Business services firms — advisory, IT, engineering — showed improving order book sentiment for the first time since Q2 2024.</p>
+              <p>The shift in hiring intentions is the most significant signal in this release. Austria's labour market has been characterised by cautious workforce management — firms have reduced hours and discretionary headcount but avoided large-scale layoffs through Austria's Kurzarbeit support framework. A turn to positive hiring intent suggests executives now see sufficient demand visibility to commit to fixed labour cost additions, a lagging indicator that typically confirms rather than predicts recovery. Forward guidance from the WifO model points to GDP growth of 1.4% in 2026, up from the 0.8% recorded in 2025.</p>
+            </div>
+          </div>
+        </div>
+        <div class="impl-block">
+          <button class="impl-toggle" onclick="toggleImpl(this)">
+            <span class="impl-arrow">→</span> Business implication
+          </button>
+          <div class="impl-body">
+            <div class="impl-inner">Improving business confidence typically precedes accelerating B2B spend by 2–3 months. If your pipeline felt soft in Q4 2025, conditions should improve through Q2. Begin positioning for H2 campaigns now and review hiring plans — talent availability will tighten as confidence builds.</div>
+          </div>
+        </div>
+        <a class="story-src" href="#" target="_blank">→ WifO / Austria Presse Agentur · 26 Feb 2026</a>
+      </article>
+
+      <div class="story-grid">
+        <article class="story-card">
+          <div class="story-header">
+            <div class="story-tags">
+              <span class="sdot neu" title="Neutral"></span>
+              <span class="story-tag">Switzerland · Trade</span>
+            </div>
+            <span class="story-rt">1 min</span>
+          </div>
+          <h3 class="story-hl">Swiss export orders dip 2.1% in January — CHF strength and soft luxury demand weigh</h3>
+          <p class="story-body">Federal Customs data shows a modest export contraction led by luxury goods and pharmaceutical volumes, partially offset by machinery and precision instruments from Southeast Asia. CHF strength continues to create structural headwinds for Swiss exporters across sectors.</p>
+          <div class="full-story-block">
+            <button class="full-story-btn" onclick="toggleFullStory(this)">
+              <span class="fs-chevron">+</span> Read full analysis
+            </button>
+            <div class="full-story-body">
+              <div class="full-story-inner">
+                <p>Luxury goods (watches, jewellery) contracted 4.8% YoY in January — the steepest decline since 2020 — reflecting normalisation of post-pandemic luxury demand in Asian markets, particularly China, and softening consumer discretionary spend in the US. Pharmaceutical volumes, which had been a consistent export strength for Switzerland, contracted 1.2% due to product launch timing effects; this is not expected to persist through Q2.</p>
+                <p>The SNB has shown no appetite to intervene despite EUR/CHF trading at 0.9340 — near historic lows — as Swiss domestic inflation at 1.1% remains well within comfort zone. Analysts at UBS and Credit Suisse see EUR/CHF stabilising at 0.93–0.96 through H1 as ECB cuts compress the rate differential. For Austrian and German businesses exporting to Switzerland, the current FX level represents a headwind of approximately 4–6% on price competitiveness versus domestic Swiss suppliers.</p>
+              </div>
+            </div>
+          </div>
+          <div class="impl-block">
+            <button class="impl-toggle" onclick="toggleImpl(this)">
+              <span class="impl-arrow">→</span> Business implication
+            </button>
+            <div class="impl-body">
+              <div class="impl-inner">Swiss demand for imported industrial inputs may soften modestly through Q1. Monitor Swiss client order cadence closely. CHF strength creates a buying opportunity for businesses with CHF revenues importing EUR-denominated goods — review procurement timing for H1 orders.</div>
+            </div>
+          </div>
+          <a class="story-src" href="#" target="_blank">→ Neue Zürcher Zeitung · 25 Feb 2026</a>
+        </article>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- HIGHLIGHT TOOLTIP -->
+  <div class="hl-tooltip" id="hlTooltip">
+    <span class="hl-spark">✦</span>
+    <span class="hl-label">Capture insight</span>
+  </div>
+
+  <!-- NOTEPAD FAB -->
+  <button class="np-fab" id="npFab" onclick="toggleNotepad()" title="Research notes (N)">
+    <span class="np-fab-icon">✦</span>
+    <span class="np-fab-badge" id="npFabBadge">0</span>
+  </button>
+
+  <!-- NOTEPAD PANEL -->
+  <aside class="np-panel" id="npPanel">
+    <div class="np-panel-head">
+      <div class="np-head-left">
+        <span class="np-head-logo">I.</span>
+        <div>
+          <div class="np-head-title">Research Notes</div>
+          <div class="np-head-count" id="npCount">No notes yet</div>
+        </div>
+      </div>
+      <div class="np-head-right">
+        <button class="np-export-btn" onclick="exportNotes()">↓ Export</button>
+        <button class="np-close-btn" onclick="closeNotepad()" title="Close">✕</button>
+      </div>
+    </div>
+    <div class="np-body" id="npBody">
+      <div class="np-empty" id="npEmpty">
+        <div class="np-empty-spark">✦</div>
+        <p><strong>Highlight any text</strong> while reading to capture an AI-generated insight into your research notes.</p>
+      </div>
+    </div>
+    <div class="np-panel-foot" id="npFoot" style="display:none">
+      <button class="np-clear-btn" onclick="clearAllNotes()">Clear all notes</button>
+    </div>
+  </aside>
+
+  <!-- BACK TO TOP -->
+  <button class="back-top" id="backTop" onclick="scrollToContentTop()" title="Back to top">↑</button>
+
+  <!-- FOOTER — Icon "I." used here (separately from wordmark) -->
+  <footer class="page-footer">
+    <div class="footer-inner">
+      <div class="footer-icon">I.</div>
+      <div class="footer-meta">
+        Morning Briefing · Issue #47 · Thursday, 26 February 2026<br>
+        Compiled at 06:30 CET by parallel AI research agents · 14 sources reviewed across 6 sections
+      </div>
+      <div class="footer-links">
+        <a href="#">Manage preferences</a>
+        <a href="#">View archive</a>
+        <a href="#">Unsubscribe</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ════════════════════════════════════════════════════
+       INTELIO BRIEFING · Section-by-section reading
+    ════════════════════════════════════════════════════ */
+
+    const SECTION_IDS   = ['summary', 'macro', 'energy', 'pe', 'realestate', 'regional'];
+    const SECTION_NAMES = ['Executive Summary', 'Macro & Markets', 'Energy & Industry', 'PE & M&A', 'Real Estate', 'Regional Intelligence'];
+
+    let currentIdx = 0;
+
+    /* ── 1. THEME TOGGLE ── */
+    const html     = document.documentElement;
+    const themeBtn = document.getElementById('themeBtn');
+    let   theme    = localStorage.getItem('intelio-theme') || 'light';
+    applyTheme(theme);
+
+    themeBtn.addEventListener('click', () => {
+      theme = theme === 'light' ? 'dark' : 'light';
+      applyTheme(theme);
+      localStorage.setItem('intelio-theme', theme);
+    });
+
+    function applyTheme(t) {
+      html.setAttribute('data-theme', t);
+      themeBtn.textContent = t === 'light' ? '☽' : '☀';
+      themeBtn.title = t === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+    }
+
+    /* ── 2. READING PROGRESS BAR (within-section scroll) ── */
+    const progressBar = document.getElementById('progress');
+    window.addEventListener('scroll', () => {
+      const st = window.scrollY;
+      const dh = document.documentElement.scrollHeight - window.innerHeight;
+      progressBar.style.width = dh > 0 ? ((st / dh) * 100) + '%' : '0%';
+    }, { passive: true });
+
+    /* ── 3. BACK TO TOP ── */
+    const backTop = document.getElementById('backTop');
+    window.addEventListener('scroll', () => {
+      backTop.classList.toggle('show', window.scrollY > 400);
+    }, { passive: true });
+
+    function scrollToContentTop() {
+      // Scroll to just below the sticky header stack (masthead + signals + secnav)
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ── 4. STICKY NAV SHADOW ── */
+    const secNavEl = document.getElementById('secNav');
+    window.addEventListener('scroll', () => {
+      secNavEl.classList.toggle('elevated', window.scrollY > 112);
+    }, { passive: true });
+
+    /* ── 5. SECTION SWITCHING ── */
+    function showSection(newIdx) {
+      if (newIdx === currentIdx) return;
+      if (newIdx < 0 || newIdx >= SECTION_IDS.length) return;
+
+      const oldEl = document.getElementById(SECTION_IDS[currentIdx]);
+      const newEl = document.getElementById(SECTION_IDS[newIdx]);
+
+      // Exit animation on old section
+      oldEl.classList.add('exiting');
+
+      setTimeout(() => {
+        oldEl.classList.remove('active', 'exiting');
+        newEl.classList.add('active');
+        currentIdx = newIdx;
+        updateUI();
+        // Jump to top of content, below the sticky headers
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }, 210); // slightly longer than exit animation
+    }
+
+    function nextSection() { showSection(currentIdx + 1); }
+    function prevSection() { showSection(currentIdx - 1); }
+
+    /* ── 6. UPDATE UI (pills, counter, dots, end-nav) ── */
+    function updateUI() {
+      const idx = currentIdx;
+
+      // Nav pills
+      document.querySelectorAll('.nav-pill').forEach((p, i) => {
+        p.classList.toggle('active', i === idx);
+      });
+
+      // Section counter
+      document.getElementById('secCounter').innerHTML =
+        `${idx + 1}&thinsp;/&thinsp;${SECTION_IDS.length} &nbsp;·&nbsp; <span class="counter-name">${SECTION_NAMES[idx]}</span>`;
+
+      // Progress dots — update ALL dot sets
+      document.querySelectorAll('.dot').forEach(dot => {
+        const dotIdx = parseInt(dot.dataset.idx, 10);
+        dot.classList.toggle('dot-active', dotIdx === idx);
+      });
+
+      // Section-end prev button
+      document.querySelectorAll('.sec-end-prev').forEach(btn => {
+        if (idx === 0) {
+          btn.setAttribute('disabled', '');
+          btn.textContent = '';
+        } else {
+          btn.removeAttribute('disabled');
+          btn.textContent = `← ${SECTION_NAMES[idx - 1]}`;
+        }
+      });
+
+      // Section-end next button
+      document.querySelectorAll('.sec-end-next').forEach(btn => {
+        if (idx === SECTION_IDS.length - 1) {
+          btn.textContent = 'Briefing complete ✓';
+          btn.classList.add('is-complete');
+        } else {
+          btn.textContent = `${SECTION_NAMES[idx + 1]} →`;
+          btn.classList.remove('is-complete');
+        }
+      });
+    }
+
+    /* ── 7. BUILD SECTION-END NAVS (injected into each section) ── */
+    function buildSectionEndNavs() {
+      SECTION_IDS.forEach((id, idx) => {
+        const sec = document.getElementById(id);
+
+        const dots = SECTION_IDS.map((_, i) =>
+          `<span class="dot${i === idx ? ' dot-active' : ''}" data-idx="${i}" title="${SECTION_NAMES[i]}"></span>`
+        ).join('');
+
+        const prevDisabled = idx === 0 ? 'disabled' : '';
+        const prevText     = idx === 0 ? '' : `← ${SECTION_NAMES[idx - 1]}`;
+        const nextText     = idx < SECTION_IDS.length - 1 ? `${SECTION_NAMES[idx + 1]} →` : 'Briefing complete ✓';
+        const nextClass    = idx === SECTION_IDS.length - 1 ? 'is-complete' : '';
+
+        const nav = document.createElement('div');
+        nav.className = 'sec-end-nav';
+        nav.innerHTML = `
+          <button class="sec-end-btn sec-end-prev" ${prevDisabled} onclick="prevSection()">${prevText}</button>
+          <div class="dots-bar">${dots}</div>
+          <button class="sec-end-btn sec-end-next ${nextClass}" onclick="nextSection()">${nextText}</button>
+        `;
+        sec.appendChild(nav);
+      });
+
+      // Make dots clickable to jump to that section
+      document.querySelectorAll('.dot').forEach(dot => {
+        dot.addEventListener('click', () => {
+          const targetIdx = parseInt(dot.dataset.idx, 10);
+          showSection(targetIdx);
+        });
+      });
+    }
+
+    /* ── 8. NAV PILL CLICKS ── */
+    document.querySelectorAll('.nav-pill[data-sec]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const targetIdx = SECTION_IDS.indexOf(pill.dataset.sec);
+        if (targetIdx !== -1) showSection(targetIdx);
+      });
+    });
+
+    /* ── 9. KEYBOARD NAVIGATION ── */
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        nextSection();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        prevSection();
+      } else {
+        const num = parseInt(e.key) - 1;
+        if (num >= 0 && num < SECTION_IDS.length) showSection(num);
+      }
+    });
+
+    /* ── 10. IMPLICATION TOGGLE ── */
+    function toggleImpl(btn) {
+      const body = btn.nextElementSibling;
+      const open = body.classList.toggle('open');
+      btn.classList.toggle('open', open);
+    }
+
+    /* ── 11. FULL STORY TOGGLE ── */
+    function toggleFullStory(btn) {
+      const body = btn.nextElementSibling;
+      const open = body.classList.toggle('open');
+      btn.classList.toggle('open', open);
+      btn.querySelector('.fs-chevron').textContent = open ? '×' : '+';
+      if (!open) return;
+      // Smooth scroll to show the expanded content
+      setTimeout(() => {
+        body.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 80);
+    }
+
+    /* ══════════════════════════════════════════════════════════
+       AI RESEARCH NOTEPAD
+       Highlight text → tooltip → AI categorises + generates insight
+    ══════════════════════════════════════════════════════════ */
+
+    let notes = JSON.parse(localStorage.getItem('intelio-notes') || '[]');
+    let pendingSelection = '';
+    let pendingSection  = '';
+    let npOpen = false;
+
+    const hlTooltip = document.getElementById('hlTooltip');
+    const npPanel   = document.getElementById('npPanel');
+    const npBody    = document.getElementById('npBody');
+    const npEmpty   = document.getElementById('npEmpty');
+    const npFoot    = document.getElementById('npFoot');
+    const npCount   = document.getElementById('npCount');
+    const npBadge   = document.getElementById('npFabBadge');
+
+    /* Render notes from storage on load */
+    function renderNotes() {
+      // Remove existing note cards
+      npBody.querySelectorAll('.note-card').forEach(c => c.remove());
+      if (notes.length === 0) {
+        npEmpty.style.display = '';
+        npFoot.style.display = 'none';
+        npCount.textContent = 'No notes yet';
+        npBadge.classList.remove('show');
+      } else {
+        npEmpty.style.display = 'none';
+        npFoot.style.display = '';
+        npCount.textContent = `${notes.length} note${notes.length !== 1 ? 's' : ''}`;
+        npBadge.textContent = notes.length;
+        npBadge.classList.add('show');
+        notes.forEach(note => {
+          npBody.appendChild(buildNoteCard(note));
+        });
+      }
+    }
+
+    function buildNoteCard(note) {
+      const card = document.createElement('div');
+      card.className = 'note-card';
+      card.dataset.id = note.id;
+      card.innerHTML = `
+        <div class="note-category-bar" style="background:${note.color}"></div>
+        <div class="note-card-body">
+          <div class="note-cat-row">
+            <span class="note-cat-badge" style="background:${note.color}18;color:${note.color}">${note.category}</span>
+            <button class="note-delete" onclick="deleteNote('${note.id}')" title="Delete note">✕</button>
+          </div>
+          <div class="note-insight">${note.insight}</div>
+          <div class="note-quote">"${note.quote}"</div>
+          <div class="note-meta">${note.section} &nbsp;·&nbsp; ${note.time}</div>
+        </div>`;
+      return card;
+    }
+
+    /* ── Text selection → tooltip ── */
+    document.addEventListener('mouseup', e => {
+      // Small delay to let selection settle
+      setTimeout(() => {
+        const sel = window.getSelection();
+        const text = sel ? sel.toString().trim() : '';
+
+        if (!text || text.length < 20 || text.length > 600) {
+          hideTooltip();
+          return;
+        }
+
+        // Only trigger within .bsec content
+        const anchorNode = sel.anchorNode;
+        if (!anchorNode) { hideTooltip(); return; }
+        const inBriefing = anchorNode.parentElement?.closest('.bsec');
+        if (!inBriefing) { hideTooltip(); return; }
+
+        pendingSelection = text;
+        pendingSection   = SECTION_NAMES[currentIdx];
+
+        // Position tooltip near selection end
+        const range = sel.getRangeAt(0);
+        const rect  = range.getBoundingClientRect();
+        const tx    = Math.min(rect.left + rect.width / 2 - 80, window.innerWidth - 200);
+        const ty    = rect.top - 48 + window.scrollY;
+
+        hlTooltip.style.left = Math.max(8, tx) + 'px';
+        hlTooltip.style.top  = ty + 'px';
+        hlTooltip.classList.remove('processing');
+        hlTooltip.querySelector('.hl-label').textContent = 'Capture insight';
+        hlTooltip.classList.add('visible');
+      }, 10);
+    });
+
+    document.addEventListener('mousedown', e => {
+      if (!e.target.closest('#hlTooltip')) hideTooltip();
+    });
+
+    function hideTooltip() {
+      hlTooltip.classList.remove('visible', 'processing');
+    }
+
+    hlTooltip.addEventListener('click', captureHighlight);
+
+    function captureHighlight() {
+      if (!pendingSelection) return;
+      // Processing state
+      hlTooltip.classList.add('processing');
+      hlTooltip.querySelector('.hl-label').textContent = 'Analysing…';
+
+      const quote   = pendingSelection;
+      const section = pendingSection;
+
+      // Simulate AI processing delay (feels deliberate)
+      setTimeout(() => {
+        const ai   = simulateAI(quote, section);
+        const note = {
+          id:       Date.now().toString(),
+          quote:    quote.length > 220 ? quote.slice(0, 220) + '…' : quote,
+          section,
+          insight:  ai.insight,
+          category: ai.category,
+          color:    ai.color,
+          time:     new Date().toLocaleTimeString('de-AT', { hour: '2-digit', minute: '2-digit' }) + ' CET'
+        };
+        notes.unshift(note); // newest first
+        localStorage.setItem('intelio-notes', JSON.stringify(notes));
+        renderNotes();
+        hideTooltip();
+        window.getSelection()?.removeAllRanges();
+
+        // Auto-open panel if closed
+        if (!npOpen) openNotepad();
+        else {
+          // Animate badge
+          npBadge.style.transform = 'scale(1.4)';
+          setTimeout(() => npBadge.style.transform = '', 300);
+        }
+        pendingSelection = '';
+      }, 700);
+    }
+
+    /* ── AI simulation engine ── */
+    function simulateAI(text, sectionName) {
+      const lower = text.toLowerCase();
+
+      // Extract first strong number/figure
+      const numMatch = text.match(/(\d[\d,.]*)\s*(%|bn|m|×|x|bp|billion|million)/i);
+      const keyFig   = numMatch ? numMatch[0].trim() : null;
+
+      // Pattern classifiers
+      const isMA      = /acqui|merger|deal|EV\/EBITDA|carve.out|close[sd]|buyout|sponsor/i.test(text);
+      const isPolicy  = /regulat|directive|commission|government|minister|legislation|permit|framework/i.test(text);
+      const isStat    = keyFig !== null;
+      const isRisk    = /declin|fall|drop|contract|weak|headwind|concern|challeng|below|miss|deficit|tighten/i.test(text);
+      const isOpp     = /record|rise|grow|opportun|increas|improv|strong|expand|high|peak|recover|positive/i.test(text);
+      const isQuote   = /"|"|said|stated|noted|cited|according|confirmed/i.test(text);
+
+      let category, color, insight;
+
+      if (isMA) {
+        category = 'DEAL SIGNAL';
+        color    = '#7C3AED';
+        const mult = text.match(/\d+\.?\d*[×x]/i);
+        insight  = mult
+          ? `Transaction multiple of ${mult[0]} — benchmark against sector precedents and assess valuation trajectory`
+          : `M&A activity in ${sectionName} — map competitive landscape and assess strategic implications`;
+
+      } else if (isPolicy) {
+        category = 'POLICY UPDATE';
+        color    = '#0369A1';
+        insight  = `Regulatory shift in ${sectionName} — review compliance exposure and identify first-mover positioning windows`;
+
+      } else if (isRisk && isStat && keyFig) {
+        category = 'RISK SIGNAL';
+        color    = '#B45309';
+        insight  = `${keyFig} — below-trend figure; model downside scenario and review supply chain or demand exposure`;
+
+      } else if (isOpp && isStat && keyFig) {
+        category = 'OPPORTUNITY';
+        color    = '#166534';
+        insight  = `${keyFig} — outperformance signal; evaluate timing for early-cycle positioning before consensus catches up`;
+
+      } else if (isStat && keyFig) {
+        category = 'DATA POINT';
+        color    = '#0F766E';
+        insight  = `Key figure: ${keyFig} — log as benchmark and track for directional change in next data release`;
+
+      } else if (isQuote) {
+        category = 'EXPERT VIEW';
+        color    = '#6D28D9';
+        insight  = `Forward guidance from source in ${sectionName} — cross-reference with primary data and assess credibility weight`;
+
+      } else if (isRisk) {
+        category = 'RISK SIGNAL';
+        color    = '#B45309';
+        insight  = `Headwind identified in ${sectionName} — assess exposure duration and scenario-plan for 3-month horizon`;
+
+      } else if (isOpp) {
+        category = 'OPPORTUNITY';
+        color    = '#166534';
+        insight  = `Positive signal in ${sectionName} — evaluate timing, competitive moat, and first-mover advantage window`;
+
+      } else {
+        category = 'INTELLIGENCE';
+        color    = '#C41E3A';
+        insight  = `Context captured from ${sectionName} — file for strategic synthesis and cross-sector correlation`;
+      }
+
+      return { category, color, insight };
+    }
+
+    /* ── Notepad panel controls ── */
+    function toggleNotepad() { npOpen ? closeNotepad() : openNotepad(); }
+
+    function openNotepad() {
+      npOpen = true;
+      npPanel.classList.add('open');
+      document.getElementById('npFab').title = 'Close notes (N)';
+    }
+
+    function closeNotepad() {
+      npOpen = false;
+      npPanel.classList.remove('open');
+      document.getElementById('npFab').title = 'Research notes (N)';
+    }
+
+    function deleteNote(id) {
+      const card = npBody.querySelector(`[data-id="${id}"]`);
+      if (card) {
+        card.style.opacity = '0';
+        card.style.transform = 'translateX(20px)';
+        card.style.transition = 'opacity 0.2s, transform 0.2s';
+        setTimeout(() => card.remove(), 200);
+      }
+      notes = notes.filter(n => n.id !== id);
+      localStorage.setItem('intelio-notes', JSON.stringify(notes));
+      setTimeout(() => renderNotes(), 220);
+    }
+
+    function clearAllNotes() {
+      notes = [];
+      localStorage.removeItem('intelio-notes');
+      renderNotes();
+    }
+
+    function exportNotes() {
+      if (!notes.length) return;
+      const lines = [
+        `# Intelio Research Notes`,
+        `Exported ${new Date().toLocaleDateString('de-AT')} · ${notes.length} note${notes.length > 1 ? 's' : ''}`,
+        '',
+        ...notes.map(n =>
+          `## [${n.category}] ${n.section} · ${n.time}\n**${n.insight}**\n> "${n.quote}"\n`
+        )
+      ];
+      const blob = new Blob([lines.join('\n')], { type: 'text/markdown' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'intelio-notes.md';
+      a.click(); URL.revokeObjectURL(url);
+    }
+
+    /* N key to toggle notepad */
+    document.addEventListener('keydown', e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if ((e.key === 'n' || e.key === 'N') && !e.ctrlKey && !e.metaKey) toggleNotepad();
+    });
+
+    /* ── INIT ── */
+    buildSectionEndNavs();
+    document.getElementById(SECTION_IDS[0]).classList.add('active');
+    updateUI();
+    renderNotes();
+  </script>
+
+</body>
+</html>
