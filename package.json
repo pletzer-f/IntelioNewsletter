@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Intelio — AI-powered personalised economic intelligence briefings",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=20"
   },
@@ -15,8 +16,5 @@
     "@supabase/supabase-js": "^2.47.0",
     "resend": "^4.0.0",
     "node-fetch": "^3.3.2"
-  },
-  "devDependencies": {
-    "vercel": "^39.0.0"
   }
 }
