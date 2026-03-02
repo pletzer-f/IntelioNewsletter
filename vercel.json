@@ -3,6 +3,9 @@
   "framework": null,
   "buildCommand": null,
   "outputDirectory": "briefing-app",
+  "redirects": [
+    { "source": "/", "destination": "/signup.html", "permanent": false }
+  ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" }
   ],
