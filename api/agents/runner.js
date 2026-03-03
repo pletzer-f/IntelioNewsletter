@@ -74,29 +74,30 @@ export async function runPipelineForClient(clientId) {
   // Step 2: Run all section searches in parallel (Brave Search — no Claude tokens)
   console.log(`[runner] Running parallel search for 6 sections`);
   const [sr01, sr02, sr03, sr04, sr05, sr06] = await Promise.all([
-    multiSearch(queries.agent01, { count: 5, freshness: 'pd', country: 'DE' }),
-    multiSearch(queries.agent02, { count: 5, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent03, { count: 5, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent04, { count: 5, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent05, { count: 5, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent06, { count: 5, freshness: 'pd', country: 'DE' }),
+    multiSearch(queries.agent01, { count: 3, freshness: 'pd', country: 'DE' }),
+    multiSearch(queries.agent02, { count: 3, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent03, { count: 3, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent04, { count: 3, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent05, { count: 3, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent06, { count: 3, freshness: 'pd', country: 'DE' }),
   ]);
 
-  // Step 3: Run 6 section agents sequentially to stay within API rate limits
-  console.log(`[runner] Running 6 section agents sequentially`);
+  // Step 3: Run all 6 section agents in parallel
+  // Token budget: ~1,400 tokens/agent × 6 = ~8,400 < 10K TPM (Tier 1 safe)
+  console.log(`[runner] Running 6 section agents in parallel`);
   const enabledSections = new Set(client.sections_enabled || [1,2,3,4,5,6]);
 
-  const h01 = enabledSections.has(1) ? await runAgent01(client, profileText, sr01) : '';
-  await sleep(8000);
-  const h02 = enabledSections.has(2) ? await runAgent02(client, profileText, sr02) : '';
-  await sleep(8000);
-  const h03 = enabledSections.has(3) ? await runAgent03(client, profileText, sr03) : '';
-  await sleep(8000);
-  const h04 = enabledSections.has(4) ? await runAgent04(client, profileText, sr04) : '';
-  await sleep(8000);
-  const h05 = enabledSections.has(5) ? await runAgent05(client, profileText, sr05) : '';
-  await sleep(8000);
-  const h06 = enabledSections.has(6) ? await runAgent06(client, profileText, sr06) : '';
+  // Trim profile to first 400 chars to keep tokens low
+  const profileExcerpt = profileText.slice(0, 400);
+
+  const [h01, h02, h03, h04, h05, h06] = await Promise.all([
+    enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01) : Promise.resolve(''),
+    enabledSections.has(2) ? runAgent02(client, profileExcerpt, sr02) : Promise.resolve(''),
+    enabledSections.has(3) ? runAgent03(client, profileExcerpt, sr03) : Promise.resolve(''),
+    enabledSections.has(4) ? runAgent04(client, profileExcerpt, sr04) : Promise.resolve(''),
+    enabledSections.has(5) ? runAgent05(client, profileExcerpt, sr05) : Promise.resolve(''),
+    enabledSections.has(6) ? runAgent06(client, profileExcerpt, sr06) : Promise.resolve(''),
+  ]);
 
   const sectionHtmls = [h01, h02, h03, h04, h05, h06].filter(Boolean);
 
