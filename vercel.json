@@ -25,7 +25,8 @@
     "api/register.js":      { "maxDuration": 60 },
     "api/agents/runner.js": { "maxDuration": 300 },
     "api/preferences.js":   { "maxDuration": 10 },
-    "api/chat.js":          { "maxDuration": 30 }
+    "api/chat.js":          { "maxDuration": 30 },
+    "api/admin.js":         { "maxDuration": 15 }
   },
   "headers": [
     {

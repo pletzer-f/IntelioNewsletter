@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelio · Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #0F172A;
+      --crimson:   #C41E3A;
+      --surface:   #FFFFFF;
+      --surface-2: #F9F8F5;
+      --border:    #E2DFD8;
+      --muted:     #64748B;
+      --green:     #16A34A;
+      --radius:    10px;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--surface-2);
+      color: var(--ink);
+      min-height: 100vh;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      background: var(--ink);
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .wordmark {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 20px;
+      font-weight: 800;
+      color: #F9F8F5;
+      text-decoration: none;
+    }
+    .wordmark span { color: var(--crimson); }
+    .nav-tag {
+      font-size: 11px;
+      font-weight: 600;
+      color: #475569;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* ── Unlock screen ── */
+    .unlock-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: calc(100vh - 56px);
+      padding: 32px;
+    }
+    .unlock-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+    .unlock-icon {
+      font-size: 28px;
+      color: var(--crimson);
+      margin-bottom: 16px;
+    }
+    .unlock-card h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 22px;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .unlock-card p {
+      font-size: 13.5px;
+      color: var(--muted);
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+    .unlock-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      color: var(--ink);
+      background: var(--surface-2);
+      outline: none;
+      transition: border-color 0.2s;
+      text-align: center;
+      letter-spacing: 0.04em;
+      margin-bottom: 14px;
+    }
+    .unlock-input:focus { border-color: var(--crimson); background: var(--surface); }
+    .unlock-btn {
+      width: 100%;
+      padding: 12px;
+      background: var(--crimson);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.15s;
+    }
+    .unlock-btn:hover { background: #A01830; transform: translateY(-1px); }
+    .unlock-error {
+      font-size: 12.5px;
+      color: #DC2626;
+      margin-top: 10px;
+      display: none;
+    }
+
+    /* ── Dashboard ── */
+    .dashboard { display: none; padding: 40px 32px; max-width: 960px; margin: 0 auto; }
+
+    .dash-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 32px;
+    }
+    .dash-header h1 {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 26px;
+      font-weight: 800;
+    }
+    .dash-header p { font-size: 13.5px; color: var(--muted); margin-top: 4px; }
+    .push-all-btn {
+      padding: 10px 20px;
+      background: var(--ink);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+    .push-all-btn:hover { background: #1E293B; }
+    .push-all-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 6px; }
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--ink); }
+
+    /* ── Client table ── */
+    .table-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .table-head {
+      display: grid;
+      grid-template-columns: 1fr 1fr 100px 110px 130px;
+      padding: 12px 20px;
+      background: var(--surface-2);
+      border-bottom: 1px solid var(--border);
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--muted);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    .client-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 100px 110px 130px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+      align-items: center;
+      transition: background 0.1s;
+    }
+    .client-row:last-child { border-bottom: none; }
+    .client-row:hover { background: #FAFAF9; }
+
+    .client-name { font-weight: 600; font-size: 14px; }
+    .client-email { font-size: 13px; color: var(--muted); }
+    .client-time  { font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+    .client-last  { font-size: 12.5px; color: var(--muted); }
+    .client-last.today { color: var(--green); font-weight: 500; }
+    .client-last.never { color: #EF4444; }
+
+    /* Status badge */
+    .status-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: #94A3B8;
+      margin-right: 6px;
+      flex-shrink: 0;
+    }
+    .status-dot.active { background: var(--green); }
+
+    /* Push button */
+    .push-btn {
+      padding: 7px 16px;
+      background: var(--crimson);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      white-space: nowrap;
+    }
+    .push-btn:hover:not(:disabled) { background: #A01830; transform: scale(1.03); }
+    .push-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+    .push-btn.queued  { background: #DCFCE7; color: var(--green); border: 1px solid #86EFAC; }
+    .push-btn.error   { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+
+    /* Loading spinner */
+    .spinner {
+      display: inline-block;
+      width: 12px; height: 12px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty + loading states */
+    .table-empty {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--ink);
+      color: #F9F8F5;
+      font-size: 13.5px;
+      font-weight: 500;
+      padding: 12px 24px;
+      border-radius: 100px;
+      box-shadow: 0 8px 32px rgba(15,23,42,0.2);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1), opacity 0.3s;
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 9999;
+    }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+    @media (max-width: 700px) {
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .table-head, .client-row { grid-template-columns: 1fr 90px 110px; }
+      .table-head > :nth-child(2),
+      .client-row > :nth-child(2) { display: none; }
+      .dashboard { padding: 24px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <a href="signup.html" class="wordmark">Intel<span>io</span>.</a>
+    <span class="nav-tag">Admin Console</span>
+  </nav>
+
+  <!-- ── Unlock screen ───────────────────────────────────────────────────── -->
+  <div class="unlock-wrap" id="unlockWrap">
+    <div class="unlock-card">
+      <div class="unlock-icon">✦</div>
+      <h1>Admin Console</h1>
+      <p>Enter your admin secret to access the briefing dashboard.</p>
+      <input
+        class="unlock-input"
+        id="secretInput"
+        type="password"
+        placeholder="Enter admin secret…"
+        autocomplete="off"
+      >
+      <button class="unlock-btn" onclick="unlock()">Unlock →</button>
+      <div class="unlock-error" id="unlockError">Incorrect secret — try again.</div>
+    </div>
+  </div>
+
+  <!-- ── Dashboard ──────────────────────────────────────────────────────── -->
+  <div class="dashboard" id="dashboard">
+
+    <div class="dash-header">
+      <div>
+        <h1>Briefing Dashboard</h1>
+        <p id="dashSubtitle">Loading clients…</p>
+      </div>
+      <button class="push-all-btn" id="pushAllBtn" onclick="pushAll()">Push to all users</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Total users</div>
+        <div class="stat-value" id="statTotal">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Active</div>
+        <div class="stat-value" id="statActive">—</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Briefed today</div>
+        <div class="stat-value" id="statToday">—</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="table-head">
+        <span>Company</span>
+        <span>Email</span>
+        <span>Delivery</span>
+        <span>Last briefing</span>
+        <span></span>
+      </div>
+      <div id="clientList">
+        <div class="table-empty">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const API_BASE = '/api';
+    let SECRET = sessionStorage.getItem('intelio_admin_secret') || '';
+    let clientData = [];
+
+    // ── Unlock ──────────────────────────────────────────────────────────────
+    if (SECRET) attemptLoad();
+
+    document.getElementById('secretInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter') unlock();
+    });
+
+    async function unlock() {
+      const val = document.getElementById('secretInput').value.trim();
+      if (!val) return;
+      SECRET = val;
+      const ok = await attemptLoad();
+      if (!ok) {
+        document.getElementById('unlockError').style.display = 'block';
+        SECRET = '';
+      }
+    }
+
+    async function attemptLoad() {
+      try {
+        const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
+        if (!res.ok) return false;
+        const data = await res.json();
+        sessionStorage.setItem('intelio_admin_secret', SECRET);
+        showDashboard(data.clients);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function showDashboard(clients) {
+      clientData = clients;
+      document.getElementById('unlockWrap').style.display = 'none';
+      document.getElementById('dashboard').style.display = 'block';
+      renderStats(clients);
+      renderClients(clients);
+    }
+
+    // ── Stats ────────────────────────────────────────────────────────────────
+    function renderStats(clients) {
+      const today = new Date().toISOString().slice(0, 10);
+      const active  = clients.filter(c => c.active).length;
+      const briefed = clients.filter(c => c.last_briefing === today).length;
+      document.getElementById('statTotal').textContent  = clients.length;
+      document.getElementById('statActive').textContent = active;
+      document.getElementById('statToday').textContent  = briefed;
+      document.getElementById('dashSubtitle').textContent =
+        `${clients.length} registered user${clients.length !== 1 ? 's' : ''} · ${briefed} briefed today`;
+    }
+
+    // ── Client rows ──────────────────────────────────────────────────────────
+    function renderClients(clients) {
+      const list = document.getElementById('clientList');
+      if (!clients.length) {
+        list.innerHTML = '<div class="table-empty">No users yet.</div>';
+        return;
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      list.innerHTML = clients.map(c => {
+        const delivTime = (c.delivery_time || '0700').replace(/(\d{2})(\d{2})/, '$1:$2');
+        const lastDate  = c.last_briefing;
+        const lastLabel = !lastDate ? 'Never'
+          : lastDate === today ? 'Today'
+          : formatDate(lastDate);
+        const lastClass = !lastDate ? 'never' : lastDate === today ? 'today' : '';
+        return `
+          <div class="client-row" id="row-${c.id}">
+            <div>
+              <span class="status-dot ${c.active ? 'active' : ''}"></span>
+              <span class="client-name">${esc(c.client_name)}</span>
+            </div>
+            <div class="client-email">${esc(c.email)}</div>
+            <div class="client-time">${delivTime}</div>
+            <div class="client-last ${lastClass}">${lastLabel}</div>
+            <div>
+              <button class="push-btn" id="btn-${c.id}" onclick="pushOne('${c.id}', '${esc(c.client_name)}')">
+                Push briefing
+              </button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Push one ─────────────────────────────────────────────────────────────
+    async function pushOne(clientId, name) {
+      const btn = document.getElementById(`btn-${clientId}`);
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Generating…';
+
+      try {
+        const res = await fetch(`${API_BASE}/admin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ secret: SECRET, clientId }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.queued) throw new Error(data.error || 'Failed');
+
+        btn.classList.add('queued');
+        btn.textContent = '✓ Generating…';
+        showToast(`Briefing queued for ${name} — email arriving in ~2 mins`);
+
+        // Reset button after 3 minutes
+        setTimeout(() => {
+          btn.classList.remove('queued');
+          btn.disabled = false;
+          btn.textContent = 'Push briefing';
+          refreshLastBriefing(clientId);
+        }, 180_000);
+
+      } catch (err) {
+        btn.disabled = false;
+        btn.classList.add('error');
+        btn.textContent = '✗ Error';
+        setTimeout(() => {
+          btn.classList.remove('error');
+          btn.textContent = 'Push briefing';
+        }, 4000);
+        showToast(`Error: ${err.message}`);
+      }
+    }
+
+    // ── Push all ─────────────────────────────────────────────────────────────
+    async function pushAll() {
+      const btn = document.getElementById('pushAllBtn');
+      const active = clientData.filter(c => c.active);
+      if (!active.length) return;
+
+      if (!confirm(`Push a briefing to all ${active.length} active user${active.length !== 1 ? 's' : ''}?`)) return;
+
+      btn.disabled = true;
+      btn.textContent = `Queuing ${active.length} briefings…`;
+
+      for (const c of active) {
+        await pushOne(c.id, c.client_name);
+        await new Promise(r => setTimeout(r, 500)); // small gap between requests
+      }
+
+      btn.textContent = `✓ All queued`;
+      showToast(`${active.length} briefings queued — emails arriving in ~2–5 mins`);
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.textContent = 'Push to all users';
+      }, 60_000);
+    }
+
+    // ── Refresh last briefing for a row ──────────────────────────────────────
+    async function refreshLastBriefing(clientId) {
+      try {
+        const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        const client = data.clients.find(c => c.id === clientId);
+        if (!client) return;
+        clientData = data.clients;
+        renderStats(data.clients);
+        const today = new Date().toISOString().slice(0, 10);
+        const lastDate = client.last_briefing;
+        const lastEl = document.querySelector(`#row-${clientId} .client-last`);
+        if (lastEl) {
+          lastEl.textContent = lastDate === today ? 'Today' : lastDate ? formatDate(lastDate) : 'Never';
+          lastEl.className   = 'client-last' + (lastDate === today ? ' today' : !lastDate ? ' never' : '');
+        }
+      } catch {}
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+    function formatDate(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    }
+
+    function esc(s) {
+      return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    let toastTimer;
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
+    }
+  </script>
+</body>
+</html>
