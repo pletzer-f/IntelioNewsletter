@@ -16,6 +16,8 @@ import { assembleBriefing } from './orchestrator.js';
 
 export const config = { runtime: 'nodejs' };
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 export default async function handler(req, res) {
   // Verify internal call (cron or admin only)
   const secret = req.headers['x-cron-secret'] || req.query.secret;
@@ -69,29 +71,32 @@ export async function runPipelineForClient(clientId) {
   // Step 1: Build search queries per section (from the profile + client config)
   const queries = buildSectionQueries(client, profileText);
 
-  // Step 2: Run all section searches in parallel
+  // Step 2: Run all section searches in parallel (Brave Search — no Claude tokens)
   console.log(`[runner] Running parallel search for 6 sections`);
   const [sr01, sr02, sr03, sr04, sr05, sr06] = await Promise.all([
-    multiSearch(queries.agent01, { count: 10, freshness: 'pd', country: 'DE' }),
-    multiSearch(queries.agent02, { count: 10, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent03, { count: 10, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent04, { count: 10, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent05, { count: 10, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent06, { count: 10, freshness: 'pd', country: 'DE' }),
+    multiSearch(queries.agent01, { count: 5, freshness: 'pd', country: 'DE' }),
+    multiSearch(queries.agent02, { count: 5, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent03, { count: 5, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent04, { count: 5, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent05, { count: 5, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent06, { count: 5, freshness: 'pd', country: 'DE' }),
   ]);
 
-  // Step 3: Run all 6 section agents in parallel
-  console.log(`[runner] Running 6 section agents in parallel`);
+  // Step 3: Run 6 section agents sequentially to stay within API rate limits
+  console.log(`[runner] Running 6 section agents sequentially`);
   const enabledSections = new Set(client.sections_enabled || [1,2,3,4,5,6]);
 
-  const [h01, h02, h03, h04, h05, h06] = await Promise.all([
-    enabledSections.has(1) ? runAgent01(client, profileText, sr01) : Promise.resolve(''),
-    enabledSections.has(2) ? runAgent02(client, profileText, sr02) : Promise.resolve(''),
-    enabledSections.has(3) ? runAgent03(client, profileText, sr03) : Promise.resolve(''),
-    enabledSections.has(4) ? runAgent04(client, profileText, sr04) : Promise.resolve(''),
-    enabledSections.has(5) ? runAgent05(client, profileText, sr05) : Promise.resolve(''),
-    enabledSections.has(6) ? runAgent06(client, profileText, sr06) : Promise.resolve(''),
-  ]);
+  const h01 = enabledSections.has(1) ? await runAgent01(client, profileText, sr01) : '';
+  await sleep(8000);
+  const h02 = enabledSections.has(2) ? await runAgent02(client, profileText, sr02) : '';
+  await sleep(8000);
+  const h03 = enabledSections.has(3) ? await runAgent03(client, profileText, sr03) : '';
+  await sleep(8000);
+  const h04 = enabledSections.has(4) ? await runAgent04(client, profileText, sr04) : '';
+  await sleep(8000);
+  const h05 = enabledSections.has(5) ? await runAgent05(client, profileText, sr05) : '';
+  await sleep(8000);
+  const h06 = enabledSections.has(6) ? await runAgent06(client, profileText, sr06) : '';
 
   const sectionHtmls = [h01, h02, h03, h04, h05, h06].filter(Boolean);
 
