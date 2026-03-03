@@ -88,7 +88,10 @@ export async function runPipelineForClient(clientId) {
   // Step 3: Run all 6 section agents in parallel
   // Token budget: ~1,400 tokens/agent × 6 = ~8,400 < 10K TPM (Tier 1 safe)
   console.log(`[runner] Running 6 section agents in parallel`);
-  const enabledSections = new Set(client.sections_enabled || [1,2,3,4,5,6]);
+  // Defensive: DB may contain [null,null,...] from old signups that sent slug strings.
+  // Filter to clean positive integers and fall back to all 6 sections if empty.
+  const rawEnabled = (client.sections_enabled || []).map(Number).filter(n => n > 0 && !isNaN(n));
+  const enabledSections = new Set(rawEnabled.length > 0 ? rawEnabled : [1, 2, 3, 4, 5, 6]);
 
   // 2,000 chars ≈ 500 tokens — gives agents solid client context within budget
   const profileExcerpt = profileText.slice(0, 2000);
