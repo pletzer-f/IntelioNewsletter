@@ -75,7 +75,7 @@ export async function runPipelineForClient(clientId) {
   // Step 2: Run all section searches + market tickers in parallel
   console.log(`[runner] Running parallel search for 6 sections + market tickers`);
   const [sr01, sr02, sr03, sr04, sr05, sr06, tickers] = await Promise.all([
-    multiSearch(queries.agent01, { count: 8, freshness: 'pd', country: 'DE' }),
+    multiSearch(queries.agent01, { count: 10, freshness: 'pd', country: 'DE' }),
     multiSearch(queries.agent02, { count: 8, freshness: 'pw', country: 'DE' }),
     multiSearch(queries.agent03, { count: 8, freshness: 'pw', country: 'DE' }),
     multiSearch(queries.agent04, { count: 8, freshness: 'pw', country: 'DE' }),
