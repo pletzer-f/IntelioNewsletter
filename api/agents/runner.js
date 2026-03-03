@@ -74,12 +74,12 @@ export async function runPipelineForClient(clientId) {
   // Step 2: Run all section searches in parallel (Brave Search — no Claude tokens)
   console.log(`[runner] Running parallel search for 6 sections`);
   const [sr01, sr02, sr03, sr04, sr05, sr06] = await Promise.all([
-    multiSearch(queries.agent01, { count: 3, freshness: 'pd', country: 'DE' }),
-    multiSearch(queries.agent02, { count: 3, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent03, { count: 3, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent04, { count: 3, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent05, { count: 3, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent06, { count: 3, freshness: 'pd', country: 'DE' }),
+    multiSearch(queries.agent01, { count: 8, freshness: 'pd', country: 'DE' }),
+    multiSearch(queries.agent02, { count: 8, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent03, { count: 8, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent04, { count: 8, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent05, { count: 8, freshness: 'pw', country: 'DE' }),
+    multiSearch(queries.agent06, { count: 8, freshness: 'pd', country: 'DE' }),
   ]);
 
   // Step 3: Run all 6 section agents in parallel
@@ -87,8 +87,8 @@ export async function runPipelineForClient(clientId) {
   console.log(`[runner] Running 6 section agents in parallel`);
   const enabledSections = new Set(client.sections_enabled || [1,2,3,4,5,6]);
 
-  // Trim profile to first 400 chars to keep tokens low
-  const profileExcerpt = profileText.slice(0, 400);
+  // 2,000 chars ≈ 500 tokens — gives agents solid client context within budget
+  const profileExcerpt = profileText.slice(0, 2000);
 
   const [h01, h02, h03, h04, h05, h06] = await Promise.all([
     enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01) : Promise.resolve(''),
