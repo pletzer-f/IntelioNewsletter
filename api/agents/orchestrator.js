@@ -317,6 +317,151 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     .chat-clear-btn { color: var(--text-3) !important; }
     .chat-clear-btn:hover { color: #C41E3A !important; }
     .chat-panel-foot { border-top-color: var(--border); background: var(--surface); }
+
+    /* ── Legacy story-card → story-lead override ─────────────────────────
+       Any AI-generated story-card still displays as a full-width story-lead */
+    .story-card {
+      background: transparent !important; border: none !important;
+      border-radius: 0 !important; padding: 0 !important;
+      box-shadow: none !important; transform: none !important;
+      display: block !important;
+    }
+    .story-card:hover { transform: none !important; box-shadow: none !important; }
+    .story-card .story-hl { font-size: 30px !important; }
+    .story-card .story-body { font-size: 14.5px !important; margin-bottom: 22px !important; }
+    .story-grid { display: block !important; }
+    .story-grid .story-card { margin-bottom: 28px; }
+    .story-grid .story-card + .story-card {
+      padding-top: 28px !important;
+      border-top: 1px solid var(--border) !important;
+    }
+
+    /* ── Save (bookmark) button on each story article ─────────────────── */
+    .art-save-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 5px 12px; margin-top: 10px; margin-bottom: 8px;
+      background: transparent; border: 1px solid var(--border);
+      border-radius: 20px; cursor: pointer;
+      font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
+      letter-spacing: 0.04em; color: var(--text-3);
+      transition: all 0.18s;
+    }
+    .art-save-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .art-save-btn.saved {
+      background: var(--accent-dim); border-color: var(--accent);
+      color: var(--accent);
+    }
+    .art-save-btn .save-star { font-size: 12px; }
+
+    /* ── Saved articles panel ─────────────────────────────────────────── */
+    .saved-fab {
+      position: fixed; bottom: 100px; right: 36px;
+      width: 50px; height: 50px;
+      background: var(--surface); border: 2px solid var(--border);
+      border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.10); z-index: 700;
+      transition: transform 0.22s, box-shadow 0.22s, border-color 0.22s;
+    }
+    .saved-fab:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.14); border-color: var(--accent); }
+    .saved-fab-icon { font-size: 20px; color: var(--text-2); line-height: 1; }
+    .saved-fab-count {
+      position: absolute; top: -4px; right: -4px;
+      min-width: 18px; height: 18px; border-radius: 9px;
+      background: var(--accent); color: #fff;
+      font-size: 10px; font-weight: 700;
+      display: none; align-items: center; justify-content: center;
+      padding: 0 4px;
+    }
+    .saved-fab-count.visible { display: flex; }
+
+    .saved-panel {
+      position: fixed; top: 0; right: 0;
+      width: 420px; max-width: 94vw; height: 100vh;
+      background: var(--surface);
+      border-left: 1px solid var(--border);
+      box-shadow: -4px 0 32px rgba(15,23,42,0.10);
+      display: flex; flex-direction: column; z-index: 900;
+      transform: translateX(100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .saved-panel.open { transform: translateX(0); }
+
+    .saved-panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px; flex-shrink: 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .saved-head-left { display: flex; align-items: center; gap: 10px; }
+    .saved-head-icon { font-size: 18px; color: var(--accent); }
+    .saved-head-title {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 17px; font-weight: 700; color: var(--text);
+    }
+    .saved-head-count {
+      font-size: 11px; font-weight: 600; color: var(--text-3);
+      letter-spacing: 0.06em; text-transform: uppercase; margin-top: 2px;
+    }
+    .saved-close-btn {
+      background: none; border: none; cursor: pointer; font-size: 18px;
+      color: var(--text-3); padding: 4px 6px; border-radius: 4px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .saved-close-btn:hover { color: var(--text); background: var(--surface-hi); }
+
+    .saved-body { flex: 1; overflow-y: auto; padding: 16px 20px; display: flex; flex-direction: column; gap: 0; }
+    .saved-empty {
+      margin: auto; text-align: center; color: var(--text-3);
+      font-size: 13.5px; line-height: 1.65; padding: 32px 16px;
+    }
+    .saved-empty-icon { font-size: 28px; margin-bottom: 10px; color: var(--accent); }
+
+    .saved-item {
+      padding: 16px 0; border-bottom: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 6px;
+    }
+    .saved-item:last-child { border-bottom: none; }
+    .saved-item-tag {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--text-3);
+    }
+    .saved-item-hl {
+      font-family: 'Playfair Display', Georgia, serif;
+      font-size: 15px; font-weight: 700; color: var(--text);
+      line-height: 1.3; letter-spacing: -0.01em;
+    }
+    .saved-item-body {
+      font-size: 12.5px; color: var(--text-2); line-height: 1.65;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .saved-item-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 4px; }
+    .saved-item-src { font-size: 10.5px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; }
+    .saved-item-remove {
+      background: none; border: none; cursor: pointer; font-size: 11px;
+      color: var(--text-3); padding: 3px 8px; border-radius: 4px;
+      transition: color 0.15s, background 0.15s; font-family: 'Inter', sans-serif;
+    }
+    .saved-item-remove:hover { color: #DC2626; background: #FEF2F2; }
+
+    .saved-panel-foot {
+      padding: 12px 20px; border-top: 1px solid var(--border); flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .saved-export-btn {
+      background: none; border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--text-2);
+      cursor: pointer; font-family: 'Inter', sans-serif; transition: all 0.18s;
+    }
+    .saved-export-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .saved-clear-btn {
+      background: none; border: none; font-size: 12px; color: var(--text-3);
+      cursor: pointer; font-family: 'Inter', sans-serif; transition: color 0.15s;
+    }
+    .saved-clear-btn:hover { color: #DC2626; }
+
+    @media print { .saved-fab, .saved-panel { display: none !important; } }
+    @media (max-width: 600px) { .saved-panel { width: 100%; } .saved-fab { bottom: 20px; right: 20px; } }
   </style>
 </head>
 <body>
@@ -451,6 +596,36 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     </div>
     <div class="chat-panel-foot" id="chatFoot" style="display:none">
       <button class="chat-clear-btn" onclick="clearChatHistory()">Clear history</button>
+    </div>
+  </aside>
+
+  <!-- SAVED ARTICLES FAB -->
+  <button class="saved-fab" id="savedFab" onclick="toggleSaved()" title="Saved articles (B)">
+    <span class="saved-fab-icon">\u2605</span>
+    <span class="saved-fab-count" id="savedFabCount"></span>
+  </button>
+
+  <!-- SAVED ARTICLES PANEL -->
+  <aside class="saved-panel" id="savedPanel">
+    <div class="saved-panel-head">
+      <div class="saved-head-left">
+        <span class="saved-head-icon">\u2605</span>
+        <div>
+          <div class="saved-head-title">Saved Articles</div>
+          <div class="saved-head-count" id="savedHeadCount">No saved articles</div>
+        </div>
+      </div>
+      <button class="saved-close-btn" onclick="closeSaved()" title="Close">\u2715</button>
+    </div>
+    <div class="saved-body" id="savedBody">
+      <div class="saved-empty" id="savedEmpty">
+        <div class="saved-empty-icon">\u2605</div>
+        <p><strong>No saved articles yet.</strong><br>Click the star on any story to save it here.</p>
+      </div>
+    </div>
+    <div class="saved-panel-foot" id="savedPanelFoot" style="display:none">
+      <button class="saved-export-btn" onclick="exportSaved()">\u2193 Export saved</button>
+      <button class="saved-clear-btn" onclick="clearAllSaved()">Clear all</button>
     </div>
   </aside>
 
@@ -604,6 +779,142 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       document.getElementById('chatFoot').style.display = 'none';
     }
 
+    // ── Save (bookmark) articles ─────────────────────────────────────────────
+    const SAVED_STORE_KEY = 'saved_articles_' + CHAT_CLIENT_ID;
+    let savedOpen = false;
+
+    // Inject save buttons onto every story article at page-load
+    (function injectSaveButtons() {
+      document.querySelectorAll('article.story-lead, article.story-card').forEach((art, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'art-save-btn';
+        btn.dataset.idx = idx;
+        btn.onclick = () => toggleSaveArticle(idx);
+        btn.innerHTML = '<span class="save-star">\u2606</span> Save';
+        const src = art.querySelector('.story-src');
+        if (src) art.insertBefore(btn, src);
+        else art.appendChild(btn);
+      });
+      refreshSaveButtons();
+    })();
+
+    function getSavedArticles() {
+      return JSON.parse(localStorage.getItem(SAVED_STORE_KEY) || '[]');
+    }
+    function setSavedArticles(arr) {
+      localStorage.setItem(SAVED_STORE_KEY, JSON.stringify(arr));
+    }
+
+    function toggleSaveArticle(idx) {
+      const arts = document.querySelectorAll('article.story-lead, article.story-card');
+      const art = arts[idx];
+      if (!art) return;
+
+      const hl   = art.querySelector('.story-hl')?.textContent?.trim() || '';
+      const body = art.querySelector('.story-body')?.textContent?.trim() || '';
+      const tag  = art.querySelector('.story-tag')?.textContent?.trim() || '';
+      const src  = art.querySelector('.story-src')?.textContent?.replace('\u2192','').trim() || '';
+      const href = art.querySelector('.story-src')?.href || '#';
+
+      const saved = getSavedArticles();
+      const existingIndex = saved.findIndex(s => s.idx === idx);
+
+      if (existingIndex >= 0) {
+        saved.splice(existingIndex, 1);
+      } else {
+        saved.push({ idx, hl, body, tag, src, href, savedAt: new Date().toISOString() });
+      }
+      setSavedArticles(saved);
+      refreshSaveButtons();
+      renderSavedPanel();
+    }
+
+    function refreshSaveButtons() {
+      const saved = getSavedArticles();
+      const savedIdxs = new Set(saved.map(s => s.idx));
+      document.querySelectorAll('.art-save-btn').forEach(btn => {
+        const idx = Number(btn.dataset.idx);
+        const isSaved = savedIdxs.has(idx);
+        btn.classList.toggle('saved', isSaved);
+        btn.innerHTML = isSaved
+          ? '<span class="save-star">\u2605</span> Saved'
+          : '<span class="save-star">\u2606</span> Save';
+      });
+      const count = saved.length;
+      const countEl = document.getElementById('savedFabCount');
+      if (countEl) {
+        countEl.textContent = count;
+        countEl.classList.toggle('visible', count > 0);
+      }
+      const headCount = document.getElementById('savedHeadCount');
+      if (headCount) headCount.textContent = count === 0 ? 'No saved articles' : `${count} article${count !== 1 ? 's' : ''} saved`;
+      const foot = document.getElementById('savedPanelFoot');
+      if (foot) foot.style.display = count > 0 ? '' : 'none';
+    }
+
+    function renderSavedPanel() {
+      const saved = getSavedArticles();
+      const body  = document.getElementById('savedBody');
+      const empty = document.getElementById('savedEmpty');
+      if (!body) return;
+      if (saved.length === 0) {
+        body.innerHTML = '<div class="saved-empty" id="savedEmpty"><div class="saved-empty-icon">\u2605</div><p><strong>No saved articles yet.</strong><br>Click the star on any story to save it here.</p></div>';
+        return;
+      }
+      body.innerHTML = saved.map((s, i) => `
+        <div class="saved-item">
+          <div class="saved-item-tag">${s.tag}</div>
+          <div class="saved-item-hl">${s.hl}</div>
+          <div class="saved-item-body">${s.body}</div>
+          <div class="saved-item-foot">
+            <span class="saved-item-src">${s.src}</span>
+            <button class="saved-item-remove" onclick="removeSavedAt(${i})">\u2715 Remove</button>
+          </div>
+        </div>`).join('');
+    }
+
+    function removeSavedAt(i) {
+      const saved = getSavedArticles();
+      if (i >= 0 && i < saved.length) {
+        saved.splice(i, 1);
+        setSavedArticles(saved);
+        refreshSaveButtons();
+        renderSavedPanel();
+      }
+    }
+
+    function toggleSaved() {
+      savedOpen ? closeSaved() : openSaved();
+    }
+    function openSaved() {
+      savedOpen = true;
+      renderSavedPanel();
+      document.getElementById('savedPanel').classList.add('open');
+    }
+    function closeSaved() {
+      savedOpen = false;
+      document.getElementById('savedPanel').classList.remove('open');
+    }
+
+    function exportSaved() {
+      const saved = getSavedArticles();
+      if (!saved.length) return;
+      const text = saved.map((s, i) =>
+        `${i + 1}. ${s.tag}\n${s.hl}\n\n${s.body}\n\nSource: ${s.src}\n${'─'.repeat(60)}`
+      ).join('\n\n');
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href = url; a.download = 'intelio-saved-articles.txt';
+      a.click(); URL.revokeObjectURL(url);
+    }
+
+    function clearAllSaved() {
+      setSavedArticles([]);
+      refreshSaveButtons();
+      renderSavedPanel();
+    }
+
     // ── Mobile section nav (bottom drawer) ───────────────────────────────────
     let _mobNavOpen = false;
 
@@ -678,16 +989,20 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       });
     }, { passive: true });
 
-    // Keyboard shortcuts — chat panel + mobile nav (section keys handled by template script)
+    // Keyboard shortcuts — chat, saved panel, mobile nav (section keys: template script)
     document.addEventListener('keydown', e => {
       const tag = document.activeElement.tagName;
-      if (e.key === 'C' && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'INPUT' && tag !== 'TEXTAREA') {
-        toggleChat();
-      }
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (e.key === 'C') toggleChat();
+      if (e.key === 'B') toggleSaved();
       if (e.key === 'Escape') {
         if (chatOpen) toggleChat();
+        if (savedOpen) closeSaved();
         if (_mobNavOpen) closeMobNav();
       }
+    });
+    document.addEventListener('keydown', e => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && document.activeElement === document.getElementById('chatInput')) {
         sendChat();
       }
