@@ -41,8 +41,6 @@ export default async function handler(req, res) {
     console.log(`[register] Upserted client: ${client.id} (${client.email})`);
 
     // 2. Send welcome email
-    // Note: Agent 00 (monthly profile) runs automatically via the daily pipeline
-    // runner the first time a briefing is generated (runner.js handles missing profiles).
     const welcomeHtml = buildWelcomeEmail(client);
     await sendTransactional(
       client.email,
@@ -51,10 +49,25 @@ export default async function handler(req, res) {
     );
     console.log(`[register] Welcome email sent to ${client.email}`);
 
+    // 3. Kick off first briefing immediately — fire-and-forget into runner's own function context.
+    // runner.js has maxDuration:300 and handles Agent 00 + all 6 agents + email delivery.
+    // We do NOT await this — register returns immediately so the signup form feels instant.
+    const appUrl = process.env.APP_URL || `https://${process.env.VERCEL_URL}`;
+    fetch(`${appUrl}/api/agents/runner`, {
+      method:  'POST',
+      headers: {
+        'Content-Type':   'application/json',
+        'x-cron-secret':  process.env.CRON_SECRET,
+      },
+      body: JSON.stringify({ clientId: client.id }),
+    }).catch(err => console.warn(`[register] Runner kick-off failed for ${client.id}:`, err.message));
+
+    console.log(`[register] Runner kicked off for ${client.id} — briefing will arrive shortly`);
+
     return res.status(200).json({
       success: true,
       clientId: client.id,
-      message:  `Registration complete. Your first briefing will arrive at ${client.delivery_time} tomorrow.`,
+      message:  `Registration complete. Your first briefing is being generated and will arrive in your inbox shortly.`,
     });
 
   } catch (err) {
@@ -89,8 +102,9 @@ function buildWelcomeEmail(client) {
   <div class="hd"><div class="logo">Intelio.</div></div>
   <div class="bd">
     <h2>You're all set, ${client.client_contact}.</h2>
-    <p>Your personalised briefing for <strong>${client.client_name}</strong> is being configured.
-    Your first edition will arrive at <strong>${client.delivery_time || '07:00'}</strong> tomorrow.</p>
+    <p>Your personalised briefing for <strong>${client.client_name}</strong> is being generated right now.
+    <strong>Expect your first edition in your inbox within the next few minutes.</strong>
+    After that, it will arrive automatically every morning at <strong>${client.delivery_time || '07:00'}</strong> CET.</p>
     <p>
       <span class="pill">Region: ${client.region}</span>
       <span class="pill">Sections: ${sections}</span>
