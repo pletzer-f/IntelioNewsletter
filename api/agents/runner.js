@@ -119,11 +119,20 @@ export async function runPipelineForClient(clientId) {
   const briefing = await saveBriefing(clientId, briefingHtml, today);
   console.log(`[runner] Briefing saved: ${briefing.id}`);
 
-  // Step 7: Send email
+  // Step 7: Send email — pass orchestratorHtml (executive summary) + section names
+  // We do NOT send the full briefingHtml; the email contains the summary + a CTA link.
   const dateLabel = new Date().toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
-  await sendBriefingEmail(client.email, client.client_name, dateLabel, briefingHtml, briefing.id);
+  const activeSectionNames = ['Executive Summary'];
+  if (enabledSections.has(1) && h01?.trim()) activeSectionNames.push('Macro & Markets');
+  if (enabledSections.has(2) && h02?.trim()) activeSectionNames.push('Core Industry');
+  if (enabledSections.has(3) && h03?.trim()) activeSectionNames.push('PE & M\u0026A');
+  if (enabledSections.has(4) && h04?.trim()) activeSectionNames.push('End-Market Demand');
+  if (enabledSections.has(5) && h05?.trim()) activeSectionNames.push('Assets & Capex');
+  if (enabledSections.has(6) && h06?.trim()) activeSectionNames.push('Local Policy & Reputation');
+
+  await sendBriefingEmail(client.email, client.client_name, dateLabel, orchestratorHtml, briefing.id, activeSectionNames);
   console.log(`[runner] Email delivered to ${client.email}`);
 
   return briefing;

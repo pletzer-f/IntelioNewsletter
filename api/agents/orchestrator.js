@@ -95,13 +95,16 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     </section>`;
 
   // ── Agent sections ────────────────────────────────────────────────────────
-  const agentSections = activeSections.map(s => {
+  const agentSections = activeSections.map((s, i) => {
     const html = htmlByAgent[s.agent];
     return `
     <section class="bsec" id="${s.slug}">
       <div class="sec-head">
         <div class="sec-title-row">
-          <h2 class="sec-title">${s.name}</h2>
+          <div>
+            <div class="sec-label-badge">Section ${i + 2} of ${allSections.length}</div>
+            <h2 class="sec-title">${s.name}</h2>
+          </div>
         </div>
         <div class="sec-rule"></div>
       </div>
@@ -195,6 +198,26 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
 
     @media print { .chat-fab, .chat-panel { display: none !important; } }
     @media (max-width: 600px) { .chat-panel { width: 100%; } .chat-fab { bottom: 20px; right: 20px; } }
+
+    /* ── CONTINUOUS SCROLL LAYOUT — all sections visible at once ──────── */
+    /* Override the template's tab-based single-section-at-a-time UX */
+    .bsec { display: block !important; padding-top: 48px !important; }
+    .bsec.active { animation: none !important; }
+    .bsec.exiting { animation: none !important; pointer-events: auto !important; }
+    .content { display: flex; flex-direction: column; }
+    .content .bsec + .bsec {
+      border-top: 2px solid var(--border);
+      margin-top: 8px;
+    }
+    .sec-end-nav { display: none !important; }
+    /* Section label badge shown above each non-summary section */
+    .sec-label-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent-dim); color: var(--accent);
+      font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 4px 10px; border-radius: 20px;
+      margin-bottom: 6px; font-family: 'Inter', sans-serif;
+    }
   </style>
 </head>
 <body>
@@ -457,28 +480,46 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       document.getElementById('chatFoot').style.display = 'none';
     }
 
-    // ── Section navigation fallback ──────────────────────────────────────
-    // Robust nav pill binding in case the template script binding fails.
-    // Uses the same showSection() function defined in the template script block.
-    document.querySelectorAll('.nav-pill[data-sec]').forEach(pill => {
-      pill.addEventListener('click', () => {
-        const sec = pill.dataset.sec;
-        if (typeof SECTION_IDS !== 'undefined' && typeof showSection === 'function') {
-          const idx = SECTION_IDS.indexOf(sec);
-          if (idx !== -1) showSection(idx);
-        } else {
-          // Ultra-simple fallback: just toggle visibility directly
-          document.querySelectorAll('.bsec').forEach(s => s.classList.remove('active'));
-          document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
-          const target = document.getElementById(sec);
-          if (target) target.classList.add('active');
-          pill.classList.add('active');
-          window.scrollTo({ top: 0, behavior: 'instant' });
-        }
-      });
-    });
+    // ── CONTINUOUS SCROLL MODE ────────────────────────────────────────────────
+    // All sections are visible at once (continuous scroll, not tabs).
+    // Nav pills scroll smoothly to the target section.
+    // The active nav pill highlights whichever section is currently in view.
 
-    // Keyboard shortcuts
+    window.showSection = function(newIdx) {
+      if (newIdx < 0 || newIdx >= SECTION_IDS.length) return;
+      const el = document.getElementById(SECTION_IDS[newIdx]);
+      if (!el) return;
+      const mastH  = document.querySelector('.masthead')?.offsetHeight  || 0;
+      const sigH   = document.querySelector('.signals-bar')?.offsetHeight || 0;
+      const navH   = document.querySelector('.sec-nav')?.offsetHeight   || 0;
+      const offset = mastH + sigH + navH + 12;
+      const y = el.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      currentIdx = newIdx;
+      updateUI();
+    };
+
+    // Track which section is in view as the user scrolls
+    const _ssEls = SECTION_IDS.map(id => document.getElementById(id)).filter(Boolean);
+    let _ssTick = false;
+    window.addEventListener('scroll', () => {
+      if (_ssTick) return;
+      _ssTick = true;
+      requestAnimationFrame(() => {
+        _ssTick = false;
+        const mastH  = document.querySelector('.masthead')?.offsetHeight  || 0;
+        const sigH   = document.querySelector('.signals-bar')?.offsetHeight || 0;
+        const navH   = document.querySelector('.sec-nav')?.offsetHeight   || 0;
+        const threshold = mastH + sigH + navH + 60;
+        let ai = 0;
+        _ssEls.forEach((el, i) => {
+          if (el && el.getBoundingClientRect().top <= threshold) ai = i;
+        });
+        if (ai !== currentIdx) { currentIdx = ai; updateUI(); }
+      });
+    }, { passive: true });
+
+    // Keyboard shortcuts — chat panel only (section keys handled by template script)
     document.addEventListener('keydown', e => {
       const tag = document.activeElement.tagName;
       if (e.key === 'C' && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'INPUT' && tag !== 'TEXTAREA') {
