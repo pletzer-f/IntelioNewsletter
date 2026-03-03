@@ -14,7 +14,7 @@ export default async function handler(req, res) {
   // CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
     return res.status(204).end();
   }
@@ -51,6 +51,32 @@ export default async function handler(req, res) {
     }));
 
     return res.status(200).json({ clients: result });
+  }
+
+  // ── PUT: update client settings ─────────────────────────────────────────
+  if (req.method === 'PUT') {
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    const { secret, clientId, ...fields } = body || {};
+
+    if (!checkSecret(secret)) return res.status(401).json({ error: 'Unauthorized' });
+    if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
+
+    // Build update object — only include defined fields
+    const update = {};
+    if (fields.delivery_time       !== undefined) update.delivery_time        = String(fields.delivery_time).replace(':', '');
+    if (fields.output_language     !== undefined) update.output_language      = fields.output_language;
+    if (fields.region              !== undefined) update.region               = fields.region;
+    if (fields.stories_per_section !== undefined) update.stories_per_section  = Number(fields.stories_per_section);
+    if (fields.client_profile      !== undefined) update.client_profile       = fields.client_profile;
+    if (fields.client_entities     !== undefined) update.client_entities      = fields.client_entities;
+    if (fields.client_topics       !== undefined) update.client_topics        = fields.client_topics;
+    if (fields.client_local_sources !== undefined) update.client_local_sources = fields.client_local_sources;
+    update.updated_at = new Date().toISOString();
+
+    const { error } = await supabase.from('clients').update(update).eq('id', clientId);
+    if (error) return res.status(500).json({ error: error.message });
+
+    return res.status(200).json({ updated: true, clientId });
   }
 
   // ── POST: trigger runner for a specific client ───────────────────────────

@@ -284,6 +284,32 @@
       padding-right: 34px;
     }
 
+    /* ── Outlet picker ── */
+    .outlet-picker {
+      border: 1px solid var(--border); border-radius: 10px;
+      background: var(--surface); overflow: hidden;
+      max-height: 340px; overflow-y: auto;
+    }
+    .outlet-group { padding: 14px 16px 10px; border-bottom: 1px solid var(--border); }
+    .outlet-group:last-child { border-bottom: none; }
+    .outlet-group-label {
+      font-size: 11px; font-weight: 700; color: var(--text-3);
+      letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 10px;
+    }
+    .outlet-chips { display: flex; flex-wrap: wrap; gap: 7px; }
+    .outlet-chip {
+      display: inline-block; padding: 5px 11px; border-radius: 20px;
+      font-size: 12.5px; font-weight: 500; cursor: pointer;
+      background: var(--surface-hi); border: 1px solid var(--border);
+      color: var(--text-2); transition: all 0.15s;
+      user-select: none;
+    }
+    .outlet-chip:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .outlet-chip.selected {
+      background: var(--accent); border-color: var(--accent);
+      color: #fff; font-weight: 600;
+    }
+
     /* Chip input (for topics/entities) */
     .chip-input-wrap {
       background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
@@ -751,9 +777,118 @@
       </div>
 
       <div class="field">
-        <label>Preferred local sources</label>
-        <div class="hint">Regional or trade publications your team reads. Agents will prioritise these for local coverage.</div>
-        <input type="text" id="f-local-sources" placeholder="e.g. Tiroler Tageszeitung, APA, Wirtschaftsblatt…">
+        <label>Preferred sources</label>
+        <div class="hint">Select the outlets you want agents to prioritise. You can select as many as you like.</div>
+        <div class="outlet-picker" id="outletPicker">
+          <div class="outlet-group">
+            <div class="outlet-group-label">🇦🇹 Austria — National</div>
+            <div class="outlet-chips">
+              <span class="outlet-chip" data-val="Der Standard">Der Standard</span>
+              <span class="outlet-chip" data-val="Die Presse">Die Presse</span>
+              <span class="outlet-chip" data-val="Kurier">Kurier</span>
+              <span class="outlet-chip" data-val="Kronen Zeitung">Kronen Zeitung</span>
+              <span class="outlet-chip" data-val="APA">APA</span>
+              <span class="outlet-chip" data-val="ORF">ORF</span>
+              <span class="outlet-chip" data-val="Wirtschaftsblatt">Wirtschaftsblatt</span>
+              <span class="outlet-chip" data-val="Format">Format</span>
+              <span class="outlet-chip" data-val="Trend">Trend</span>
+              <span class="outlet-chip" data-val="Profil">Profil</span>
+              <span class="outlet-chip" data-val="WKO">WKO</span>
+              <span class="outlet-chip" data-val="APA-OTS">APA-OTS</span>
+            </div>
+          </div>
+          <div class="outlet-group">
+            <div class="outlet-group-label">🇦🇹 Austria — Regional</div>
+            <div class="outlet-chips">
+              <span class="outlet-chip" data-val="Tiroler Tageszeitung">Tiroler Tageszeitung</span>
+              <span class="outlet-chip" data-val="Kleine Zeitung">Kleine Zeitung</span>
+              <span class="outlet-chip" data-val="Salzburger Nachrichten">Salzburger Nachrichten</span>
+              <span class="outlet-chip" data-val="Oberösterreichische Nachrichten">OÖN</span>
+              <span class="outlet-chip" data-val="Vorarlberger Nachrichten">Vorarlberger Nachrichten</span>
+              <span class="outlet-chip" data-val="Wiener Zeitung">Wiener Zeitung</span>
+              <span class="outlet-chip" data-val="Niederösterreichische Nachrichten">NÖN</span>
+              <span class="outlet-chip" data-val="Steirische Wirtschaft">Steirische Wirtschaft</span>
+            </div>
+          </div>
+          <div class="outlet-group">
+            <div class="outlet-group-label">🇩🇪 Germany</div>
+            <div class="outlet-chips">
+              <span class="outlet-chip" data-val="Handelsblatt">Handelsblatt</span>
+              <span class="outlet-chip" data-val="Süddeutsche Zeitung">Süddeutsche Zeitung</span>
+              <span class="outlet-chip" data-val="FAZ">FAZ</span>
+              <span class="outlet-chip" data-val="Die Zeit">Die Zeit</span>
+              <span class="outlet-chip" data-val="Der Spiegel">Der Spiegel</span>
+              <span class="outlet-chip" data-val="Wirtschaftswoche">Wirtschaftswoche</span>
+              <span class="outlet-chip" data-val="Manager Magazin">Manager Magazin</span>
+              <span class="outlet-chip" data-val="Capital">Capital</span>
+              <span class="outlet-chip" data-val="Business Insider DE">Business Insider DE</span>
+              <span class="outlet-chip" data-val="Die Welt">Die Welt</span>
+              <span class="outlet-chip" data-val="Focus">Focus</span>
+              <span class="outlet-chip" data-val="Bayerischer Rundfunk">BR</span>
+              <span class="outlet-chip" data-val="Frankfurter Rundschau">FR</span>
+              <span class="outlet-chip" data-val="Stuttgarter Zeitung">Stuttgarter Zeitung</span>
+            </div>
+          </div>
+          <div class="outlet-group">
+            <div class="outlet-group-label">🇨🇭 Switzerland</div>
+            <div class="outlet-chips">
+              <span class="outlet-chip" data-val="NZZ">NZZ</span>
+              <span class="outlet-chip" data-val="Tagesanzeiger">Tagesanzeiger</span>
+              <span class="outlet-chip" data-val="Handelszeitung">Handelszeitung</span>
+              <span class="outlet-chip" data-val="Finanz und Wirtschaft">Finanz und Wirtschaft</span>
+              <span class="outlet-chip" data-val="Cash">Cash</span>
+              <span class="outlet-chip" data-val="SRF">SRF</span>
+              <span class="outlet-chip" data-val="20 Minuten">20 Minuten</span>
+              <span class="outlet-chip" data-val="Blick">Blick</span>
+            </div>
+          </div>
+          <div class="outlet-group">
+            <div class="outlet-group-label">🌍 International</div>
+            <div class="outlet-chips">
+              <span class="outlet-chip" data-val="Financial Times">Financial Times</span>
+              <span class="outlet-chip" data-val="Wall Street Journal">Wall Street Journal</span>
+              <span class="outlet-chip" data-val="The Economist">The Economist</span>
+              <span class="outlet-chip" data-val="Bloomberg">Bloomberg</span>
+              <span class="outlet-chip" data-val="Reuters">Reuters</span>
+              <span class="outlet-chip" data-val="Associated Press">AP</span>
+              <span class="outlet-chip" data-val="Euronews">Euronews</span>
+              <span class="outlet-chip" data-val="Politico Europe">Politico Europe</span>
+              <span class="outlet-chip" data-val="Business Insider">Business Insider</span>
+              <span class="outlet-chip" data-val="Forbes">Forbes</span>
+              <span class="outlet-chip" data-val="Harvard Business Review">HBR</span>
+            </div>
+          </div>
+          <div class="outlet-group">
+            <div class="outlet-group-label">🏢 Industry &amp; Trade</div>
+            <div class="outlet-chips">
+              <span class="outlet-chip" data-val="Mergermarket">Mergermarket</span>
+              <span class="outlet-chip" data-val="PEI">PEI</span>
+              <span class="outlet-chip" data-val="Real Estate Capital">Real Estate Capital</span>
+              <span class="outlet-chip" data-val="PERE">PERE</span>
+              <span class="outlet-chip" data-val="CBRE Research">CBRE Research</span>
+              <span class="outlet-chip" data-val="JLL Research">JLL Research</span>
+              <span class="outlet-chip" data-val="Savills Research">Savills Research</span>
+              <span class="outlet-chip" data-val="Platts">Platts (S&amp;P Global)</span>
+              <span class="outlet-chip" data-val="Argus Media">Argus Media</span>
+              <span class="outlet-chip" data-val="pv magazine">pv magazine</span>
+              <span class="outlet-chip" data-val="Energy Monitor">Energy Monitor</span>
+            </div>
+          </div>
+          <div class="outlet-group">
+            <div class="outlet-group-label">📊 Research &amp; Data</div>
+            <div class="outlet-chips">
+              <span class="outlet-chip" data-val="Eurostat">Eurostat</span>
+              <span class="outlet-chip" data-val="OeNB">OeNB</span>
+              <span class="outlet-chip" data-val="WifO">WifO</span>
+              <span class="outlet-chip" data-val="IWI">IWI</span>
+              <span class="outlet-chip" data-val="IMF">IMF</span>
+              <span class="outlet-chip" data-val="OECD">OECD</span>
+              <span class="outlet-chip" data-val="World Bank">World Bank</span>
+              <span class="outlet-chip" data-val="ECB">ECB</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:8px;font-size:12px;color:var(--text-3);" id="outletCount">0 sources selected</div>
       </div>
 
       <div class="field">
@@ -982,6 +1117,7 @@
         <a href="#">Privacy</a>
         <a href="#">Terms</a>
         <a href="#">Contact</a>
+        <a href="admin.html">Admin ↗</a>
       </div>
     </div>
   </footer>
@@ -1125,12 +1261,15 @@
 
     /* ── AGENT SECTION CARDS ── */
     document.querySelectorAll('#agentGrid .sec-card').forEach(card => {
-      card.addEventListener('click', () => {
-        card.classList.toggle('selected');
+      card.addEventListener('click', e => {
+        // Prevent default label→checkbox double-fire behaviour
+        e.preventDefault();
         const cb    = card.querySelector('input[type="checkbox"]');
         const check = card.querySelector('.sec-card-check');
-        cb.checked  = card.classList.contains('selected');
-        check.textContent = cb.checked ? '✓' : '';
+        const nowSelected = !card.classList.contains('selected');
+        card.classList.toggle('selected', nowSelected);
+        cb.checked = nowSelected;
+        check.textContent = nowSelected ? '✓' : '';
         updateAgentCount();
       });
     });
@@ -1183,6 +1322,24 @@
     initChipInput('entitiesWrap', 'entityInput', entities);
     initChipInput('topicsWrap',   'topicInput',  topics);
 
+    /* ── OUTLET PICKER ── */
+    const selectedOutlets = [];
+    document.querySelectorAll('#outletPicker .outlet-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        const val = chip.dataset.val;
+        chip.classList.toggle('selected');
+        if (chip.classList.contains('selected')) {
+          if (!selectedOutlets.includes(val)) selectedOutlets.push(val);
+        } else {
+          const i = selectedOutlets.indexOf(val);
+          if (i > -1) selectedOutlets.splice(i, 1);
+        }
+        const count = selectedOutlets.length;
+        document.getElementById('outletCount').textContent =
+          count === 0 ? '0 sources selected' : `${count} source${count !== 1 ? 's' : ''} selected`;
+      });
+    });
+
     /* ── SUBMIT ── */
     function handleSubmit() {
       if (!validateStep(4)) return;
@@ -1201,7 +1358,7 @@
         REGION:                 document.getElementById('f-region').value,
         NEWS_SCOPE:             scope,
         CLIENT_TOPICS:          topics,
-        CLIENT_LOCAL_SOURCES:   document.getElementById('f-local-sources').value.trim(),
+        CLIENT_LOCAL_SOURCES:   selectedOutlets.join(', '),
         OUTPUT_LANGUAGE:        selectedLang,
         SECTIONS_ENABLED:       sections,
         VIEW_MODE:              depth,

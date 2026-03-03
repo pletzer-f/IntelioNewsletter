@@ -320,6 +320,7 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       <div class="footer-links">
         <a href="${appUrl}/preferences.html?id=${client.id}">Manage preferences</a>
         <a href="#">View archive</a>
+        <a href="${appUrl}/admin.html">Admin ↗</a>
       </div>
     </div>
   </footer>
@@ -455,6 +456,27 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       body.innerHTML = '<div class="chat-empty" id="chatEmpty"><div class="chat-empty-icon">\u2726</div><p><strong>Customise your next briefing.</strong><br>Tell me what to add, remove, or focus on.</p></div>';
       document.getElementById('chatFoot').style.display = 'none';
     }
+
+    // ── Section navigation fallback ──────────────────────────────────────
+    // Robust nav pill binding in case the template script binding fails.
+    // Uses the same showSection() function defined in the template script block.
+    document.querySelectorAll('.nav-pill[data-sec]').forEach(pill => {
+      pill.addEventListener('click', () => {
+        const sec = pill.dataset.sec;
+        if (typeof SECTION_IDS !== 'undefined' && typeof showSection === 'function') {
+          const idx = SECTION_IDS.indexOf(sec);
+          if (idx !== -1) showSection(idx);
+        } else {
+          // Ultra-simple fallback: just toggle visibility directly
+          document.querySelectorAll('.bsec').forEach(s => s.classList.remove('active'));
+          document.querySelectorAll('.nav-pill').forEach(p => p.classList.remove('active'));
+          const target = document.getElementById(sec);
+          if (target) target.classList.add('active');
+          pill.classList.add('active');
+          window.scrollTo({ top: 0, behavior: 'instant' });
+        }
+      });
+    });
 
     // Keyboard shortcuts
     document.addEventListener('keydown', e => {

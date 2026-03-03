@@ -183,7 +183,7 @@
     }
     .table-head {
       display: grid;
-      grid-template-columns: 1fr 1fr 100px 110px 130px;
+      grid-template-columns: 1fr 1fr 100px 110px 190px;
       padding: 12px 20px;
       background: var(--surface-2);
       border-bottom: 1px solid var(--border);
@@ -195,7 +195,7 @@
     }
     .client-row {
       display: grid;
-      grid-template-columns: 1fr 1fr 100px 110px 130px;
+      grid-template-columns: 1fr 1fr 100px 110px 190px;
       padding: 16px 20px;
       border-bottom: 1px solid var(--border);
       align-items: center;
@@ -283,12 +283,66 @@
     }
     .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 
+    /* Edit button */
+    .edit-btn {
+      padding: 7px 12px; background: var(--surface-2); color: var(--ink);
+      border: 1px solid var(--border); border-radius: 8px;
+      font-family: 'Inter', sans-serif; font-size: 12.5px; font-weight: 500;
+      cursor: pointer; transition: background 0.15s; white-space: nowrap; margin-right: 6px;
+    }
+    .edit-btn:hover { background: var(--border); }
+
+    /* ── Edit Modal ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15,23,42,0.5);
+      z-index: 1000; display: flex; align-items: center; justify-content: center;
+      padding: 20px; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: all; }
+    .modal {
+      background: var(--surface); border-radius: 16px; width: 100%; max-width: 540px;
+      max-height: 90vh; overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(15,23,42,0.2);
+      transform: translateY(20px); transition: transform 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    .modal-overlay.open .modal { transform: translateY(0); }
+    .modal-head {
+      position: sticky; top: 0; background: var(--surface);
+      padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: flex-start; justify-content: space-between; z-index: 1;
+    }
+    .modal-title { font-size: 17px; font-weight: 700; }
+    .modal-subtitle { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+    .modal-close { background: none; border: none; font-size: 20px; color: var(--muted); cursor: pointer; padding: 0 4px; line-height: 1; }
+    .modal-close:hover { color: var(--ink); }
+    .modal-body { padding: 24px; display: flex; flex-direction: column; gap: 20px; }
+    .modal-field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+    .modal-field input, .modal-field textarea, .modal-field select {
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+      font-family: 'Inter', sans-serif; font-size: 13.5px; color: var(--ink);
+      background: var(--surface-2); outline: none; transition: border-color 0.2s;
+    }
+    .modal-field input:focus, .modal-field textarea:focus, .modal-field select:focus { border-color: var(--crimson); background: #fff; }
+    .modal-field textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .modal-foot {
+      padding: 16px 24px; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: flex-end; gap: 10px;
+      position: sticky; bottom: 0; background: var(--surface);
+    }
+    .modal-cancel { background: none; border: 1px solid var(--border); padding: 9px 18px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; cursor: pointer; color: var(--muted); }
+    .modal-cancel:hover { background: var(--surface-2); }
+    .modal-save { background: var(--crimson); color: #fff; border: none; padding: 9px 20px; border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .modal-save:hover:not(:disabled) { background: #A01830; }
+    .modal-save:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; }
+
     @media (max-width: 700px) {
       .stats-row { grid-template-columns: repeat(2, 1fr); }
       .table-head, .client-row { grid-template-columns: 1fr 90px 110px; }
       .table-head > :nth-child(2),
       .client-row > :nth-child(2) { display: none; }
       .dashboard { padding: 24px 16px; }
+      .modal-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -359,6 +413,68 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <!-- ── Edit User Modal ─────────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="editOverlay" onclick="closeEditModal(event)">
+    <div class="modal" id="editModal">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="editModalTitle">Edit user</div>
+          <div class="modal-subtitle" id="editModalSub"></div>
+        </div>
+        <button class="modal-close" onclick="closeEditModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <div class="modal-field">
+            <label>Delivery time</label>
+            <input type="time" id="editDeliveryTime">
+          </div>
+          <div class="modal-field">
+            <label>Language</label>
+            <select id="editLanguage">
+              <option value="en">English</option>
+              <option value="de">Deutsch</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field">
+            <label>Region</label>
+            <input type="text" id="editRegion" placeholder="e.g. Austria, DACH">
+          </div>
+          <div class="modal-field">
+            <label>Stories per section</label>
+            <select id="editDepth">
+              <option value="3">3 — Concise</option>
+              <option value="5">5 — Standard</option>
+              <option value="7">7 — Deep dive</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-field">
+          <label>Business profile</label>
+          <textarea id="editProfile" placeholder="What does this company do? Key markets, products, regions…" rows="4"></textarea>
+        </div>
+        <div class="modal-field">
+          <label>Entities to monitor</label>
+          <input type="text" id="editEntities" placeholder="Comma-separated: Vaillant, Viessmann, Daikin…">
+        </div>
+        <div class="modal-field">
+          <label>Topics to track</label>
+          <input type="text" id="editTopics" placeholder="Comma-separated: heat pumps, BEG subsidies, R290…">
+        </div>
+        <div class="modal-field">
+          <label>Preferred sources</label>
+          <input type="text" id="editSources" placeholder="Comma-separated outlets…">
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="modal-cancel" onclick="closeEditModal()">Cancel</button>
+        <button class="modal-save" id="editSaveBtn" onclick="saveEdit()">Save changes</button>
+      </div>
+    </div>
+  </div>
 
   <script>
     const API_BASE = '/api';
@@ -440,7 +556,8 @@
             <div class="client-email">${esc(c.email)}</div>
             <div class="client-time">${delivTime}</div>
             <div class="client-last ${lastClass}">${lastLabel}</div>
-            <div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <button class="edit-btn" onclick="openEditModal('${c.id}')">Edit</button>
               <button class="push-btn" id="btn-${c.id}" onclick="pushOne('${c.id}', '${esc(c.client_name)}')">
                 Push briefing
               </button>
@@ -550,6 +667,90 @@
       clearTimeout(toastTimer);
       toastTimer = setTimeout(() => t.classList.remove('show'), 4000);
     }
+
+    // ── Edit Modal ─────────────────────────────────────────────────────────
+    let editingClientId = null;
+
+    function openEditModal(clientId) {
+      const c = clientData.find(x => x.id === clientId);
+      if (!c) return;
+      editingClientId = clientId;
+
+      document.getElementById('editModalTitle').textContent = c.client_name;
+      document.getElementById('editModalSub').textContent   = c.email;
+
+      // Delivery time: DB stores "0700" → input needs "07:00"
+      const dt = (c.delivery_time || '0700').replace(/(\d{2})(\d{2})/, '$1:$2');
+      document.getElementById('editDeliveryTime').value = dt;
+      document.getElementById('editLanguage').value     = c.output_language || 'en';
+      document.getElementById('editRegion').value       = c.region || '';
+      document.getElementById('editDepth').value        = String(c.stories_per_section || 5);
+      document.getElementById('editProfile').value      = c.client_profile || '';
+
+      // Arrays → comma-separated strings
+      document.getElementById('editEntities').value = (c.client_entities || []).join(', ');
+      document.getElementById('editTopics').value   = (c.client_topics   || []).join(', ');
+      document.getElementById('editSources').value  = c.client_local_sources || '';
+
+      document.getElementById('editSaveBtn').disabled = false;
+      document.getElementById('editSaveBtn').textContent = 'Save changes';
+      document.getElementById('editOverlay').classList.add('open');
+    }
+
+    function closeEditModal(e) {
+      if (e && e.target !== document.getElementById('editOverlay')) return;
+      document.getElementById('editOverlay').classList.remove('open');
+      editingClientId = null;
+    }
+
+    async function saveEdit() {
+      if (!editingClientId) return;
+      const btn = document.getElementById('editSaveBtn');
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+
+      const payload = {
+        secret:      SECRET,
+        clientId:    editingClientId,
+        delivery_time:        document.getElementById('editDeliveryTime').value.replace(':', ''),
+        output_language:      document.getElementById('editLanguage').value,
+        region:               document.getElementById('editRegion').value.trim(),
+        stories_per_section:  parseInt(document.getElementById('editDepth').value, 10),
+        client_profile:       document.getElementById('editProfile').value.trim(),
+        client_entities:      document.getElementById('editEntities').value.split(',').map(s => s.trim()).filter(Boolean),
+        client_topics:        document.getElementById('editTopics').value.split(',').map(s => s.trim()).filter(Boolean),
+        client_local_sources: document.getElementById('editSources').value.trim(),
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/admin`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok || data.error) throw new Error(data.error || 'Failed');
+
+        // Update local data
+        const idx = clientData.findIndex(c => c.id === editingClientId);
+        if (idx !== -1) {
+          clientData[idx] = { ...clientData[idx], ...payload };
+          renderClients(clientData);
+          renderStats(clientData);
+        }
+        showToast(`Saved — changes will apply to ${clientData[idx]?.client_name || 'user'}'s next briefing`);
+        document.getElementById('editOverlay').classList.remove('open');
+      } catch (err) {
+        btn.disabled = false;
+        btn.textContent = 'Save changes';
+        showToast(`Error: ${err.message}`);
+      }
+    }
+
+    // Close modal on Escape
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') document.getElementById('editOverlay').classList.remove('open');
+    });
   </script>
 </body>
 </html>
