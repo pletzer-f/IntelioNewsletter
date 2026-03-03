@@ -11,6 +11,7 @@ import {
 } from '../../lib/claude.js';
 import { multiSearch } from '../../lib/search.js';
 import { sendBriefingEmail } from '../../lib/email.js';
+import { fetchMarketTickers } from '../../lib/market.js';
 import { buildSectionQueries } from './queries.js';
 import { assembleBriefing } from './orchestrator.js';
 
@@ -71,16 +72,18 @@ export async function runPipelineForClient(clientId) {
   // Step 1: Build search queries per section (from the profile + client config)
   const queries = buildSectionQueries(client, profileText);
 
-  // Step 2: Run all section searches in parallel (Brave Search — no Claude tokens)
-  console.log(`[runner] Running parallel search for 6 sections`);
-  const [sr01, sr02, sr03, sr04, sr05, sr06] = await Promise.all([
+  // Step 2: Run all section searches + market tickers in parallel
+  console.log(`[runner] Running parallel search for 6 sections + market tickers`);
+  const [sr01, sr02, sr03, sr04, sr05, sr06, tickers] = await Promise.all([
     multiSearch(queries.agent01, { count: 8, freshness: 'pd', country: 'DE' }),
     multiSearch(queries.agent02, { count: 8, freshness: 'pw', country: 'DE' }),
     multiSearch(queries.agent03, { count: 8, freshness: 'pw', country: 'DE' }),
     multiSearch(queries.agent04, { count: 8, freshness: 'pw', country: 'DE' }),
     multiSearch(queries.agent05, { count: 8, freshness: 'pw', country: 'DE' }),
     multiSearch(queries.agent06, { count: 8, freshness: 'pd', country: 'DE' }),
+    fetchMarketTickers(),
   ]);
+  console.log(`[runner] Market tickers fetched: ${tickers.length} instruments`);
 
   // Step 3: Run all 6 section agents in parallel
   // Token budget: ~1,400 tokens/agent × 6 = ~8,400 < 10K TPM (Tier 1 safe)
@@ -113,6 +116,7 @@ export async function runPipelineForClient(clientId) {
     orchestratorHtml,
     sectionHtmls: { h01, h02, h03, h04, h05, h06 },
     enabledSections,
+    tickers,
   });
 
   // Step 6: Save to Supabase

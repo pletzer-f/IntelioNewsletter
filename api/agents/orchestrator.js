@@ -45,7 +45,7 @@ const SECTION_DEFS = [
  * Uses CSS + JS extracted from briefing-template.html so the generated briefing
  * always matches the designed brand identity.
  */
-export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls, enabledSections }) {
+export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls, enabledSections, tickers = [] }) {
   const { h01, h02, h03, h04, h05, h06 } = sectionHtmls;
   const appUrl = process.env.APP_URL || '';
   const htmlByAgent = { 1: h01, 2: h02, 3: h03, 4: h04, 5: h05, 6: h06 };
@@ -241,6 +241,11 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
 
   <div class="signals-bar">
     <div class="signals-inner">
+      ${tickers.map(t => `<div class="sig-item s-${t.direction}">
+        <span class="sig-lbl">${t.label}</span>
+        <span class="sig-val">${t.value}</span>
+        <span class="sig-chg">${t.change}</span>
+      </div>`).join('')}
       <span class="signals-ts">Generated ${timeCET} CET \u00B7 ${dateLabel}</span>
     </div>
   </div>
