@@ -1,225 +1,226 @@
 // api/agents/orchestrator.js — HTML assembly for the final briefing
+// Loads CSS/JS from briefing-template.html at cold-start for design system consistency.
+
+import { readFileSync } from 'fs';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// ── Load the design system template once at cold-start ─────────────────────
+const templateHtml = readFileSync(
+  join(__dirname, '../../briefing-app/briefing-template.html'), 'utf-8'
+);
+
+// Extract the full <style> block (complete CSS design system)
+const TEMPLATE_STYLE = templateHtml.slice(
+  templateHtml.indexOf('<style>'),
+  templateHtml.indexOf('</style>') + '</style>'.length
+);
+
+// Extract the <script> block content, then strip the two hardcoded SECTION_IDS /
+// SECTION_NAMES declarations so we can inject our own dynamic values instead.
+const rawScriptContent = templateHtml.slice(
+  templateHtml.indexOf('<script>') + '<script>'.length,
+  templateHtml.lastIndexOf('</script>')
+);
+const TEMPLATE_SCRIPT = rawScriptContent
+  .replace(/^\s*const SECTION_IDS\s*=.*;\s*$/m, '')
+  .replace(/^\s*const SECTION_NAMES\s*=.*;\s*$/m, '');
+
+// ── Section definitions (maps agent IDs to nav slugs/labels) ───────────────
+const SECTION_DEFS = [
+  { slug: 'macro',    name: 'Macro & Markets',           agent: 1 },
+  { slug: 'industry', name: 'Core Industry',             agent: 2 },
+  { slug: 'pe',       name: 'PE & M\u0026A',             agent: 3 },
+  { slug: 'demand',   name: 'End-Market Demand',         agent: 4 },
+  { slug: 'assets',   name: 'Assets & Capex',            agent: 5 },
+  { slug: 'local',    name: 'Local Policy & Reputation', agent: 6 },
+];
+
+// ── Main assembly function ──────────────────────────────────────────────────
 
 /**
  * Assembles the complete Intelio briefing HTML from agent section outputs.
- * Wraps in the full Intelio brand shell (matching briefing-template.html style).
+ * Uses CSS + JS extracted from briefing-template.html so the generated briefing
+ * always matches the designed brand identity.
  */
 export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls, enabledSections }) {
   const { h01, h02, h03, h04, h05, h06 } = sectionHtmls;
+  const htmlByAgent = { 1: h01, 2: h02, 3: h03, 4: h04, 5: h05, 6: h06 };
+
   const dateLabel = new Date(today).toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 
-  const SECTIONS = [
-    { id: 1, key: 'h01', icon: '📈', label: 'Macro & Markets',         html: h01 },
-    { id: 2, key: 'h02', icon: '⚙️', label: 'Core Industry',           html: h02 },
-    { id: 3, key: 'h03', icon: '🤝', label: 'Private Equity & M&A',    html: h03 },
-    { id: 4, key: 'h04', icon: '📊', label: 'End-Market Demand',       html: h04 },
-    { id: 5, key: 'h05', icon: '🏗️',  label: 'Assets & Capex',         html: h05 },
-    { id: 6, key: 'h06', icon: '🏛️',  label: 'Local Policy',           html: h06 },
-  ].filter(s => enabledSections.has(s.id) && s.html);
+  const timeCET = new Date().toLocaleTimeString('de-AT', {
+    hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Vienna',
+  });
 
-  const navDots = SECTIONS.map((s, i) =>
-    `<button class="sec-dot${i === 0 ? ' active' : ''}" onclick="goTo(${i})" title="${s.label}"></button>`
-  ).join('');
+  // Determine which agent sections have content and are enabled
+  const activeSections = SECTION_DEFS.filter(s => {
+    const html = htmlByAgent[s.agent];
+    return enabledSections.has(s.agent) && html && html.trim().length > 0;
+  });
 
-  const sectionBlocks = SECTIONS.map((s, i) => `
-<section class="bsec${i === 0 ? ' active' : ''}" id="bsec-0${s.id}">
-  <div class="sec-header">
-    <span class="sec-icon">${s.icon}</span>
-    <span class="sec-label">${s.label}</span>
-    <span class="sec-count">${i + 1} / ${SECTIONS.length}</span>
-  </div>
-  <div class="sec-content">
-    ${s.html}
-  </div>
-  <div class="sec-nav">
-    ${i > 0 ? `<button class="sec-btn sec-prev" onclick="goTo(${i-1})">← Previous</button>` : '<span></span>'}
-    <div class="sec-dots">${navDots}</div>
-    ${i < SECTIONS.length - 1 ? `<button class="sec-btn sec-next" onclick="goTo(${i+1})">Next →</button>` : '<span></span>'}
-  </div>
-</section>`).join('\n');
+  // Summary is always first; enabled agent sections follow
+  const allSections = [
+    { slug: 'summary', name: 'Executive Summary' },
+    ...activeSections,
+  ];
 
+  // Dynamic SECTION_IDS / SECTION_NAMES injected into the template script
+  const SECTION_IDS_JSON   = JSON.stringify(allSections.map(s => s.slug));
+  const SECTION_NAMES_JSON = JSON.stringify(allSections.map(s => s.name));
+
+  // ── Nav pills ─────────────────────────────────────────────────────────────
+  const navPills = allSections.map((s, i) =>
+    `<button class="nav-pill${i === 0 ? ' active' : ''}" data-sec="${s.slug}">${s.name}</button>`
+  ).join('\n      ');
+
+  // ── Summary section (orchestrator output) ─────────────────────────────────
+  const summarySection = `
+    <section class="bsec active" id="summary">
+      <div class="sec-head">
+        <div class="sec-title-row">
+          <h2 class="sec-title">Executive Summary</h2>
+          <div class="sec-meta"><span>${timeCET} CET</span></div>
+        </div>
+        <div class="sec-rule"></div>
+      </div>
+      <div class="summary-card">
+        ${orchestratorHtml}
+      </div>
+    </section>`;
+
+  // ── Agent sections ────────────────────────────────────────────────────────
+  const agentSections = activeSections.map(s => {
+    const html = htmlByAgent[s.agent];
+    return `
+    <section class="bsec" id="${s.slug}">
+      <div class="sec-head">
+        <div class="sec-title-row">
+          <h2 class="sec-title">${s.name}</h2>
+        </div>
+        <div class="sec-rule"></div>
+      </div>
+      ${html}
+    </section>`;
+  }).join('\n');
+
+  // ── Assemble full page ────────────────────────────────────────────────────
   return `<!DOCTYPE html>
-<html lang="${client.output_language || 'en'}">
+<html lang="${client.output_language || 'en'}" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Intelio · ${client.client_name} · ${dateLabel}</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,800;1,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-/* ── Intelio Design Tokens (Option B — Paper Edition) ── */
-:root {
-  --cream:   #F9F8F5;
-  --ink:     #1A1A1A;
-  --crimson: #C41E3A;
-  --surface: #FFFFFF;
-  --border:  #E8E3DC;
-  --text-2:  #6B6860;
-  --accent:  #F5F0E8;
-  --radius:  10px;
-}
-
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: 'Inter', sans-serif;
-  background: var(--cream);
-  color: var(--ink);
-  min-height: 100vh;
-}
-
-/* ── Masthead ── */
-.masthead {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  height: 76px;
-  background: var(--ink);
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 0 32px;
-  border-bottom: 2px solid var(--crimson);
-}
-.wordmark {
-  font-family: 'Playfair Display', serif;
-  font-size: 34px; font-weight: 800;
-  color: var(--cream); letter-spacing: -1px;
-}
-.wordmark span { color: var(--crimson); }
-.masthead-meta { text-align: right; }
-.masthead-client { color: var(--cream); font-size: 13px; font-weight: 600; }
-.masthead-date   { color: var(--text-2); font-size: 11px; margin-top: 2px; }
-
-/* ── Section nav ── */
-.sec-nav-bar {
-  position: fixed; top: 76px; left: 0; right: 0; z-index: 90;
-  background: var(--surface); border-bottom: 1px solid var(--border);
-  display: flex; align-items: center; gap: 8px;
-  padding: 0 32px; height: 44px; overflow-x: auto;
-}
-.sec-tab {
-  flex-shrink: 0; display: flex; align-items: center; gap: 6px;
-  padding: 6px 14px; border-radius: 20px; border: 1px solid transparent;
-  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-  background: none; color: var(--text-2);
-}
-.sec-tab:hover     { background: var(--accent); color: var(--ink); }
-.sec-tab.active    { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-
-/* ── Main layout ── */
-.main { margin-top: 120px; max-width: 860px; margin-left: auto; margin-right: auto; padding: 32px 24px 80px; }
-
-/* ── Orchestrator blocks ── */
-#exec-highlights, #key-themes {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 28px 32px; margin-bottom: 32px;
-}
-#exec-highlights h2, #key-themes h2 {
-  font-family: 'Playfair Display', serif; font-size: 22px;
-  margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid var(--border);
-}
-
-/* ── Section blocks ── */
-.bsec { display: none; }
-.bsec.active { display: block; animation: secEnter 0.35s cubic-bezier(.4,0,.2,1) both; }
-@keyframes secEnter {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-.sec-header {
-  display: flex; align-items: center; gap: 10px;
-  margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid var(--border);
-}
-.sec-icon  { font-size: 20px; }
-.sec-label { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 700; flex: 1; }
-.sec-count { font-size: 12px; color: var(--text-2); }
-
-/* ── Story cards ── */
-.card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 28px; margin-bottom: 20px; position: relative;
-  transition: box-shadow 0.2s;
-}
-.card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.07); }
-.card-number { font-size: 11px; font-weight: 700; color: var(--crimson); letter-spacing: 0.1em; margin-bottom: 8px; }
-.card-title  { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; line-height: 1.3; margin-bottom: 16px; }
-.card-body   { font-size: 14px; line-height: 1.75; color: #333; }
-.card-body strong { color: var(--ink); }
-.card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
-.card-source { font-size: 11px; color: var(--text-2); }
-.card-link   { font-size: 11px; color: var(--crimson); text-decoration: none; font-weight: 600; }
-.card-link:hover { text-decoration: underline; }
-
-/* ── Section footer nav ── */
-.sec-nav {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-top: 36px; padding-top: 24px; border-top: 1px solid var(--border);
-}
-.sec-btn {
-  padding: 10px 20px; border-radius: 8px; font-size: 13px; font-weight: 600;
-  cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);
-  background: var(--surface); color: var(--ink);
-}
-.sec-btn:hover { background: var(--ink); color: var(--cream); border-color: var(--ink); }
-.sec-dots { display: flex; gap: 6px; }
-.sec-dot {
-  width: 8px; height: 8px; border-radius: 50%; border: none; cursor: pointer;
-  background: var(--border); transition: background 0.2s;
-}
-.sec-dot.active { background: var(--crimson); }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelio \u00B7 ${client.client_name} \u00B7 ${dateLabel}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
+  ${TEMPLATE_STYLE}
 </head>
 <body>
 
-<!-- Masthead -->
-<header class="masthead">
-  <div class="wordmark">I<span>.</span></div>
-  <div class="masthead-meta">
-    <div class="masthead-client">${client.client_name}</div>
-    <div class="masthead-date">${dateLabel}</div>
+  <div id="progress"></div>
+
+  <header class="masthead">
+    <div class="masthead-left">
+      <span class="edition-tag">${client.client_name}</span>
+    </div>
+    <div class="masthead-center">
+      <div class="wordmark">Intel<span class="io">io</span>.</div>
+      <div class="masthead-byline">Personalised intelligence for <strong>${client.client_name}</strong></div>
+    </div>
+    <div class="masthead-right">
+      <span class="masthead-date">${dateLabel}</span>
+      <button class="theme-btn" id="themeBtn" title="Switch to dark mode">\u263D</button>
+      <button class="print-btn" onclick="window.print()">\u2193 Save PDF</button>
+    </div>
+  </header>
+
+  <div class="signals-bar">
+    <div class="signals-inner">
+      <span class="signals-ts">Generated ${timeCET} CET \u00B7 ${dateLabel}</span>
+    </div>
   </div>
-</header>
 
-<!-- Section tab nav -->
-<nav class="sec-nav-bar">
-  ${SECTIONS.map((s, i) =>
-    `<button class="sec-tab${i === 0 ? ' active' : ''}" onclick="goTo(${i})">${s.icon} ${s.label}</button>`
-  ).join('\n  ')}
-</nav>
+  <nav class="sec-nav" id="secNav">
+    <div class="sec-nav-inner">
+      ${navPills}
+      <div class="sec-counter-wrap">
+        <span class="sec-counter" id="secCounter">
+          1&thinsp;/&thinsp;${allSections.length} &nbsp;\u00B7&nbsp; <span class="counter-name">Executive Summary</span>
+        </span>
+      </div>
+    </div>
+  </nav>
 
-<!-- Main content -->
-<main class="main">
+  <main class="content">
+    ${summarySection}
+    ${agentSections}
+  </main>
 
-  <!-- Orchestrator: Executive Highlights + Key Themes -->
-  ${orchestratorHtml}
+  <!-- HIGHLIGHT TOOLTIP -->
+  <div class="hl-tooltip" id="hlTooltip">
+    <span class="hl-spark">\u2726</span>
+    <span class="hl-label">Capture insight</span>
+  </div>
 
-  <!-- Section briefings -->
-  ${sectionBlocks}
+  <!-- NOTEPAD FAB -->
+  <button class="np-fab" id="npFab" onclick="toggleNotepad()" title="Research notes (N)">
+    <span class="np-fab-icon">\u2726</span>
+    <span class="np-fab-badge" id="npFabBadge">0</span>
+  </button>
 
-</main>
+  <!-- NOTEPAD PANEL -->
+  <aside class="np-panel" id="npPanel">
+    <div class="np-panel-head">
+      <div class="np-head-left">
+        <span class="np-head-logo">I.</span>
+        <div>
+          <div class="np-head-title">Research Notes</div>
+          <div class="np-head-count" id="npCount">No notes yet</div>
+        </div>
+      </div>
+      <div class="np-head-right">
+        <button class="np-export-btn" onclick="exportNotes()">\u2193 Export</button>
+        <button class="np-close-btn" onclick="closeNotepad()" title="Close">\u2715</button>
+      </div>
+    </div>
+    <div class="np-body" id="npBody">
+      <div class="np-empty" id="npEmpty">
+        <div class="np-empty-spark">\u2726</div>
+        <p><strong>Highlight any text</strong> while reading to capture an AI-generated insight into your research notes.</p>
+      </div>
+    </div>
+    <div class="np-panel-foot" id="npFoot" style="display:none">
+      <button class="np-clear-btn" onclick="clearAllNotes()">Clear all notes</button>
+    </div>
+  </aside>
 
-<script>
-let current = 0;
-const sections = document.querySelectorAll('.bsec');
-const tabs     = document.querySelectorAll('.sec-tab');
-const dots     = document.querySelectorAll('.sec-dot');
+  <!-- BACK TO TOP -->
+  <button class="back-top" id="backTop" onclick="scrollToContentTop()" title="Back to top">\u2191</button>
 
-function goTo(idx) {
-  if (idx < 0 || idx >= sections.length) return;
-  sections[current].classList.remove('active');
-  tabs[current].classList.remove('active');
-  current = idx;
-  sections[current].classList.add('active');
-  tabs[current].classList.add('active');
-  dots.forEach((d, i) => d.classList.toggle('active', i === current));
-  window.scrollTo({ top: 120, behavior: 'smooth' });
-}
+  <footer class="page-footer">
+    <div class="footer-inner">
+      <div class="footer-icon">I.</div>
+      <div class="footer-meta">
+        Morning Briefing \u00B7 ${dateLabel}<br>
+        Compiled at ${timeCET} CET by parallel AI research agents \u00B7 ${activeSections.length} sections
+      </div>
+      <div class="footer-links">
+        <a href="#">Manage preferences</a>
+        <a href="#">View archive</a>
+      </div>
+    </div>
+  </footer>
 
-document.addEventListener('keydown', e => {
-  if (e.key === 'ArrowRight') goTo(current + 1);
-  if (e.key === 'ArrowLeft')  goTo(current - 1);
-});
-</script>
+  <script>
+    const SECTION_IDS   = ${SECTION_IDS_JSON};
+    const SECTION_NAMES = ${SECTION_NAMES_JSON};
+    ${TEMPLATE_SCRIPT}
+  </script>
 
 </body>
 </html>`;
