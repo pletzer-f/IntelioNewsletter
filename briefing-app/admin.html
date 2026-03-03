@@ -584,6 +584,10 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Generating…';
 
+      // Capture the briefing ID BEFORE the push so we can detect when a NEW one arrives.
+      // Using date alone fails when a briefing was already pushed today.
+      const prePushId = (clientData.find(c => c.id === clientId) || {}).last_briefing_id || null;
+
       try {
         const res = await fetch(`${API_BASE}/admin`, {
           method: 'POST',
@@ -597,12 +601,13 @@
         btn.textContent = '✓ Generating…';
         showToast(`Briefing queued for ${name} — email arriving in ~2 mins`);
 
-        // Poll every 30s until briefing appears (up to 5 minutes)
+        // Poll every 30s until a NEW briefing ID appears (up to 5 minutes = 10 polls).
+        // Compare against prePushId so we detect the fresh briefing even if one existed today.
         let polls = 0;
         const pollTimer = setInterval(async () => {
           polls++;
-          const updated = await refreshLastBriefing(clientId);
-          if (updated || polls >= 10) {
+          const hasNew = await refreshLastBriefing(clientId, prePushId);
+          if (hasNew || polls >= 10) {
             clearInterval(pollTimer);
             btn.classList.remove('queued');
             btn.disabled = false;
@@ -646,8 +651,10 @@
       }, 60_000);
     }
 
-    // ── Refresh last briefing for a row — returns true if briefing found ────
-    async function refreshLastBriefing(clientId) {
+    // ── Refresh last briefing for a row ─────────────────────────────────────
+    // prePushId: if supplied, returns true only when a DIFFERENT (newer) briefing ID appears.
+    // Without prePushId: returns true if a briefing exists for today (legacy behaviour).
+    async function refreshLastBriefing(clientId, prePushId = null) {
       try {
         const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
         if (!res.ok) return false;
@@ -657,8 +664,9 @@
         clientData = data.clients;
         renderStats(data.clients);
         const today = new Date().toISOString().slice(0, 10);
-        const lastDate  = client.last_briefing;
+        const lastDate    = client.last_briefing;
         const briefingUrl = client.briefing_url;
+        const newId       = client.last_briefing_id;
         const lastEl = document.getElementById(`last-${clientId}`);
         if (lastEl) {
           const label = lastDate === today ? 'Today' : lastDate ? formatDate(lastDate) : 'Never';
@@ -668,6 +676,9 @@
           lastEl.innerHTML = label + link;
           lastEl.className = 'client-last' + (lastDate === today ? ' today' : !lastDate ? ' never' : '');
         }
+        // If we're watching for a new briefing (prePushId supplied), detect ID change.
+        // Otherwise fall back to date-based check for backward compatibility.
+        if (prePushId !== null) return newId !== null && newId !== prePushId;
         return lastDate === today;
       } catch { return false; }
     }

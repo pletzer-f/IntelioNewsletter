@@ -218,6 +218,105 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       text-transform: uppercase; padding: 4px 10px; border-radius: 20px;
       margin-bottom: 6px; font-family: 'Inter', sans-serif;
     }
+
+    /* ── Mobile nav button (hidden on desktop) ───────────────────────── */
+    .mob-sec-btn { display: none; }
+
+    /* ── Mobile bottom-sheet drawer ──────────────────────────────────── */
+    .mob-sec-drawer {
+      display: none; position: fixed; inset: 0;
+      background: rgba(15,23,42,0.5); z-index: 800;
+      align-items: flex-end; -webkit-tap-highlight-color: transparent;
+    }
+    .mob-sec-drawer.open { display: flex; }
+
+    .mob-sec-sheet {
+      width: 100%; max-height: 80vh; overflow-y: auto;
+      background: var(--surface); border-radius: 20px 20px 0 0;
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+      animation: sheetIn 0.28s cubic-bezier(0.32,0.72,0,1);
+    }
+    @keyframes sheetIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+    .mob-sec-sheet-head {
+      position: sticky; top: 0; display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      background: var(--surface);
+      font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3);
+    }
+    .mob-sec-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; }
+
+    .mob-sec-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 17px 20px; border-bottom: 1px solid var(--border);
+      cursor: pointer; transition: background 0.15s;
+    }
+    .mob-sec-item:last-child { border-bottom: none; }
+    .mob-sec-item:active { background: var(--surface-hi); }
+    .mob-sec-item.active { background: var(--accent-dim); }
+    .mob-sec-item.active .mob-sec-item-name { color: var(--accent); font-weight: 700; }
+    .mob-sec-item-name { font-size: 15px; font-weight: 500; color: var(--text); }
+    .mob-sec-num { font-size: 11px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; flex-shrink: 0; }
+
+    @media (max-width: 768px) {
+      /* Hide desktop nav pills on mobile — replaced by the bottom drawer */
+      .nav-pill { display: none !important; }
+      .sec-counter-wrap { display: none !important; }
+
+      /* Show compact mobile section picker in the nav bar */
+      .mob-sec-btn {
+        display: flex; align-items: center; justify-content: space-between;
+        flex: 1; padding: 9px 14px;
+        background: var(--surface-hi); border: 1px solid var(--border);
+        border-radius: 8px; cursor: pointer;
+        font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+        color: var(--text); transition: border-color 0.18s;
+      }
+      .mob-sec-btn:active { border-color: var(--accent); }
+      .mob-sec-chevron { font-size: 8px; color: var(--text-3); flex-shrink: 0; margin-left: 8px; }
+
+      /* Allow impl-body to scroll on mobile (260px is too short) */
+      .impl-body.open { max-height: 600px !important; overflow-y: auto !important; }
+    }
+
+    /* ── Story source — branded accent badge ─────────────────────────── */
+    .story-src {
+      display: inline-flex !important; align-items: center !important; gap: 8px !important;
+      margin-top: 12px !important; padding: 5px 12px 5px 10px !important;
+      font-size: 10.5px !important; font-weight: 600 !important; letter-spacing: 0.03em !important;
+      text-decoration: none !important; color: var(--text-2) !important;
+      border-left: 3px solid var(--accent) !important;
+      background: var(--surface-hi) !important; border-radius: 0 6px 6px 0 !important;
+      transition: background 0.18s, color 0.18s !important;
+    }
+    .story-src::before {
+      content: 'SOURCE'; font-size: 7.5px; font-weight: 800; letter-spacing: 0.14em;
+      background: var(--accent); color: #fff; padding: 2px 6px; border-radius: 3px; flex-shrink: 0;
+    }
+    .story-src:hover { background: var(--accent-dim) !important; color: var(--accent) !important; }
+
+    /* ── Chat — use design-system CSS vars (dark-mode safe) ─────────────── */
+    /* The inline chat styles above use --ink/--surface-2/--muted which aren't in the
+       briefing template. These overrides replace them with the correct variables. */
+    .chat-panel { background: var(--surface); border-right-color: var(--border); }
+    .chat-panel-head { background: #0F172A !important; }
+    .chat-head-logo { color: #F9F8F5 !important; }
+    .chat-head-title { color: rgba(255,255,255,0.38) !important; }
+    .chat-close-btn { color: rgba(255,255,255,0.35) !important; }
+    .chat-close-btn:hover { color: #fff !important; background: rgba(255,255,255,0.08) !important; }
+    .chat-body { background: var(--surface); }
+    .chat-msg.ai .chat-bubble { background: var(--surface-hi) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    .chat-empty { color: var(--text-3) !important; }
+    .chat-empty strong { color: var(--text-2) !important; }
+    .chat-typing { background: var(--surface-hi) !important; border-color: var(--border) !important; }
+    .chat-dot { background: var(--text-3) !important; }
+    .chat-input { background: var(--surface) !important; color: var(--text) !important; border-color: var(--border) !important; }
+    .chat-input::placeholder { color: var(--text-3); }
+    .chat-foot { border-top-color: var(--border); background: var(--surface); }
+    .chat-msg-time { color: var(--text-3) !important; }
+    .chat-clear-btn { color: var(--text-3) !important; }
+    .chat-clear-btn:hover { color: #C41E3A !important; }
+    .chat-panel-foot { border-top-color: var(--border); background: var(--surface); }
   </style>
 </head>
 <body>
@@ -230,7 +329,7 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     </div>
     <div class="masthead-center">
       <div class="wordmark">Intel<span class="io">io</span>.</div>
-      <div class="masthead-byline">Personalised intelligence for <strong>${client.client_name}</strong></div>
+      <div class="masthead-byline">Personalised for <strong>${client.client_contact || client.client_name}</strong></div>
     </div>
     <div class="masthead-right">
       <span class="masthead-date">${dateLabel}</span>
@@ -252,6 +351,11 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
 
   <nav class="sec-nav" id="secNav">
     <div class="sec-nav-inner">
+      <!-- Mobile compact section picker (hidden on desktop) -->
+      <button class="mob-sec-btn" id="mobSecBtn" onclick="toggleMobNav()">
+        <span id="mobSecName">Executive Summary</span>
+        <span class="mob-sec-chevron">&#9660;</span>
+      </button>
       ${navPills}
       <div class="sec-counter-wrap">
         <span class="sec-counter" id="secCounter">
@@ -260,6 +364,21 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       </div>
     </div>
   </nav>
+
+  <!-- Mobile section bottom drawer -->
+  <div class="mob-sec-drawer" id="mobSecDrawer" onclick="closeMobNav()">
+    <div class="mob-sec-sheet" onclick="event.stopPropagation()">
+      <div class="mob-sec-sheet-head">
+        <span>JUMP TO SECTION</span>
+        <span class="mob-sec-handle"></span>
+      </div>
+      ${allSections.map((s, i) => `
+      <div class="mob-sec-item${i === 0 ? ' active' : ''}" data-idx="${i}" onclick="mobNavSelect(${i})">
+        <span class="mob-sec-item-name">${s.name}</span>
+        <span class="mob-sec-num">${i + 1}&thinsp;/&thinsp;${allSections.length}</span>
+      </div>`).join('')}
+    </div>
+  </div>
 
   <main class="content">
     ${summarySection}
@@ -485,6 +604,40 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       document.getElementById('chatFoot').style.display = 'none';
     }
 
+    // ── Mobile section nav (bottom drawer) ───────────────────────────────────
+    let _mobNavOpen = false;
+
+    function _updateMobNav(idx) {
+      const name = document.getElementById('mobSecName');
+      if (name) name.textContent = SECTION_NAMES[idx] || '';
+      document.querySelectorAll('.mob-sec-item').forEach((el, i) => {
+        el.classList.toggle('active', i === idx);
+      });
+    }
+
+    function toggleMobNav() {
+      _mobNavOpen ? closeMobNav() : openMobNav();
+    }
+
+    function openMobNav() {
+      _mobNavOpen = true;
+      const drawer = document.getElementById('mobSecDrawer');
+      drawer.classList.add('open');
+      document.querySelectorAll('.mob-sec-item').forEach((el, i) => {
+        el.classList.toggle('active', i === currentIdx);
+      });
+    }
+
+    function closeMobNav() {
+      _mobNavOpen = false;
+      document.getElementById('mobSecDrawer').classList.remove('open');
+    }
+
+    function mobNavSelect(idx) {
+      closeMobNav();
+      showSection(idx);
+    }
+
     // ── CONTINUOUS SCROLL MODE ────────────────────────────────────────────────
     // All sections are visible at once (continuous scroll, not tabs).
     // Nav pills scroll smoothly to the target section.
@@ -502,6 +655,7 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
       currentIdx = newIdx;
       updateUI();
+      _updateMobNav(newIdx);
     };
 
     // Track which section is in view as the user scrolls
@@ -520,17 +674,20 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
         _ssEls.forEach((el, i) => {
           if (el && el.getBoundingClientRect().top <= threshold) ai = i;
         });
-        if (ai !== currentIdx) { currentIdx = ai; updateUI(); }
+        if (ai !== currentIdx) { currentIdx = ai; updateUI(); _updateMobNav(ai); }
       });
     }, { passive: true });
 
-    // Keyboard shortcuts — chat panel only (section keys handled by template script)
+    // Keyboard shortcuts — chat panel + mobile nav (section keys handled by template script)
     document.addEventListener('keydown', e => {
       const tag = document.activeElement.tagName;
       if (e.key === 'C' && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'INPUT' && tag !== 'TEXTAREA') {
         toggleChat();
       }
-      if (e.key === 'Escape' && chatOpen) toggleChat();
+      if (e.key === 'Escape') {
+        if (chatOpen) toggleChat();
+        if (_mobNavOpen) closeMobNav();
+      }
       if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && document.activeElement === document.getElementById('chatInput')) {
         sendChat();
       }
