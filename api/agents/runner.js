@@ -30,13 +30,12 @@ export default async function handler(req, res) {
   const { clientId } = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
   if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
 
-  // Acknowledge immediately — processing happens async within the 300s window
-  res.status(202).json({ status: 'accepted', clientId });
-
   try {
-    await runPipelineForClient(clientId);
+    const briefing = await runPipelineForClient(clientId);
+    return res.status(200).json({ status: 'complete', briefingId: briefing.id });
   } catch (err) {
     console.error(`[runner] Fatal error for client ${clientId}:`, err);
+    return res.status(500).json({ error: err.message });
   }
 }
 
