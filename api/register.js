@@ -2,9 +2,7 @@
 // Receives signup form config, saves client to Supabase, sends welcome email,
 // then kicks off an immediate Agent 00 profile generation run.
 
-import { upsertClient, saveProfile, getLatestProfile } from '../lib/supabase.js';
-import { runAgent00 } from '../lib/claude.js';
-import { multiSearch } from '../lib/search.js';
+import { upsertClient } from '../lib/supabase.js';
 import { sendTransactional } from '../lib/email.js';
 
 export const config = { runtime: 'nodejs' };
@@ -42,36 +40,9 @@ export default async function handler(req, res) {
     const client = await upsertClient(body);
     console.log(`[register] Upserted client: ${client.id} (${client.email})`);
 
-    // 2. Check if we need an Agent 00 profile (new client or stale > 31 days)
-    const existingProfile = await getLatestProfile(client.id);
-    const profileAge = existingProfile
-      ? (Date.now() - new Date(existingProfile.created_at).getTime()) / (1000 * 60 * 60 * 24)
-      : Infinity;
-
-    if (profileAge > 31) {
-      console.log(`[register] Running Agent 00 for ${client.client_name} (profile age: ${Math.round(profileAge)} days)`);
-
-      // Build initial search queries for Agent 00
-      const entities   = (client.client_entities || []).join(' ');
-      const queries = [
-        `${client.client_name} ${new Date().getFullYear()}`,
-        `${client.region} business outlook ${new Date().getFullYear()}`,
-        ...(client.client_topics || []).slice(0, 3).map(t => `${t} ${client.region} ${new Date().getFullYear()}`),
-        ...(client.client_entities || []).slice(0, 3).map(e => `${e} news ${new Date().getFullYear()}`),
-      ].filter(Boolean);
-
-      const searchResults = await multiSearch(queries, {
-        count:     10,
-        freshness: 'pm', // past month
-        country:   'de-DE',
-      });
-
-      const profileMarkdown = await runAgent00(client, searchResults);
-      await saveProfile(client.id, profileMarkdown);
-      console.log(`[register] Agent 00 profile saved for ${client.id}`);
-    }
-
-    // 3. Send welcome email
+    // 2. Send welcome email
+    // Note: Agent 00 (monthly profile) runs automatically via the daily pipeline
+    // runner the first time a briefing is generated (runner.js handles missing profiles).
     const welcomeHtml = buildWelcomeEmail(client);
     await sendTransactional(
       client.email,
