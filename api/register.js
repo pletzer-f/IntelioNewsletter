@@ -77,42 +77,80 @@ export default async function handler(req, res) {
 }
 
 function buildWelcomeEmail(client) {
-  const sections = (client.sections_enabled || [1,2,3,4,5,6])
-    .map(n => sectionName(n)).join(', ');
+  const sectionCount = (client.sections_enabled || [1,2,3,4,5,6]).length;
+  const deliveryFmt  = (client.delivery_time || '0700').replace(/(\d{2})(\d{2})/, '$1:$2');
+  const prefsUrl     = `${process.env.APP_URL}/preferences.html?id=${client.id}`;
+  const langLabel    = client.output_language === 'de' ? 'Deutsch' : 'English';
 
   return `<!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><style>
-  body { font-family: Georgia, serif; background: #F9F8F5; margin: 0; padding: 32px 16px; }
-  .card { max-width: 560px; margin: 0 auto; background: #fff; border: 1px solid #E8E3DC;
-          border-radius: 12px; overflow: hidden; }
-  .hd { background: #1A1A1A; padding: 24px 32px; }
-  .hd .logo { color: #C41E3A; font-size: 22px; font-weight: bold; }
-  .bd { padding: 32px; }
-  .bd h2 { font-size: 20px; margin: 0 0 16px; }
-  .bd p  { color: #555; font-size: 14px; line-height: 1.7; margin: 0 0 12px; font-family: Arial, sans-serif; }
-  .pill { display: inline-block; background: #F9F8F5; border: 1px solid #E8E3DC; border-radius: 20px;
-          padding: 4px 12px; font-size: 12px; color: #444; margin: 2px; font-family: Arial, sans-serif; }
-  .cta { display: inline-block; background: #C41E3A; color: #fff; text-decoration: none;
-         padding: 12px 24px; border-radius: 8px; font-size: 14px; margin-top: 20px;
-         font-family: Arial, sans-serif; }
-</style></head>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome to Intelio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  body { margin: 0; padding: 0; background: #F9F8F5; font-family: 'Inter', Arial, sans-serif; -webkit-font-smoothing: antialiased; }
+  .wrap { max-width: 560px; margin: 40px auto; background: #FFFFFF; border: 1px solid #E2DFD8; border-radius: 16px; overflow: hidden; }
+
+  /* Header */
+  .hd { background: #0F172A; padding: 28px 36px; display: flex; align-items: center; justify-content: space-between; }
+  .hd-wordmark { font-family: 'Playfair Display', Georgia, serif; font-size: 26px; font-weight: 800; color: #F9F8F5; letter-spacing: -0.5px; }
+  .hd-wordmark span { color: #C41E3A; }
+  .hd-rule { width: 2px; height: 32px; background: #C41E3A; opacity: 0.6; }
+  .hd-label { font-size: 11px; font-weight: 600; color: #64748B; letter-spacing: 0.08em; text-transform: uppercase; }
+
+  /* Body */
+  .bd { padding: 36px; }
+  .greeting { font-family: 'Playfair Display', Georgia, serif; font-size: 22px; font-weight: 700; color: #0F172A; margin: 0 0 12px; line-height: 1.3; }
+  .sub { font-size: 14.5px; color: #475569; line-height: 1.75; margin: 0 0 28px; }
+  .sub strong { color: #0F172A; font-weight: 600; }
+
+  /* Config grid */
+  .config { background: #F9F8F5; border: 1px solid #E2DFD8; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
+  .config-row { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #E2DFD8; font-size: 13px; }
+  .config-row:last-child { border-bottom: none; padding-bottom: 0; }
+  .config-row:first-child { padding-top: 0; }
+  .config-key { color: #64748B; font-weight: 500; }
+  .config-val { color: #0F172A; font-weight: 600; }
+
+  /* Divider */
+  .rule { border: none; border-top: 1px solid #E2DFD8; margin: 0 0 24px; }
+
+  /* Footer */
+  .ft { padding: 20px 36px 28px; }
+  .ft p { font-size: 12px; color: #94A3B8; line-height: 1.7; margin: 0 0 8px; }
+  .ft a { color: #C41E3A; text-decoration: none; }
+  .ft a:hover { text-decoration: underline; }
+</style>
+</head>
 <body>
-<div class="card">
-  <div class="hd"><div class="logo">Intelio.</div></div>
+<div class="wrap">
+  <div class="hd">
+    <div class="hd-wordmark">Intel<span>io</span>.</div>
+    <div class="hd-rule"></div>
+    <div class="hd-label">Morning Briefing</div>
+  </div>
   <div class="bd">
-    <h2>You're all set, ${client.client_contact}.</h2>
-    <p>Your personalised briefing for <strong>${client.client_name}</strong> is being generated right now.
-    <strong>Expect your first edition in your inbox within the next few minutes.</strong>
-    After that, it will arrive automatically every morning at <strong>${client.delivery_time || '07:00'}</strong> CET.</p>
-    <p>
-      <span class="pill">Region: ${client.region}</span>
-      <span class="pill">Sections: ${sections}</span>
-      <span class="pill">Mode: ${client.view_mode}</span>
-      <span class="pill">Language: ${client.output_language}</span>
+    <p class="greeting">You're all set, ${client.client_contact}.</p>
+    <p class="sub">
+      Your personalised briefing for <strong>${client.client_name}</strong> is being generated right now.
+      Expect your first edition in your inbox <strong>within the next few minutes</strong>.
+      After that, it arrives automatically every morning at <strong>${deliveryFmt} CET</strong>.
     </p>
-    <p>If you have questions, simply reply to this email.</p>
-    <a class="cta" href="${process.env.APP_URL}">View sample briefing</a>
+    <div class="config">
+      <div class="config-row"><span class="config-key">Company</span><span class="config-val">${client.client_name}</span></div>
+      <div class="config-row"><span class="config-key">Region</span><span class="config-val">${client.region}</span></div>
+      <div class="config-row"><span class="config-key">Sections</span><span class="config-val">${sectionCount} active</span></div>
+      <div class="config-row"><span class="config-key">Delivery</span><span class="config-val">${deliveryFmt} CET daily</span></div>
+      <div class="config-row"><span class="config-key">Language</span><span class="config-val">${langLabel}</span></div>
+    </div>
+  </div>
+  <hr class="rule">
+  <div class="ft">
+    <p>Reply to this email with any questions or feedback — we read everything.</p>
+    <p><a href="${prefsUrl}">Manage preferences</a> &nbsp;&middot;&nbsp; <a href="#">Unsubscribe</a></p>
   </div>
 </div>
 </body>

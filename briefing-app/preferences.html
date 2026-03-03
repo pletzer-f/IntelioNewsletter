@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelio · Preferences</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ── Design Tokens (Paper Edition) ── */
+    [data-theme="light"] {
+      --bg:       #F9F8F5;
+      --surface:  #FFFFFF;
+      --border:   #E2DFD8;
+      --text:     #0F172A;
+      --text-2:   #475569;
+      --text-3:   #94A3B8;
+      --accent:   #C41E3A;
+      --accent-d: rgba(196,30,58,0.08);
+      --shadow:   0 4px 20px rgba(15,23,42,0.08);
+    }
+    [data-theme="dark"] {
+      --bg:       #0E0C0A;
+      --surface:  #161310;
+      --border:   #2C2820;
+      --text:     #EDE9E0;
+      --text-2:   #887E6E;
+      --text-3:   #4A4438;
+      --accent:   #E53535;
+      --accent-d: rgba(229,53,53,0.09);
+      --shadow:   0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* ── Nav ── */
+    .nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--bg); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 32px; height: 60px;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    .nav-logo {
+      font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 800;
+      color: var(--text); text-decoration: none; letter-spacing: -0.5px;
+    }
+    .nav-logo span { color: var(--accent); }
+    .theme-btn {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      width: 36px; height: 36px; cursor: pointer; font-size: 16px;
+      color: var(--text-2); transition: border-color 0.2s, color 0.2s;
+    }
+    .theme-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Page layout ── */
+    .page { max-width: 640px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    .page-head { margin-bottom: 36px; }
+    .page-title {
+      font-family: 'Playfair Display', serif; font-size: 30px; font-weight: 800;
+      color: var(--text); letter-spacing: -0.5px; margin-bottom: 8px;
+    }
+    .page-sub { font-size: 14.5px; color: var(--text-2); line-height: 1.65; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 28px 32px; margin-bottom: 20px;
+      transition: background 0.3s, border-color 0.3s;
+      box-shadow: var(--shadow);
+    }
+    .card-title {
+      font-size: 11px; font-weight: 700; letter-spacing: 0.1em;
+      text-transform: uppercase; color: var(--accent); margin-bottom: 20px;
+    }
+
+    /* ── Form fields ── */
+    .field { margin-bottom: 20px; }
+    .field:last-child { margin-bottom: 0; }
+    label {
+      display: block; font-size: 13px; font-weight: 600;
+      color: var(--text); margin-bottom: 6px;
+    }
+    label .hint { font-weight: 400; color: var(--text-3); margin-left: 6px; }
+    input[type="text"], input[type="email"], input[type="time"],
+    select, textarea {
+      width: 100%; padding: 10px 14px;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: 8px; font-size: 14px; color: var(--text);
+      font-family: 'Inter', sans-serif; line-height: 1.5;
+      transition: border-color 0.2s, background 0.3s, color 0.3s;
+      outline: none;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-d);
+    }
+    textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Agent grid ── */
+    .agent-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .agent-chip {
+      display: flex; align-items: center; gap: 9px;
+      padding: 10px 14px; border: 1.5px solid var(--border);
+      border-radius: 9px; cursor: pointer; font-size: 13px;
+      color: var(--text-2); transition: all 0.18s; user-select: none;
+    }
+    .agent-chip input[type="checkbox"] { display: none; }
+    .agent-chip.checked {
+      border-color: var(--accent); background: var(--accent-d);
+      color: var(--text); font-weight: 600;
+    }
+    .agent-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--border); transition: background 0.18s;
+    }
+    .agent-chip.checked .agent-dot { background: var(--accent); }
+
+    /* ── Segmented control ── */
+    .seg { display: flex; gap: 8px; flex-wrap: wrap; }
+    .seg-btn {
+      padding: 8px 16px; border-radius: 8px; border: 1.5px solid var(--border);
+      font-size: 13px; font-weight: 500; color: var(--text-2);
+      cursor: pointer; background: none; transition: all 0.18s;
+    }
+    .seg-btn.active {
+      border-color: var(--accent); background: var(--accent-d);
+      color: var(--text); font-weight: 600;
+    }
+
+    /* ── Save button ── */
+    .save-wrap { display: flex; align-items: center; gap: 16px; margin-top: 8px; }
+    .btn-save {
+      padding: 13px 32px; background: var(--accent); color: #fff;
+      border: none; border-radius: 10px; font-size: 14px; font-weight: 600;
+      cursor: pointer; font-family: 'Inter', sans-serif;
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn-save:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+    .btn-save:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── Status messages ── */
+    .status { font-size: 13.5px; font-weight: 500; transition: opacity 0.3s; }
+    .status.success { color: #166534; }
+    .status.error   { color: var(--accent); }
+    .status.hidden  { opacity: 0; pointer-events: none; }
+
+    /* ── Loading skeleton ── */
+    .skeleton { background: var(--border); border-radius: 6px; animation: pulse 1.4s ease-in-out infinite; }
+    @keyframes pulse { 0%,100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+    /* ── Error state ── */
+    .load-error {
+      text-align: center; padding: 60px 24px;
+      font-size: 15px; color: var(--text-2); line-height: 1.7;
+    }
+    .load-error strong { color: var(--accent); display: block; font-size: 24px; margin-bottom: 12px; font-family: 'Playfair Display', serif; }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-logo" href="/">Intel<span>io</span>.</a>
+  <button class="theme-btn" id="themeBtn" title="Toggle dark mode">☽</button>
+</nav>
+
+<div class="page">
+
+  <div class="page-head">
+    <h1 class="page-title">Briefing Preferences</h1>
+    <p class="page-sub">Changes take effect in your next briefing. Your history and intelligence profile are preserved.</p>
+  </div>
+
+  <!-- Loading / error states -->
+  <div id="loadError" class="load-error" style="display:none">
+    <strong>Not found</strong>
+    No preferences found for this link. Please use the link from your email or briefing.
+  </div>
+
+  <div id="formWrap" style="display:none">
+
+    <!-- Delivery -->
+    <div class="card">
+      <div class="card-title">Delivery</div>
+      <div class="field">
+        <label>Daily delivery time <span class="hint">CET</span></label>
+        <input type="time" id="pDelivery" step="1800">
+      </div>
+      <div class="field">
+        <label>Output language</label>
+        <div class="seg" id="segLang">
+          <button class="seg-btn" data-val="en" onclick="setSeg('lang','en',this)">English</button>
+          <button class="seg-btn" data-val="de" onclick="setSeg('lang','de',this)">Deutsch</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sections -->
+    <div class="card">
+      <div class="card-title">Active Sections</div>
+      <div class="field">
+        <div class="agent-grid" id="agentGrid">
+          <label class="agent-chip" data-id="1" onclick="toggleChip(this)">
+            <input type="checkbox" value="1">
+            <span class="agent-dot"></span> Macro &amp; Markets
+          </label>
+          <label class="agent-chip" data-id="2" onclick="toggleChip(this)">
+            <input type="checkbox" value="2">
+            <span class="agent-dot"></span> Core Industry
+          </label>
+          <label class="agent-chip" data-id="3" onclick="toggleChip(this)">
+            <input type="checkbox" value="3">
+            <span class="agent-dot"></span> PE &amp; M&amp;A
+          </label>
+          <label class="agent-chip" data-id="4" onclick="toggleChip(this)">
+            <input type="checkbox" value="4">
+            <span class="agent-dot"></span> End-Market Demand
+          </label>
+          <label class="agent-chip" data-id="5" onclick="toggleChip(this)">
+            <input type="checkbox" value="5">
+            <span class="agent-dot"></span> Assets &amp; Capex
+          </label>
+          <label class="agent-chip" data-id="6" onclick="toggleChip(this)">
+            <input type="checkbox" value="6">
+            <span class="agent-dot"></span> Local Policy
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Depth -->
+    <div class="card">
+      <div class="card-title">Briefing Depth</div>
+      <div class="field">
+        <label>Stories per section</label>
+        <div class="seg" id="segDepth">
+          <button class="seg-btn" data-val="3" onclick="setSeg('depth','3',this)">3 stories · Daily</button>
+          <button class="seg-btn" data-val="6" onclick="setSeg('depth','6',this)">6 stories · Weekly deep-dive</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Region focus</label>
+        <select id="pRegion">
+          <option value="DACH">DACH (Austria, Germany, Switzerland)</option>
+          <option value="Germany">Germany</option>
+          <option value="Austria">Austria</option>
+          <option value="Switzerland">Switzerland</option>
+          <option value="Europe">Europe</option>
+          <option value="Global">Global</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Intelligence profile -->
+    <div class="card">
+      <div class="card-title">Intelligence Profile</div>
+      <div class="field">
+        <label>Company / context description <span class="hint">used by AI agents to personalise coverage</span></label>
+        <textarea id="pProfile" rows="4" placeholder="Describe your business, focus areas, key markets…"></textarea>
+      </div>
+      <div class="field">
+        <label>Key entities to track <span class="hint">comma-separated: companies, people, brands</span></label>
+        <input type="text" id="pEntities" placeholder="e.g. voestalpine, Erste Group, ECB, Anton Bruckner University">
+      </div>
+      <div class="field">
+        <label>Custom topics <span class="hint">comma-separated</span></label>
+        <input type="text" id="pTopics" placeholder="e.g. logistics real estate, green hydrogen, M&A Austria">
+      </div>
+    </div>
+
+    <!-- Save -->
+    <div class="save-wrap">
+      <button class="btn-save" id="saveBtn" onclick="save()">Save preferences</button>
+      <span class="status hidden" id="statusMsg"></span>
+    </div>
+
+  </div><!-- /formWrap -->
+</div>
+
+<script>
+  /* ── Theme toggle ── */
+  const html = document.documentElement;
+  let theme = localStorage.getItem('intelio-theme') || 'light';
+  applyTheme(theme);
+  document.getElementById('themeBtn').addEventListener('click', () => {
+    theme = theme === 'light' ? 'dark' : 'light';
+    applyTheme(theme);
+    localStorage.setItem('intelio-theme', theme);
+  });
+  function applyTheme(t) {
+    html.setAttribute('data-theme', t);
+    document.getElementById('themeBtn').textContent = t === 'light' ? '☽' : '☀';
+  }
+
+  /* ── Segmented control state ── */
+  const segState = { lang: 'en', depth: '3' };
+  function setSeg(key, val, el) {
+    segState[key] = val;
+    el.closest('.seg').querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+    el.classList.add('active');
+  }
+
+  /* ── Agent chip toggle ── */
+  function toggleChip(el) {
+    el.classList.toggle('checked');
+    el.querySelector('input').checked = el.classList.contains('checked');
+  }
+
+  /* ── Load client data ── */
+  const params   = new URLSearchParams(location.search);
+  const clientId = params.get('id');
+
+  if (!clientId) {
+    document.getElementById('loadError').style.display = '';
+  } else {
+    fetch(`/api/preferences?id=${clientId}`)
+      .then(r => r.json())
+      .then(({ client, error }) => {
+        if (error || !client) { document.getElementById('loadError').style.display = ''; return; }
+        populate(client);
+        document.getElementById('formWrap').style.display = '';
+      })
+      .catch(() => { document.getElementById('loadError').style.display = ''; });
+  }
+
+  function populate(c) {
+    /* Delivery time — stored as "0700", input needs "07:00" */
+    const dt = (c.delivery_time || '0700').replace(/(\d{2})(\d{2})/, '$1:$2');
+    document.getElementById('pDelivery').value = dt;
+
+    /* Language */
+    const lang = c.output_language || 'en';
+    segState.lang = lang;
+    document.querySelectorAll('#segLang .seg-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.val === lang)
+    );
+
+    /* Sections */
+    const enabled = new Set((c.sections_enabled || [1,2,3,4,5,6]).map(Number));
+    document.querySelectorAll('#agentGrid .agent-chip').forEach(chip => {
+      const id = parseInt(chip.dataset.id, 10);
+      if (enabled.has(id)) {
+        chip.classList.add('checked');
+        chip.querySelector('input').checked = true;
+      }
+    });
+
+    /* Depth */
+    const depth = String(c.stories_per_section || 3);
+    segState.depth = depth;
+    document.querySelectorAll('#segDepth .seg-btn').forEach(b =>
+      b.classList.toggle('active', b.dataset.val === depth)
+    );
+
+    /* Region */
+    const regionSel = document.getElementById('pRegion');
+    [...regionSel.options].forEach(o => { o.selected = o.value === c.region; });
+
+    /* Profile text fields */
+    document.getElementById('pProfile').value  = c.client_profile || '';
+    document.getElementById('pEntities').value = (c.client_entities || []).join(', ');
+    document.getElementById('pTopics').value   = (c.client_topics   || []).join(', ');
+  }
+
+  /* ── Save ── */
+  function save() {
+    const btn    = document.getElementById('saveBtn');
+    const status = document.getElementById('statusMsg');
+
+    const sections = [...document.querySelectorAll('#agentGrid .agent-chip.checked')]
+      .map(c => parseInt(c.dataset.id, 10));
+
+    if (sections.length === 0) {
+      showStatus('Select at least one section.', 'error');
+      return;
+    }
+
+    const entities = document.getElementById('pEntities').value
+      .split(',').map(s => s.trim()).filter(Boolean);
+    const topics = document.getElementById('pTopics').value
+      .split(',').map(s => s.trim()).filter(Boolean);
+
+    const payload = {
+      id:                     clientId,
+      delivery_time:          document.getElementById('pDelivery').value,   // "07:00"
+      output_language:        segState.lang,
+      sections_enabled:       sections,
+      stories_per_section:    parseInt(segState.depth, 10),
+      region:                 document.getElementById('pRegion').value,
+      client_profile:         document.getElementById('pProfile').value.trim(),
+      client_entities:        entities,
+      client_topics:          topics,
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    showStatus('', 'hidden');
+
+    fetch('/api/preferences', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data.error) throw new Error(data.error);
+      showStatus('✓ Preferences saved — your next briefing will reflect these changes.', 'success');
+    })
+    .catch(err => {
+      showStatus('Something went wrong — please try again.', 'error');
+      console.error(err);
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.textContent = 'Save preferences';
+    });
+  }
+
+  function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = `status ${type}`;
+  }
+</script>
+
+</body>
+</html>

@@ -47,6 +47,7 @@ const SECTION_DEFS = [
  */
 export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls, enabledSections }) {
   const { h01, h02, h03, h04, h05, h06 } = sectionHtmls;
+  const appUrl = process.env.APP_URL || '';
   const htmlByAgent = { 1: h01, 2: h02, 3: h03, 4: h04, 5: h05, 6: h06 };
 
   const dateLabel = new Date(today).toLocaleDateString('en-GB', {
@@ -119,6 +120,82 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;0,800;1,700&display=swap" rel="stylesheet">
   ${TEMPLATE_STYLE}
+  <style>
+    /* ── Chat FAB ─────────────────────────────────────────────────────── */
+    .chat-fab {
+      position: fixed; bottom: 36px; right: 36px;
+      width: 50px; height: 50px;
+      background: var(--accent, #C41E3A); border: none; border-radius: 50%;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 16px rgba(196,30,58,0.35); z-index: 700;
+      transition: transform 0.22s, box-shadow 0.22s;
+    }
+    .chat-fab:hover { transform: translateY(-2px) scale(1.06); box-shadow: 0 8px 28px rgba(196,30,58,0.45); }
+    .chat-fab-icon { font-size: 18px; color: #fff; line-height: 1; }
+
+    /* ── Chat Panel ───────────────────────────────────────────────────── */
+    .chat-panel {
+      position: fixed; top: 0; left: 0;
+      width: 400px; max-width: 90vw; height: 100vh;
+      background: var(--surface, #fff);
+      border-right: 1px solid var(--border, #E2DFD8);
+      box-shadow: 4px 0 32px rgba(15,23,42,0.12);
+      display: flex; flex-direction: column;
+      z-index: 900;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+    }
+    .chat-panel.open { transform: translateX(0); }
+
+    .chat-panel-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px; background: var(--ink, #0F172A);
+      border-bottom: 1px solid rgba(255,255,255,0.06); flex-shrink: 0;
+    }
+    .chat-head-left { display: flex; align-items: center; gap: 10px; }
+    .chat-head-logo { font-family: 'Playfair Display', Georgia, serif; font-size: 18px; font-weight: 800; color: #F9F8F5; }
+    .chat-head-logo span { color: #C41E3A; }
+    .chat-head-title { font-size: 11px; font-weight: 600; color: #64748B; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 2px; }
+    .chat-close-btn { background: none; border: none; color: #64748B; cursor: pointer; font-size: 18px; padding: 4px 6px; line-height: 1; border-radius: 4px; transition: color 0.15s, background 0.15s; }
+    .chat-close-btn:hover { color: #F9F8F5; background: rgba(255,255,255,0.08); }
+
+    .chat-body { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .chat-empty { margin: auto; text-align: center; color: var(--muted, #94A3B8); font-size: 13.5px; line-height: 1.65; padding: 32px 16px; }
+    .chat-empty-icon { font-size: 26px; margin-bottom: 10px; color: var(--accent, #C41E3A); }
+
+    .chat-msg { display: flex; flex-direction: column; gap: 3px; }
+    .chat-msg.user { align-items: flex-end; }
+    .chat-msg.ai   { align-items: flex-start; }
+    .chat-bubble { max-width: 86%; padding: 10px 14px; border-radius: 14px; font-size: 13.5px; line-height: 1.6; }
+    .chat-msg.user .chat-bubble { background: var(--accent, #C41E3A); color: #fff; border-bottom-right-radius: 4px; }
+    .chat-msg.ai   .chat-bubble { background: var(--surface-2, #F9F8F5); color: var(--ink, #0F172A); border: 1px solid var(--border, #E2DFD8); border-bottom-left-radius: 4px; }
+    .chat-msg-time { font-size: 10px; color: var(--muted, #94A3B8); padding: 0 4px; }
+
+    .chat-typing { padding: 10px 14px; background: var(--surface-2, #F9F8F5); border: 1px solid var(--border, #E2DFD8); border-radius: 14px; border-bottom-left-radius: 4px; display: inline-flex; align-items: center; gap: 5px; }
+    .chat-dot { width: 6px; height: 6px; background: var(--muted, #94A3B8); border-radius: 50%; animation: chatDot 1.2s infinite; }
+    .chat-dot:nth-child(2) { animation-delay: 0.2s; }
+    .chat-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes chatDot { 0%,80%,100% { transform: scale(0.6); opacity: 0.3; } 40% { transform: scale(1); opacity: 1; } }
+
+    .chat-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 20px; }
+    .chat-chip.success { background: #DCFCE7; color: #16A34A; border: 1px solid #86EFAC; }
+    .chat-chip.error   { background: #FEF2F2; color: #DC2626; border: 1px solid #FECACA; }
+
+    .chat-foot { padding: 14px 20px 20px; border-top: 1px solid var(--border, #E2DFD8); display: flex; gap: 10px; align-items: flex-end; flex-shrink: 0; }
+    .chat-input { flex: 1; resize: none; border: 1px solid var(--border, #E2DFD8); border-radius: 10px; padding: 10px 14px; font-family: 'Inter', sans-serif; font-size: 13.5px; line-height: 1.5; color: var(--ink, #0F172A); background: var(--surface, #fff); outline: none; transition: border-color 0.2s; }
+    .chat-input:focus { border-color: var(--accent, #C41E3A); }
+    .chat-input.shake { animation: chatShake 0.35s ease; }
+    @keyframes chatShake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+    .chat-send { width: 40px; height: 40px; border-radius: 50%; background: var(--accent, #C41E3A); border: none; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background 0.15s, transform 0.15s; }
+    .chat-send:hover:not(:disabled) { background: #A01830; transform: scale(1.06); }
+    .chat-send:disabled { background: var(--border, #E2DFD8); cursor: not-allowed; color: var(--muted, #94A3B8); }
+    .chat-panel-foot { padding: 10px 20px; border-top: 1px solid var(--border, #E2DFD8); flex-shrink: 0; }
+    .chat-clear-btn { background: none; border: none; font-size: 12px; color: var(--muted, #94A3B8); cursor: pointer; padding: 4px 0; transition: color 0.15s; }
+    .chat-clear-btn:hover { color: #DC2626; }
+
+    @media print { .chat-fab, .chat-panel { display: none !important; } }
+    @media (max-width: 600px) { .chat-panel { width: 100%; } .chat-fab { bottom: 20px; right: 20px; } }
+  </style>
 </head>
 <body>
 
@@ -199,6 +276,37 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     </div>
   </aside>
 
+  <!-- CHAT FAB -->
+  <button class="chat-fab" id="chatFab" onclick="toggleChat()" title="Customise next briefing (C)">
+    <span class="chat-fab-icon">\u2726</span>
+  </button>
+
+  <!-- CHAT PANEL -->
+  <aside class="chat-panel" id="chatPanel">
+    <div class="chat-panel-head">
+      <div class="chat-head-left">
+        <div>
+          <div class="chat-head-logo">Intel<span>io</span>.</div>
+          <div class="chat-head-title">Briefing Assistant</div>
+        </div>
+      </div>
+      <button class="chat-close-btn" onclick="toggleChat()" title="Close">\u2715</button>
+    </div>
+    <div class="chat-body" id="chatBody">
+      <div class="chat-empty" id="chatEmpty">
+        <div class="chat-empty-icon">\u2726</div>
+        <p><strong>Customise your next briefing.</strong><br>Tell me what to add, remove, or focus on.</p>
+      </div>
+    </div>
+    <div class="chat-foot">
+      <textarea class="chat-input" id="chatInput" placeholder="e.g. Focus more on Austrian real estate\u2026" rows="2"></textarea>
+      <button class="chat-send" id="chatSend" onclick="sendChat()">\u2192</button>
+    </div>
+    <div class="chat-panel-foot" id="chatFoot" style="display:none">
+      <button class="chat-clear-btn" onclick="clearChatHistory()">Clear history</button>
+    </div>
+  </aside>
+
   <!-- BACK TO TOP -->
   <button class="back-top" id="backTop" onclick="scrollToContentTop()" title="Back to top">\u2191</button>
 
@@ -210,7 +318,7 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
         Compiled at ${timeCET} CET by parallel AI research agents \u00B7 ${activeSections.length} sections
       </div>
       <div class="footer-links">
-        <a href="#">Manage preferences</a>
+        <a href="${appUrl}/preferences.html?id=${client.id}">Manage preferences</a>
         <a href="#">View archive</a>
       </div>
     </div>
@@ -220,6 +328,145 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     const SECTION_IDS   = ${SECTION_IDS_JSON};
     const SECTION_NAMES = ${SECTION_NAMES_JSON};
     ${TEMPLATE_SCRIPT}
+  </script>
+
+  <script>
+    // ── Briefing Chat Panel ───────────────────────────────────────────
+    const CHAT_CLIENT_ID = '${client.id}';
+    const CHAT_STORE_KEY = 'chat_history_' + CHAT_CLIENT_ID;
+
+    let chatOpen = false;
+
+    function toggleChat() {
+      chatOpen = !chatOpen;
+      document.getElementById('chatPanel').classList.toggle('open', chatOpen);
+      if (chatOpen) {
+        loadChatHistory();
+        setTimeout(() => document.getElementById('chatInput').focus(), 320);
+      }
+    }
+
+    function loadChatHistory() {
+      const msgs = JSON.parse(localStorage.getItem(CHAT_STORE_KEY) || '[]');
+      if (msgs.length === 0) return;
+      document.getElementById('chatEmpty').style.display = 'none';
+      document.getElementById('chatFoot').style.display = '';
+      const body = document.getElementById('chatBody');
+      body.innerHTML = '';
+      msgs.forEach(m => appendMessage(m.role, m.text, m.time, false));
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function appendMessage(role, text, time, save = true) {
+      const body = document.getElementById('chatBody');
+      document.getElementById('chatEmpty').style.display = 'none';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'chat-msg ' + role;
+      const bubble = document.createElement('div');
+      bubble.className = 'chat-bubble';
+      bubble.textContent = text;
+      const ts = document.createElement('div');
+      ts.className = 'chat-msg-time';
+      ts.textContent = time || new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+      wrapper.appendChild(bubble);
+      wrapper.appendChild(ts);
+      body.appendChild(wrapper);
+      body.scrollTop = body.scrollHeight;
+      if (save) {
+        const msgs = JSON.parse(localStorage.getItem(CHAT_STORE_KEY) || '[]');
+        msgs.push({ role, text, time: ts.textContent });
+        localStorage.setItem(CHAT_STORE_KEY, JSON.stringify(msgs.slice(-40)));
+        document.getElementById('chatFoot').style.display = '';
+      }
+    }
+
+    function appendChip(type, text) {
+      const body = document.getElementById('chatBody');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'chat-msg ai';
+      const chip = document.createElement('span');
+      chip.className = 'chat-chip ' + type;
+      chip.textContent = text;
+      wrapper.appendChild(chip);
+      body.appendChild(wrapper);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function showTyping() {
+      const body = document.getElementById('chatBody');
+      const wrapper = document.createElement('div');
+      wrapper.className = 'chat-msg ai';
+      wrapper.id = 'chatTyping';
+      const dots = document.createElement('div');
+      dots.className = 'chat-typing';
+      dots.innerHTML = '<span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>';
+      wrapper.appendChild(dots);
+      body.appendChild(wrapper);
+      body.scrollTop = body.scrollHeight;
+    }
+
+    function removeTyping() {
+      const el = document.getElementById('chatTyping');
+      if (el) el.remove();
+    }
+
+    async function sendChat() {
+      const input = document.getElementById('chatInput');
+      const sendBtn = document.getElementById('chatSend');
+      const msg = input.value.trim();
+      if (!msg) {
+        input.classList.add('shake');
+        setTimeout(() => input.classList.remove('shake'), 400);
+        return;
+      }
+      appendMessage('user', msg);
+      input.value = '';
+      input.disabled = true;
+      sendBtn.disabled = true;
+      sendBtn.textContent = '\u27F3';
+      showTyping();
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ clientId: CHAT_CLIENT_ID, message: msg }),
+        });
+        const data = await res.json();
+        removeTyping();
+        if (!res.ok) throw new Error(data.error || 'Request failed');
+        appendMessage('ai', data.reply);
+        if (data.saved) {
+          setTimeout(() => appendChip('success', '\u2713 Saved \u2014 your next briefing will reflect this'), 350);
+        }
+      } catch (err) {
+        removeTyping();
+        appendChip('error', '\u26A0 Something went wrong \u2014 please try again');
+      } finally {
+        input.disabled = false;
+        sendBtn.disabled = false;
+        sendBtn.textContent = '\u2192';
+        input.focus();
+      }
+    }
+
+    function clearChatHistory() {
+      localStorage.removeItem(CHAT_STORE_KEY);
+      const body = document.getElementById('chatBody');
+      body.innerHTML = '<div class="chat-empty" id="chatEmpty"><div class="chat-empty-icon">\u2726</div><p><strong>Customise your next briefing.</strong><br>Tell me what to add, remove, or focus on.</p></div>';
+      document.getElementById('chatFoot').style.display = 'none';
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', e => {
+      const tag = document.activeElement.tagName;
+      if (e.key === 'C' && !e.metaKey && !e.ctrlKey && !e.altKey && tag !== 'INPUT' && tag !== 'TEXTAREA') {
+        toggleChat();
+      }
+      if (e.key === 'Escape' && chatOpen) toggleChat();
+      if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && document.activeElement === document.getElementById('chatInput')) {
+        sendChat();
+      }
+    });
   </script>
 
 </body>
