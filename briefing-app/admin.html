@@ -379,7 +379,10 @@
         <h1>Briefing Dashboard</h1>
         <p id="dashSubtitle">Loading clients…</p>
       </div>
-      <button class="push-all-btn" id="pushAllBtn" onclick="pushAll()">Push to all users</button>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <button class="push-all-btn" style="background:var(--surface-2);color:var(--ink);border:1px solid var(--border);" onclick="reloadDashboard()" title="Refresh data">↻ Refresh</button>
+        <button class="push-all-btn" id="pushAllBtn" onclick="pushAll()">Push to all users</button>
+      </div>
     </div>
 
     <div class="stats-row">
@@ -499,6 +502,12 @@
       }
     }
 
+    async function reloadDashboard() {
+      document.getElementById('dashSubtitle').textContent = 'Refreshing…';
+      const ok = await attemptLoad();
+      if (!ok) showToast('Refresh failed — check your connection');
+    }
+
     async function attemptLoad() {
       try {
         const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
@@ -547,6 +556,9 @@
           : lastDate === today ? 'Today'
           : formatDate(lastDate);
         const lastClass = !lastDate ? 'never' : lastDate === today ? 'today' : '';
+        const viewLink = c.briefing_url
+          ? `<a href="${c.briefing_url}" target="_blank" style="font-size:11px;color:var(--crimson);text-decoration:none;margin-left:6px;font-weight:600;" title="View briefing">↗</a>`
+          : '';
         return `
           <div class="client-row" id="row-${c.id}">
             <div>
@@ -555,7 +567,7 @@
             </div>
             <div class="client-email">${esc(c.email)}</div>
             <div class="client-time">${delivTime}</div>
-            <div class="client-last ${lastClass}">${lastLabel}</div>
+            <div class="client-last ${lastClass}" id="last-${c.id}">${lastLabel}${viewLink}</div>
             <div style="display:flex;gap:6px;align-items:center;">
               <button class="edit-btn" onclick="openEditModal('${c.id}')">Edit</button>
               <button class="push-btn" id="btn-${c.id}" onclick="pushOne('${c.id}', '${esc(c.client_name)}')">
@@ -585,13 +597,18 @@
         btn.textContent = '✓ Generating…';
         showToast(`Briefing queued for ${name} — email arriving in ~2 mins`);
 
-        // Reset button after 3 minutes
-        setTimeout(() => {
-          btn.classList.remove('queued');
-          btn.disabled = false;
-          btn.textContent = 'Push briefing';
-          refreshLastBriefing(clientId);
-        }, 180_000);
+        // Poll every 30s until briefing appears (up to 5 minutes)
+        let polls = 0;
+        const pollTimer = setInterval(async () => {
+          polls++;
+          const updated = await refreshLastBriefing(clientId);
+          if (updated || polls >= 10) {
+            clearInterval(pollTimer);
+            btn.classList.remove('queued');
+            btn.disabled = false;
+            btn.textContent = 'Push briefing';
+          }
+        }, 30_000);
 
       } catch (err) {
         btn.disabled = false;
@@ -629,24 +646,30 @@
       }, 60_000);
     }
 
-    // ── Refresh last briefing for a row ──────────────────────────────────────
+    // ── Refresh last briefing for a row — returns true if briefing found ────
     async function refreshLastBriefing(clientId) {
       try {
         const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
-        if (!res.ok) return;
+        if (!res.ok) return false;
         const data = await res.json();
         const client = data.clients.find(c => c.id === clientId);
-        if (!client) return;
+        if (!client) return false;
         clientData = data.clients;
         renderStats(data.clients);
         const today = new Date().toISOString().slice(0, 10);
-        const lastDate = client.last_briefing;
-        const lastEl = document.querySelector(`#row-${clientId} .client-last`);
+        const lastDate  = client.last_briefing;
+        const briefingUrl = client.briefing_url;
+        const lastEl = document.getElementById(`last-${clientId}`);
         if (lastEl) {
-          lastEl.textContent = lastDate === today ? 'Today' : lastDate ? formatDate(lastDate) : 'Never';
-          lastEl.className   = 'client-last' + (lastDate === today ? ' today' : !lastDate ? ' never' : '');
+          const label = lastDate === today ? 'Today' : lastDate ? formatDate(lastDate) : 'Never';
+          const link  = briefingUrl
+            ? `<a href="${briefingUrl}" target="_blank" style="font-size:11px;color:var(--crimson);text-decoration:none;margin-left:6px;font-weight:600;" title="View briefing">↗</a>`
+            : '';
+          lastEl.innerHTML = label + link;
+          lastEl.className = 'client-last' + (lastDate === today ? ' today' : !lastDate ? ' never' : '');
         }
-      } catch {}
+        return lastDate === today;
+      } catch { return false; }
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

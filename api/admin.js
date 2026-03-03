@@ -31,10 +31,10 @@ export default async function handler(req, res) {
 
     if (ce) return res.status(500).json({ error: ce.message });
 
-    // Fetch latest briefing date for each client
+    // Fetch latest briefing date + id for each client
     const { data: briefings, error: be } = await supabase
       .from('briefings')
-      .select('client_id, date, created_at')
+      .select('id, client_id, date, created_at')
       .order('date', { ascending: false });
 
     if (be) return res.status(500).json({ error: be.message });
@@ -45,9 +45,14 @@ export default async function handler(req, res) {
       if (!latestBriefing[b.client_id]) latestBriefing[b.client_id] = b;
     }
 
+    const appUrl = process.env.APP_URL || `https://${process.env.VERCEL_URL}`;
     const result = (clients || []).map(c => ({
       ...c,
-      last_briefing: latestBriefing[c.id]?.date || null,
+      last_briefing:    latestBriefing[c.id]?.date || null,
+      last_briefing_id: latestBriefing[c.id]?.id   || null,
+      briefing_url:     latestBriefing[c.id]?.id
+        ? `${appUrl}/api/briefings/${latestBriefing[c.id].id}`
+        : null,
     }));
 
     return res.status(200).json({ clients: result });
