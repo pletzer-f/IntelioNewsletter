@@ -847,7 +847,7 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
         countEl.classList.toggle('visible', count > 0);
       }
       const headCount = document.getElementById('savedHeadCount');
-      if (headCount) headCount.textContent = count === 0 ? 'No saved articles' : `${count} article${count !== 1 ? 's' : ''} saved`;
+      if (headCount) headCount.textContent = count === 0 ? 'No saved articles' : (count + ' article' + (count !== 1 ? 's' : '') + ' saved');
       const foot = document.getElementById('savedPanelFoot');
       if (foot) foot.style.display = count > 0 ? '' : 'none';
     }
@@ -861,16 +861,17 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
         body.innerHTML = '<div class="saved-empty" id="savedEmpty"><div class="saved-empty-icon">\u2605</div><p><strong>No saved articles yet.</strong><br>Click the star on any story to save it here.</p></div>';
         return;
       }
-      body.innerHTML = saved.map((s, i) => `
-        <div class="saved-item">
-          <div class="saved-item-tag">${s.tag}</div>
-          <div class="saved-item-hl">${s.hl}</div>
-          <div class="saved-item-body">${s.body}</div>
-          <div class="saved-item-foot">
-            <span class="saved-item-src">${s.src}</span>
-            <button class="saved-item-remove" onclick="removeSavedAt(${i})">\u2715 Remove</button>
-          </div>
-        </div>`).join('');
+      body.innerHTML = saved.map((s, i) =>
+        '<div class="saved-item">' +
+          '<div class="saved-item-tag">' + s.tag + '</div>' +
+          '<div class="saved-item-hl">' + s.hl + '</div>' +
+          '<div class="saved-item-body">' + s.body + '</div>' +
+          '<div class="saved-item-foot">' +
+            '<span class="saved-item-src">' + s.src + '</span>' +
+            '<button class="saved-item-remove" onclick="removeSavedAt(' + i + ')">\u2715 Remove</button>' +
+          '</div>' +
+        '</div>'
+      ).join('');
     }
 
     function removeSavedAt(i) {
@@ -900,7 +901,7 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       const saved = getSavedArticles();
       if (!saved.length) return;
       const text = saved.map((s, i) =>
-        `${i + 1}. ${s.tag}\n${s.hl}\n\n${s.body}\n\nSource: ${s.src}\n${'─'.repeat(60)}`
+        (i + 1) + '. ' + s.tag + '\n' + s.hl + '\n\n' + s.body + '\n\nSource: ' + s.src + '\n' + '\u2500'.repeat(60)
       ).join('\n\n');
       const blob = new Blob([text], { type: 'text/plain' });
       const url  = URL.createObjectURL(blob);
