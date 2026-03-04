@@ -196,6 +196,8 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     .chat-clear-btn { background: none; border: none; font-size: 12px; color: var(--muted, #94A3B8); cursor: pointer; padding: 4px 0; transition: color 0.15s; }
     .chat-clear-btn:hover { color: #DC2626; }
 
+    .chat-panel { pointer-events: none; }
+    .chat-panel.open { pointer-events: auto; }
     @media print { .chat-fab, .chat-panel { display: none !important; } }
     @media (max-width: 600px) { .chat-panel { width: 100%; } .chat-fab { bottom: 20px; right: 20px; } }
 
@@ -460,8 +462,10 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     }
     .saved-clear-btn:hover { color: #DC2626; }
 
+    .saved-panel { pointer-events: none; }
+    .saved-panel.open { pointer-events: auto; }
     @media print { .saved-fab, .saved-panel { display: none !important; } }
-    @media (max-width: 600px) { .saved-panel { width: 100%; } .saved-fab { bottom: 20px; right: 20px; } }
+    @media (max-width: 600px) { .saved-panel { width: 100%; } .saved-fab { bottom: 80px; right: 20px; } }
   </style>
 </head>
 <body>
@@ -779,6 +783,31 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       document.getElementById('chatFoot').style.display = 'none';
     }
 
+    // ── CONTINUOUS SCROLL — override template's tab-switch with smooth scroll ──
+    // Placed here (before the IIFE) so even if the IIFE throws, nav still works.
+    window.showSection = function(newIdx) {
+      if (newIdx < 0 || newIdx >= SECTION_IDS.length) return;
+      const el = document.getElementById(SECTION_IDS[newIdx]);
+      if (!el) return;
+      const mastH  = document.querySelector('.masthead')?.offsetHeight  || 0;
+      const sigH   = document.querySelector('.signals-bar')?.offsetHeight || 0;
+      const navH   = document.querySelector('.sec-nav')?.offsetHeight   || 0;
+      const offset = mastH + sigH + navH + 12;
+      const y = el.getBoundingClientRect().top + window.scrollY - offset;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      currentIdx = newIdx;
+      updateUI();
+      _updateMobNav(newIdx);
+    };
+    // Re-register nav pill clicks using onclick (replaces template addEventListener)
+    // so they always call the smooth-scroll override above.
+    document.querySelectorAll('.nav-pill[data-sec]').forEach(pill => {
+      pill.onclick = () => {
+        const idx = SECTION_IDS.indexOf(pill.dataset.sec);
+        if (idx !== -1) window.showSection(idx);
+      };
+    });
+
     // ── Save (bookmark) articles ─────────────────────────────────────────────
     const SAVED_STORE_KEY = 'saved_articles_' + CHAT_CLIENT_ID;
     let savedOpen = false;
@@ -792,7 +821,7 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
         btn.onclick = () => toggleSaveArticle(idx);
         btn.innerHTML = '<span class="save-star">\u2606</span> Save';
         const src = art.querySelector('.story-src');
-        if (src) art.insertBefore(btn, src);
+        if (src) src.insertAdjacentElement('beforebegin', btn);
         else art.appendChild(btn);
       });
       refreshSaveButtons();
@@ -949,26 +978,6 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       closeMobNav();
       showSection(idx);
     }
-
-    // ── CONTINUOUS SCROLL MODE ────────────────────────────────────────────────
-    // All sections are visible at once (continuous scroll, not tabs).
-    // Nav pills scroll smoothly to the target section.
-    // The active nav pill highlights whichever section is currently in view.
-
-    window.showSection = function(newIdx) {
-      if (newIdx < 0 || newIdx >= SECTION_IDS.length) return;
-      const el = document.getElementById(SECTION_IDS[newIdx]);
-      if (!el) return;
-      const mastH  = document.querySelector('.masthead')?.offsetHeight  || 0;
-      const sigH   = document.querySelector('.signals-bar')?.offsetHeight || 0;
-      const navH   = document.querySelector('.sec-nav')?.offsetHeight   || 0;
-      const offset = mastH + sigH + navH + 12;
-      const y = el.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
-      currentIdx = newIdx;
-      updateUI();
-      _updateMobNav(newIdx);
-    };
 
     // Track which section is in view as the user scrolls
     const _ssEls = SECTION_IDS.map(id => document.getElementById(id)).filter(Boolean);
