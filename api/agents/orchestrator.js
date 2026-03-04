@@ -226,6 +226,28 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       margin-top: 8px;
     }
     .sec-end-nav { display: none !important; }
+
+    /* ── Prevent layout leak from unclosed AI-generated divs ──────────
+       Template .story-header is display:flex — if the AI forgets to close
+       it, ALL subsequent story content becomes flex items in a horizontal
+       row. Fix: force .story-header to display:block (with inline children)
+       and add overflow-x:hidden on containers as backstop. */
+    .story-header {
+      display: block !important;
+      overflow: hidden !important;
+      margin-bottom: 14px !important;
+    }
+    .story-header .story-tags {
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 9px !important;
+    }
+    .story-header .story-rt {
+      float: right !important;
+      margin-top: 2px !important;
+    }
+    .content { overflow-x: hidden !important; }
+    .bsec    { overflow-x: hidden !important; }
     /* Section label badge shown above each non-summary section */
     .sec-label-badge {
       display: inline-flex; align-items: center; gap: 6px;
@@ -844,14 +866,19 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       updateUI();
       _updateMobNav(newIdx);
     };
-    // Re-register nav pill clicks using onclick (replaces template addEventListener)
-    // so they always call the smooth-scroll override above.
-    document.querySelectorAll('.nav-pill[data-sec]').forEach(pill => {
-      pill.onclick = () => {
-        const idx = SECTION_IDS.indexOf(pill.dataset.sec);
-        if (idx !== -1) window.showSection(idx);
-      };
-    });
+    // Replace each nav pill with a CLONE (strips all template addEventListener listeners)
+    // then attach a fresh click handler for smooth-scroll. This is the only reliable
+    // way to remove event listeners added by the template script.
+    try {
+      document.querySelectorAll('.nav-pill[data-sec]').forEach(function(pill) {
+        var fresh = pill.cloneNode(true);
+        fresh.addEventListener('click', function() {
+          var idx = SECTION_IDS.indexOf(this.dataset.sec);
+          if (idx !== -1) window.showSection(idx);
+        });
+        if (pill.parentNode) pill.parentNode.replaceChild(fresh, pill);
+      });
+    } catch (e) { console.warn('[Intelio] Nav pill setup:', e); }
 
     // ── Save (bookmark) articles ─────────────────────────────────────────────
     const SAVED_STORE_KEY = 'saved_articles_' + CHAT_CLIENT_ID;
