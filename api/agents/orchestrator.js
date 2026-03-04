@@ -202,11 +202,25 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     @media (max-width: 600px) { .chat-panel { width: 100%; } .chat-fab { bottom: 20px; right: 20px; } }
 
     /* ── CONTINUOUS SCROLL LAYOUT — all sections visible at once ──────── */
-    /* Override the template's tab-based single-section-at-a-time UX */
-    .bsec { display: block !important; padding-top: 48px !important; }
-    .bsec.active { animation: none !important; }
-    .bsec.exiting { animation: none !important; pointer-events: auto !important; }
-    .content { display: flex; flex-direction: column; }
+    /* Override the template's tab-based single-section-at-a-time UX.
+       Template has .bsec { display: none } and animation keyframes
+       (secEnter/secExit) that leave opacity:0 / transform offsets.
+       We kill ALL of those. */
+    .bsec {
+      display: block !important;
+      padding-top: 48px !important;
+      opacity: 1 !important;
+      transform: none !important;
+      position: static !important;
+      pointer-events: auto !important;
+    }
+    .bsec.active  { animation: none !important; }
+    .bsec.exiting {
+      animation: none !important;
+      opacity: 1 !important;
+      transform: none !important;
+      pointer-events: auto !important;
+    }
     .content .bsec + .bsec {
       border-top: 2px solid var(--border);
       margin-top: 8px;
@@ -320,22 +334,53 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     .chat-clear-btn:hover { color: #C41E3A !important; }
     .chat-panel-foot { border-top-color: var(--border); background: var(--surface); }
 
-    /* ── Legacy story-card → story-lead override ─────────────────────────
-       Any AI-generated story-card still displays as a full-width story-lead */
-    .story-card {
-      background: transparent !important; border: none !important;
-      border-radius: 0 !important; padding: 0 !important;
-      box-shadow: none !important; transform: none !important;
+    /* ── Kill story-grid (template: display:grid, grid-template-columns:1fr 1fr) ── */
+    .story-grid {
       display: block !important;
+      grid-template-columns: none !important;
+      gap: 0 !important;
+      columns: auto !important;
+      column-count: auto !important;
+    }
+
+    /* ── Promote story-card to story-lead styling ─────────────────────── */
+    .story-card {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      float: none !important;
+      position: static !important;
+      background: transparent !important;
+      border: none !important;
+      border-radius: 0 !important;
+      padding: 30px 0 !important;
+      box-shadow: none !important;
+      transform: none !important;
+      border-bottom: 1px solid var(--border) !important;
+      margin-bottom: 4px !important;
     }
     .story-card:hover { transform: none !important; box-shadow: none !important; }
-    .story-card .story-hl { font-size: 30px !important; }
+    .story-card .story-hl  { font-size: 30px !important; }
     .story-card .story-body { font-size: 14.5px !important; margin-bottom: 22px !important; }
-    .story-grid { display: block !important; }
-    .story-grid .story-card { margin-bottom: 28px; }
-    .story-grid .story-card + .story-card {
-      padding-top: 28px !important;
-      border-top: 1px solid var(--border) !important;
+    .story-card .key-stat   { width: 100% !important; }
+    .story-card .ks-val     { font-size: 38px !important; }
+
+    /* ── Ensure ALL story articles are full-width blocks (catch-all) ─── */
+    article.story-lead,
+    article.story-card,
+    article[class*="story"] {
+      display: block !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      float: none !important;
+      clear: both !important;
+    }
+
+    /* ── Prevent any wrapper div in sections from creating columns ───── */
+    .bsec > div:not(.sec-head) {
+      display: block !important;
+      columns: auto !important;
+      column-count: auto !important;
     }
 
     /* ── Save (bookmark) button on each story article ─────────────────── */
@@ -813,19 +858,22 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     let savedOpen = false;
 
     // Inject save buttons onto every story article at page-load
-    (function injectSaveButtons() {
+    // Wrapped in try-catch so a failure here never blocks nav/keyboard/scroll setup below.
+    try {
       document.querySelectorAll('article.story-lead, article.story-card').forEach((art, idx) => {
         const btn = document.createElement('button');
         btn.className = 'art-save-btn';
         btn.dataset.idx = idx;
-        btn.onclick = () => toggleSaveArticle(idx);
+        btn.onclick = function() { toggleSaveArticle(idx); };
         btn.innerHTML = '<span class="save-star">\u2606</span> Save';
-        const src = art.querySelector('.story-src');
-        if (src) src.insertAdjacentElement('beforebegin', btn);
-        else art.appendChild(btn);
+        try {
+          const src = art.querySelector('.story-src');
+          if (src) src.insertAdjacentElement('beforebegin', btn);
+          else art.appendChild(btn);
+        } catch (_) { art.appendChild(btn); }
       });
       refreshSaveButtons();
-    })();
+    } catch (e) { console.warn('[Intelio] Save button injection failed:', e); }
 
     function getSavedArticles() {
       return JSON.parse(localStorage.getItem(SAVED_STORE_KEY) || '[]');
