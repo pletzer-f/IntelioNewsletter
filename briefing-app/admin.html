@@ -591,31 +591,30 @@
       const prePushId = (clientData.find(c => c.id === clientId) || {}).last_briefing_id || null;
 
       try {
-        // POST now runs the full pipeline synchronously (~2–4 min) — no polling needed.
+        // POST runs the full pipeline synchronously (~2–4 min).
         const res = await fetch(`${API_BASE}/admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ secret: SECRET, clientId }),
         });
         const data = await res.json();
-        if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
+        if (!res.ok || !data.success) throw new Error(data.error || 'Pipeline failed');
 
-        // Pipeline complete — refresh the row to show the new briefing date + link
+        // Pipeline complete — refresh the row to show new briefing date + link
         await refreshLastBriefing(clientId, prePushId);
         showToast(`✓ Briefing delivered to ${name}!`);
-
-      } catch (err) {
-        btn.classList.add('error');
-        btn.textContent = '✗ Error';
-        setTimeout(() => {
-          btn.classList.remove('error');
-          btn.textContent = 'Push briefing';
-        }, 4000);
-        showToast(`Error pushing to ${name}: ${err.message}`);
-      } finally {
-        btn.classList.remove('queued');
         btn.disabled = false;
         btn.textContent = 'Push briefing';
+
+      } catch (err) {
+        showToast(`Error for ${name}: ${err.message}`);
+        btn.classList.add('error');
+        btn.textContent = '✗ Failed — retry?';
+        setTimeout(() => {
+          btn.classList.remove('error');
+          btn.disabled = false;
+          btn.textContent = 'Push briefing';
+        }, 6000);
       }
     }
 
