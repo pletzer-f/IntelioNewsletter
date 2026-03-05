@@ -1,8 +1,9 @@
 // api/admin.js — Internal admin endpoints
 // GET  /api/admin?secret=XXX          → list all clients + last briefing date
-// POST /api/admin { secret, clientId } → fire-and-forget runner for one client
+// POST /api/admin { secret, clientId } → run full briefing pipeline for one client
 
 import { supabase } from '../lib/supabase.js';
+import { runPipelineForClient } from './agents/runner.js';
 
 export const config = { runtime: 'nodejs' };
 
@@ -84,7 +85,7 @@ export default async function handler(req, res) {
     return res.status(200).json({ updated: true, clientId });
   }
 
-  // ── POST: trigger runner for a specific client ───────────────────────────
+  // ── POST: run full pipeline for a specific client ───────────────────────
   if (req.method === 'POST') {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
     const { secret, clientId } = body || {};
@@ -92,18 +93,16 @@ export default async function handler(req, res) {
     if (!checkSecret(secret)) return res.status(401).json({ error: 'Unauthorized' });
     if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
 
-    // Fire-and-forget — runner takes ~90s so we return immediately
-    const appUrl = process.env.APP_URL || `https://${process.env.VERCEL_URL}`;
-    fetch(`${appUrl}/api/agents/runner`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-cron-secret': process.env.CRON_SECRET,
-      },
-      body: JSON.stringify({ clientId }),
-    }).catch(err => console.warn('[admin] Runner fire-and-forget error:', err));
-
-    return res.status(200).json({ queued: true, clientId });
+    // Run pipeline directly (imported function) — no HTTP hop.
+    // Fire-and-forget via HTTP was unreliable: Vercel freezes the function
+    // context after res.end(), so the outbound fetch was never sent.
+    try {
+      const briefing = await runPipelineForClient(clientId);
+      return res.status(200).json({ success: true, briefingId: briefing.id });
+    } catch (err) {
+      console.error('[admin] Pipeline error for', clientId, ':', err);
+      return res.status(500).json({ error: err.message || 'Pipeline failed' });
+    }
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

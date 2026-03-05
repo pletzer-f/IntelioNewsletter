@@ -588,46 +588,34 @@
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Generating…';
 
-      // Capture the briefing ID BEFORE the push so we can detect when a NEW one arrives.
-      // Using date alone fails when a briefing was already pushed today.
       const prePushId = (clientData.find(c => c.id === clientId) || {}).last_briefing_id || null;
 
       try {
+        // POST now runs the full pipeline synchronously (~2–4 min) — no polling needed.
         const res = await fetch(`${API_BASE}/admin`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ secret: SECRET, clientId }),
         });
         const data = await res.json();
-        if (!res.ok || !data.queued) throw new Error(data.error || 'Failed');
+        if (!res.ok || !data.success) throw new Error(data.error || 'Failed');
 
-        btn.classList.add('queued');
-        btn.textContent = '✓ Generating…';
-        showToast(`Briefing queued for ${name} — email arriving in ~2 mins`);
-
-        // Poll every 30s until a NEW briefing ID appears (up to 5 minutes = 10 polls).
-        // Compare against prePushId so we detect the fresh briefing even if one existed today.
-        let polls = 0;
-        const pollTimer = setInterval(async () => {
-          polls++;
-          const hasNew = await refreshLastBriefing(clientId, prePushId);
-          if (hasNew || polls >= 10) {
-            clearInterval(pollTimer);
-            btn.classList.remove('queued');
-            btn.disabled = false;
-            btn.textContent = 'Push briefing';
-          }
-        }, 30_000);
+        // Pipeline complete — refresh the row to show the new briefing date + link
+        await refreshLastBriefing(clientId, prePushId);
+        showToast(`✓ Briefing delivered to ${name}!`);
 
       } catch (err) {
-        btn.disabled = false;
         btn.classList.add('error');
         btn.textContent = '✗ Error';
         setTimeout(() => {
           btn.classList.remove('error');
           btn.textContent = 'Push briefing';
         }, 4000);
-        showToast(`Error: ${err.message}`);
+        showToast(`Error pushing to ${name}: ${err.message}`);
+      } finally {
+        btn.classList.remove('queued');
+        btn.disabled = false;
+        btn.textContent = 'Push briefing';
       }
     }
 
