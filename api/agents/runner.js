@@ -139,8 +139,15 @@ export async function runPipelineForClient(clientId) {
   if (enabledSections.has(5) && h05?.trim()) activeSectionNames.push('Assets & Capex');
   if (enabledSections.has(6) && h06?.trim()) activeSectionNames.push('Local Policy & Reputation');
 
-  await sendBriefingEmail(client.email, client.client_name, dateLabel, orchestratorHtml, briefing.id, activeSectionNames);
-  console.log(`[runner] Email delivered to ${client.email}`);
+  try {
+    await sendBriefingEmail(client.email, client.client_name, dateLabel, orchestratorHtml, briefing.id, activeSectionNames);
+    console.log(`[runner] Email delivered to ${client.email}`);
+  } catch (emailErr) {
+    // Log full error so it's visible in Vercel function logs, but don't fail the
+    // pipeline — briefing is already saved to Supabase and accessible via web link.
+    console.error(`[runner] EMAIL FAILED for ${client.email}:`, emailErr.message);
+    console.error(`[runner] Email error detail:`, JSON.stringify(emailErr));
+  }
 
   return briefing;
 }
