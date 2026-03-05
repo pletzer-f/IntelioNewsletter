@@ -602,7 +602,11 @@
 
         // Pipeline complete — refresh the row to show new briefing date + link
         await refreshLastBriefing(clientId, prePushId);
-        showToast(`✓ Briefing delivered to ${name}!`);
+        if (data.emailError) {
+          showToast(`⚠ Briefing saved but email failed: ${data.emailError}`);
+        } else {
+          showToast(`✓ Briefing delivered to ${name}!`);
+        }
         btn.disabled = false;
         btn.textContent = 'Push briefing';
 

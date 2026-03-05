@@ -98,7 +98,11 @@ export default async function handler(req, res) {
     // context after res.end(), so the outbound fetch was never sent.
     try {
       const briefing = await runPipelineForClient(clientId);
-      return res.status(200).json({ success: true, briefingId: briefing.id });
+      return res.status(200).json({
+        success:    true,
+        briefingId: briefing.id,
+        emailError: briefing.emailError || null,
+      });
     } catch (err) {
       console.error('[admin] Pipeline error for', clientId, ':', err);
       return res.status(500).json({ error: err.message || 'Pipeline failed' });
