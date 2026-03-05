@@ -559,11 +559,15 @@
         const viewLink = c.briefing_url
           ? `<a href="${c.briefing_url}" target="_blank" style="font-size:11px;color:var(--crimson);text-decoration:none;margin-left:6px;font-weight:600;" title="View briefing">↗</a>`
           : '';
+        const updatedLabel = c.updated_at
+          ? (new Date(c.updated_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) + ' ' + new Date(c.updated_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }))
+          : '—';
         return `
           <div class="client-row" id="row-${c.id}">
             <div>
               <span class="status-dot ${c.active ? 'active' : ''}"></span>
               <span class="client-name">${esc(c.client_name)}</span>
+              <span style="font-size:10px;color:var(--muted);margin-left:6px;" title="Last signup / update">${updatedLabel}</span>
             </div>
             <div class="client-email">${esc(c.email)}</div>
             <div class="client-time">${delivTime}</div>

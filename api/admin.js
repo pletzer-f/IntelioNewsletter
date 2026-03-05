@@ -26,8 +26,8 @@ export default async function handler(req, res) {
 
     const { data: clients, error: ce } = await supabase
       .from('clients')
-      .select('id, client_name, email, delivery_time, active, created_at')
-      .order('created_at', { ascending: false });
+      .select('id, client_name, email, delivery_time, active, created_at, updated_at')
+      .order('updated_at', { ascending: false });
 
     if (ce) return res.status(500).json({ error: ce.message });
 
