@@ -1385,13 +1385,18 @@
         renderSuccess(config);
       })
       .catch(err => {
-        console.warn('Registration API unavailable, showing success locally:', err.message);
-        // Graceful degradation: show success even if API is unreachable (dev mode)
-        renderSuccess(config);
-      })
-      .finally(() => {
+        console.error('[register] API error:', err.message);
         submitBtn.textContent = 'Start free trial →';
         submitBtn.disabled = false;
+        // Show a visible error message under the button
+        var errEl = document.getElementById('submit-error');
+        if (!errEl) {
+          errEl = document.createElement('p');
+          errEl.id = 'submit-error';
+          errEl.style.cssText = 'color:#C41E3A;font-size:13px;margin-top:10px;text-align:center;';
+          submitBtn.parentNode.insertBefore(errEl, submitBtn.nextSibling);
+        }
+        errEl.textContent = 'Something went wrong — please try again. (' + err.message + ')';
       });
     }
 
