@@ -26,26 +26,32 @@ export default async function handler(req, res) {
 
   console.log(`[cron/daily] Processing ${clients.length} active clients`);
 
-  const results = [];
+  // Run all eligible clients in PARALLEL so total time = max(individual_times) ~3 min,
+  // not sum(individual_times) ~12 min which exceeds the 300s function limit.
+  const eligible = clients.filter(c => {
+    const ok = checkDeliveryWindow(c);
+    if (!ok) console.log(`[cron/daily] Skipping ${c.client_name} (not in delivery window)`);
+    return ok;
+  });
 
-  // Run each client sequentially to stay within API rate limits.
-  // For large scale (10+ clients), switch to batched concurrency.
-  for (const client of clients) {
-    const shouldRunToday = checkDeliveryWindow(client);
-    if (!shouldRunToday) {
-      console.log(`[cron/daily] Skipping ${client.client_name} (not in delivery window)`);
-      continue;
-    }
+  console.log(`[cron/daily] Running ${eligible.length} pipelines in parallel`);
 
-    try {
-      console.log(`[cron/daily] Running pipeline for ${client.client_name}`);
+  const settled = await Promise.allSettled(
+    eligible.map(async (client) => {
+      console.log(`[cron/daily] Starting pipeline for ${client.client_name}`);
       await runPipelineForClient(client.id);
-      results.push({ clientId: client.id, status: 'success' });
-    } catch (err) {
-      console.error(`[cron/daily] Error for ${client.client_name}:`, err);
-      results.push({ clientId: client.id, status: 'error', error: err.message });
-    }
-  }
+      return client.id;
+    })
+  );
+
+  const results = settled.map((r, i) =>
+    r.status === 'fulfilled'
+      ? { clientId: eligible[i].id, status: 'success' }
+      : { clientId: eligible[i].id, status: 'error', error: r.reason?.message }
+  );
+
+  const errors = results.filter(r => r.status === 'error');
+  if (errors.length) console.error(`[cron/daily] ${errors.length} pipeline(s) failed:`, errors);
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
   console.log(`[cron/daily] Completed in ${elapsed}s. Results:`, results);
