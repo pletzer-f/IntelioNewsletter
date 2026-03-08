@@ -45,11 +45,21 @@ export default async function handler(req, res) {
 // ─── Main pipeline ────────────────────────────────────────────────────────────
 
 export async function runPipelineForClient(clientId) {
-  const client = await getClient(clientId);
+  let client;
+  try {
+    client = await getClient(clientId);
+  } catch (err) {
+    throw new Error(`[Step 0/getClient] ${err.message}`);
+  }
   console.log(`[runner] Starting pipeline for ${client.client_name} (${clientId})`);
 
   // Step 0: Ensure fresh monthly profile
-  let profile = await getLatestProfile(clientId);
+  let profile;
+  try {
+    profile = await getLatestProfile(clientId);
+  } catch (err) {
+    throw new Error(`[Step 0/getProfile] ${err.message}`);
+  }
   const profileAge = profile
     ? (Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24)
     : Infinity;
@@ -61,10 +71,14 @@ export async function runPipelineForClient(clientId) {
       `${client.region} economic outlook`,
       ...(client.client_entities || []).slice(0, 4).map(e => `${e} news`),
     ];
-    const profileSearch = await multiSearch(profileQueries, { count: 10, freshness: 'pm' });
-    const profileMarkdown = await runAgent00(client, profileSearch);
-    const saved = await saveProfile(clientId, profileMarkdown);
-    profile = saved;
+    try {
+      const profileSearch = await multiSearch(profileQueries, { count: 10, freshness: 'pm' });
+      const profileMarkdown = await runAgent00(client, profileSearch);
+      const saved = await saveProfile(clientId, profileMarkdown);
+      profile = saved;
+    } catch (err) {
+      throw new Error(`[Step 0/agent00] ${err.message}`);
+    }
   }
 
   const profileText = profile?.markdown || '';
@@ -74,15 +88,20 @@ export async function runPipelineForClient(clientId) {
 
   // Step 2: Run all section searches + market tickers in parallel
   console.log(`[runner] Running parallel search for 6 sections + market tickers`);
-  const [sr01, sr02, sr03, sr04, sr05, sr06, tickers] = await Promise.all([
-    multiSearch(queries.agent01, { count: 10, freshness: 'pd', country: 'DE' }),
-    multiSearch(queries.agent02, { count: 8, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent03, { count: 8, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent04, { count: 8, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent05, { count: 8, freshness: 'pw', country: 'DE' }),
-    multiSearch(queries.agent06, { count: 8, freshness: 'pd', country: 'DE' }),
-    fetchMarketTickers(),
-  ]);
+  let sr01, sr02, sr03, sr04, sr05, sr06, tickers;
+  try {
+    [sr01, sr02, sr03, sr04, sr05, sr06, tickers] = await Promise.all([
+      multiSearch(queries.agent01, { count: 10, freshness: 'pd', country: 'DE' }),
+      multiSearch(queries.agent02, { count: 8, freshness: 'pw', country: 'DE' }),
+      multiSearch(queries.agent03, { count: 8, freshness: 'pw', country: 'DE' }),
+      multiSearch(queries.agent04, { count: 8, freshness: 'pw', country: 'DE' }),
+      multiSearch(queries.agent05, { count: 8, freshness: 'pw', country: 'DE' }),
+      multiSearch(queries.agent06, { count: 8, freshness: 'pd', country: 'DE' }),
+      fetchMarketTickers(),
+    ]);
+  } catch (err) {
+    throw new Error(`[Step 2/search] ${err.message}`);
+  }
   console.log(`[runner] Market tickers fetched: ${tickers.length} instruments`);
 
   // Step 3: Run all 6 section agents in parallel
@@ -96,34 +115,54 @@ export async function runPipelineForClient(clientId) {
   // 2,000 chars ≈ 500 tokens — gives agents solid client context within budget
   const profileExcerpt = profileText.slice(0, 2000);
 
-  const [h01, h02, h03, h04, h05, h06] = await Promise.all([
-    enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01) : Promise.resolve(''),
-    enabledSections.has(2) ? runAgent02(client, profileExcerpt, sr02) : Promise.resolve(''),
-    enabledSections.has(3) ? runAgent03(client, profileExcerpt, sr03) : Promise.resolve(''),
-    enabledSections.has(4) ? runAgent04(client, profileExcerpt, sr04) : Promise.resolve(''),
-    enabledSections.has(5) ? runAgent05(client, profileExcerpt, sr05) : Promise.resolve(''),
-    enabledSections.has(6) ? runAgent06(client, profileExcerpt, sr06) : Promise.resolve(''),
-  ]);
+  let h01, h02, h03, h04, h05, h06;
+  try {
+    [h01, h02, h03, h04, h05, h06] = await Promise.all([
+      enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01) : Promise.resolve(''),
+      enabledSections.has(2) ? runAgent02(client, profileExcerpt, sr02) : Promise.resolve(''),
+      enabledSections.has(3) ? runAgent03(client, profileExcerpt, sr03) : Promise.resolve(''),
+      enabledSections.has(4) ? runAgent04(client, profileExcerpt, sr04) : Promise.resolve(''),
+      enabledSections.has(5) ? runAgent05(client, profileExcerpt, sr05) : Promise.resolve(''),
+      enabledSections.has(6) ? runAgent06(client, profileExcerpt, sr06) : Promise.resolve(''),
+    ]);
+  } catch (err) {
+    throw new Error(`[Step 3/agents] ${err.message}`);
+  }
 
   const sectionHtmls = [h01, h02, h03, h04, h05, h06].filter(Boolean);
 
   // Step 4: Orchestrator — executive highlights + key themes
   console.log(`[runner] Running orchestrator`);
-  const orchestratorHtml = await runOrchestrator(client, profileText, sectionHtmls);
+  let orchestratorHtml;
+  try {
+    orchestratorHtml = await runOrchestrator(client, profileText, sectionHtmls);
+  } catch (err) {
+    throw new Error(`[Step 4/orchestrator] ${err.message}`);
+  }
 
   // Step 5: Assemble full briefing HTML
   const today = new Date().toISOString().split('T')[0];
-  const briefingHtml = assembleBriefing({
-    client,
-    today,
-    orchestratorHtml,
-    sectionHtmls: { h01, h02, h03, h04, h05, h06 },
-    enabledSections,
-    tickers,
-  });
+  let briefingHtml;
+  try {
+    briefingHtml = assembleBriefing({
+      client,
+      today,
+      orchestratorHtml,
+      sectionHtmls: { h01, h02, h03, h04, h05, h06 },
+      enabledSections,
+      tickers,
+    });
+  } catch (err) {
+    throw new Error(`[Step 5/assemble] ${err.message}`);
+  }
 
   // Step 6: Save to Supabase
-  const briefing = await saveBriefing(clientId, briefingHtml, today);
+  let briefing;
+  try {
+    briefing = await saveBriefing(clientId, briefingHtml, today);
+  } catch (err) {
+    throw new Error(`[Step 6/save] ${err.message}`);
+  }
   console.log(`[runner] Briefing saved: ${briefing.id}`);
 
   // Step 7: Send email — pass orchestratorHtml (executive summary) + section names
