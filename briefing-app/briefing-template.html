@@ -1702,6 +1702,8 @@
     function buildSectionEndNavs() {
       SECTION_IDS.forEach((id, idx) => {
         const sec = document.getElementById(id);
+        // Remove any existing nav first — safe to call multiple times
+        sec.querySelectorAll('.sec-end-nav').forEach(el => el.remove());
 
         const dots = SECTION_IDS.map((_, i) =>
           `<span class="dot${i === idx ? ' dot-active' : ''}" data-idx="${i}" title="${SECTION_NAMES[i]}"></span>`

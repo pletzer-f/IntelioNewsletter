@@ -201,31 +201,8 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     @media print { .chat-fab, .chat-panel { display: none !important; } }
     @media (max-width: 600px) { .chat-panel { width: 100%; } .chat-fab { bottom: 20px; right: 20px; } }
 
-    /* ── CONTINUOUS SCROLL LAYOUT — all sections visible at once ──────── */
-    /* Override the template's tab-based single-section-at-a-time UX.
-       Template has .bsec { display: none } and animation keyframes
-       (secEnter/secExit) that leave opacity:0 / transform offsets.
-       We kill ALL of those. */
-    .bsec {
-      display: block !important;
-      padding-top: 48px !important;
-      opacity: 1 !important;
-      transform: none !important;
-      position: static !important;
-      pointer-events: auto !important;
-    }
-    .bsec.active  { animation: none !important; }
-    .bsec.exiting {
-      animation: none !important;
-      opacity: 1 !important;
-      transform: none !important;
-      pointer-events: auto !important;
-    }
-    .content .bsec + .bsec {
-      border-top: 2px solid var(--border);
-      margin-top: 8px;
-    }
-    .sec-end-nav { display: none !important; }
+    /* ── Section top padding (tab-based layout — one section at a time) ── */
+    .bsec { padding-top: 48px; }
 
     /* ── Prevent layout leak from unclosed AI-generated divs ──────────
        Template .story-header is display:flex — if the AI forgets to close
