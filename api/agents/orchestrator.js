@@ -827,36 +827,6 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       document.getElementById('chatFoot').style.display = 'none';
     }
 
-    // ── CONTINUOUS SCROLL — override template's tab-switch with smooth scroll ──
-    // Placed here (before the IIFE) so even if the IIFE throws, nav still works.
-    window.showSection = function(newIdx) {
-      if (newIdx < 0 || newIdx >= SECTION_IDS.length) return;
-      const el = document.getElementById(SECTION_IDS[newIdx]);
-      if (!el) return;
-      const mastH  = document.querySelector('.masthead')?.offsetHeight  || 0;
-      const sigH   = document.querySelector('.signals-bar')?.offsetHeight || 0;
-      const navH   = document.querySelector('.sec-nav')?.offsetHeight   || 0;
-      const offset = mastH + sigH + navH + 12;
-      const y = el.getBoundingClientRect().top + window.scrollY - offset;
-      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
-      currentIdx = newIdx;
-      updateUI();
-      _updateMobNav(newIdx);
-    };
-    // Replace each nav pill with a CLONE (strips all template addEventListener listeners)
-    // then attach a fresh click handler for smooth-scroll. This is the only reliable
-    // way to remove event listeners added by the template script.
-    try {
-      document.querySelectorAll('.nav-pill[data-sec]').forEach(function(pill) {
-        var fresh = pill.cloneNode(true);
-        fresh.addEventListener('click', function() {
-          var idx = SECTION_IDS.indexOf(this.dataset.sec);
-          if (idx !== -1) window.showSection(idx);
-        });
-        if (pill.parentNode) pill.parentNode.replaceChild(fresh, pill);
-      });
-    } catch (e) { console.warn('[Intelio] Nav pill setup:', e); }
-
     // ── Save (bookmark) articles ─────────────────────────────────────────────
     const SAVED_STORE_KEY = 'saved_articles_' + CHAT_CLIENT_ID;
     let savedOpen = false;

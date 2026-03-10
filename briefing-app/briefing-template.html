@@ -890,7 +890,12 @@
       .content { padding: 0 20px 60px; }
       .story-grid { grid-template-columns: 1fr; }
       .story-lead .story-hl { font-size: 24px; }
-      .sec-end-nav { grid-template-columns: 1fr; gap: 14px; }
+      .sec-end-nav {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 24px);
+        margin-bottom: 32px;
+      }
       .sec-end-prev, .sec-end-next { text-align: center; justify-self: stretch; }
       .dots-bar { order: -1; }
       .footer-inner { grid-template-columns: 1fr; gap: 20px; }

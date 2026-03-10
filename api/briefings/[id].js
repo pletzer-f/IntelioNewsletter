@@ -21,6 +21,6 @@ export default async function handler(req, res) {
   }
 
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=86400'); // cache for 1 day
+  res.setHeader('Cache-Control', 'no-store'); // always serve fresh — same ID is re-used on same-day re-push
   return res.status(200).send(data.html);
 }
