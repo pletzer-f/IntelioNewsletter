@@ -1701,6 +1701,9 @@
           btn.classList.remove('is-complete');
         }
       });
+
+      // Mobile nav (defined in orchestrator's second script block)
+      if (typeof _updateMobNav === 'function') _updateMobNav(idx);
     }
 
     /* ── 7. BUILD SECTION-END NAVS (injected into each section) ── */

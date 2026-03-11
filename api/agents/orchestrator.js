@@ -1001,25 +1001,8 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       showSection(idx);
     }
 
-    // Track which section is in view as the user scrolls
-    const _ssEls = SECTION_IDS.map(id => document.getElementById(id)).filter(Boolean);
-    let _ssTick = false;
-    window.addEventListener('scroll', () => {
-      if (_ssTick) return;
-      _ssTick = true;
-      requestAnimationFrame(() => {
-        _ssTick = false;
-        const mastH  = document.querySelector('.masthead')?.offsetHeight  || 0;
-        const sigH   = document.querySelector('.signals-bar')?.offsetHeight || 0;
-        const navH   = document.querySelector('.sec-nav')?.offsetHeight   || 0;
-        const threshold = mastH + sigH + navH + 60;
-        let ai = 0;
-        _ssEls.forEach((el, i) => {
-          if (el && el.getBoundingClientRect().top <= threshold) ai = i;
-        });
-        if (ai !== currentIdx) { currentIdx = ai; updateUI(); _updateMobNav(ai); }
-      });
-    }, { passive: true });
+    // Scroll spy removed — incompatible with tab-based display:none layout.
+    // Hidden sections return getBoundingClientRect().top = 0, corrupting currentIdx.
 
     // Keyboard shortcuts — chat, saved panel, mobile nav (section keys: template script)
     document.addEventListener('keydown', e => {
