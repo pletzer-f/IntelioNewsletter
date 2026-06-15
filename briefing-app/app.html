@@ -468,7 +468,9 @@
         status.textContent = '✓ Done — your fresh briefing is ready below.';
         await loadBriefings();
       } catch (err) {
-        status.textContent = '⚠ ' + err.message;
+        const frame = ((err && err.stack) || '').split('\n')[1] || '';
+        status.textContent = '⚠ ' + err.message + (frame ? '  ·  ' + frame.trim() : '');
+        console.error('[generate] failed:', err);
         btn.disabled = false; btn.textContent = '↻ Generate today\'s briefing';
         return;
       }

@@ -49,6 +49,9 @@ export default async function handler(req, res) {
     console.error(`[generate] Pipeline failed for client ${client.id}:`, err);
     // Surface the originating code location so an unlabeled error is diagnosable.
     const where = (err?.stack || '').split('\n').slice(1, 4).map(s => s.trim()).join('  ·  ');
+    try {
+      await supabase.from('debug_log').insert({ context: `generate:${client.id}`, message: String(err?.message || err), stack: String(err?.stack || '') });
+    } catch (_) { /* best-effort */ }
     return res.status(500).json({ error: err?.message || String(err), where });
   }
 }
