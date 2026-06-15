@@ -40,14 +40,19 @@ export default async function handler(req, res) {
     const client = await upsertClient(body);
     console.log(`[register] Upserted client: ${client.id} (${client.email})`);
 
-    // 2. Send welcome email
-    const welcomeHtml = buildWelcomeEmail(client);
-    await sendTransactional(
-      client.email,
-      `Welcome to Intelio — your briefings are being set up`,
-      welcomeHtml
-    );
-    console.log(`[register] Welcome email sent to ${client.email}`);
+    // 2. Send welcome email — NON-FATAL. A welcome-email problem (e.g. a Resend
+    //    sender/domain misconfig) must never fail the registration itself.
+    try {
+      const welcomeHtml = buildWelcomeEmail(client);
+      await sendTransactional(
+        client.email,
+        `Welcome to Intelio — your briefings are being set up`,
+        welcomeHtml
+      );
+      console.log(`[register] Welcome email sent to ${client.email}`);
+    } catch (emailErr) {
+      console.error(`[register] Welcome email failed (non-fatal) for ${client.email}:`, emailErr?.message || emailErr);
+    }
 
     // 3. Kick off first briefing immediately — fire-and-forget into runner's own function context.
     // runner.js has maxDuration:300 and handles Agent 00 + all 6 agents + email delivery.
