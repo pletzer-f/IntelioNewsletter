@@ -408,15 +408,8 @@
     <div class="unlock-card">
       <div class="unlock-icon">✦</div>
       <h1>Admin Console</h1>
-      <p>Enter your admin secret to access the briefing dashboard.</p>
-      <input
-        class="unlock-input"
-        id="secretInput"
-        type="password"
-        placeholder="Enter admin secret…"
-        autocomplete="off"
-      >
-      <button class="unlock-btn" onclick="unlock()">Unlock →</button>
+      <p>Sign in with your admin account to access the briefing dashboard.</p>
+      <button class="unlock-btn" onclick="goSignIn()">Sign in →</button>
       <div class="unlock-error" id="unlockError">Incorrect secret — try again.</div>
     </div>
   </div>
@@ -432,6 +425,7 @@
       <div style="display:flex;gap:10px;align-items:center;">
         <button class="push-all-btn" style="background:var(--surface-2);color:var(--ink);border:1px solid var(--border);" onclick="reloadDashboard()" title="Refresh data">↻ Refresh</button>
         <button class="push-all-btn" id="pushAllBtn" onclick="pushAll()">Push to all users</button>
+        <button class="push-all-btn" style="background:var(--surface-2);color:var(--ink);border:1px solid var(--border);" onclick="adminSignOut()" title="Sign out">Sign out</button>
       </div>
     </div>
 
@@ -529,28 +523,30 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script>
     const API_BASE = '/api';
-    let SECRET = sessionStorage.getItem('intelio_admin_secret') || '';
+    const sb = supabase.createClient(window.INTELIO_SUPABASE_URL, window.INTELIO_SUPABASE_KEY);
+    let TOKEN = null;
     let clientData = [];
 
-    // ── Unlock ──────────────────────────────────────────────────────────────
-    if (SECRET) attemptLoad();
-
-    document.getElementById('secretInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') unlock();
-    });
-
-    async function unlock() {
-      const val = document.getElementById('secretInput').value.trim();
-      if (!val) return;
-      SECRET = val;
+    // ── Require an admin session ──────────────────────────────────────────────
+    (async function initAdmin() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return; // remain on the sign-in card
+      TOKEN = session.access_token;
       const ok = await attemptLoad();
       if (!ok) {
-        document.getElementById('unlockError').style.display = 'block';
-        SECRET = '';
+        const err = document.getElementById('unlockError');
+        err.style.display = 'block';
+        err.textContent = 'This account is not an admin. Try another account or contact support.';
       }
-    }
+    })();
+
+    function goSignIn() { window.location.href = '/login?next=' + encodeURIComponent('/admin'); }
+    async function adminSignOut() { await sb.auth.signOut(); window.location.reload(); }
+    function authHeaders(extra) { return Object.assign({ 'Authorization': 'Bearer ' + TOKEN }, extra || {}); }
 
     async function reloadDashboard() {
       document.getElementById('dashSubtitle').textContent = 'Refreshing…';
@@ -560,10 +556,9 @@
 
     async function attemptLoad() {
       try {
-        const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
+        const res = await fetch(`${API_BASE}/admin`, { headers: authHeaders() });
         if (!res.ok) return false;
         const data = await res.json();
-        sessionStorage.setItem('intelio_admin_secret', SECRET);
         showDashboard(data.clients);
         return true;
       } catch {
@@ -773,8 +768,8 @@
       try {
         const res = await fetch(`${API_BASE}/admin`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ secret: SECRET, clientId }),
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ clientId }),
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Pipeline failed');
@@ -831,7 +826,7 @@
     // Without prePushId: returns true if a briefing exists for today (legacy behaviour).
     async function refreshLastBriefing(clientId, prePushId = null) {
       try {
-        const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
+        const res = await fetch(`${API_BASE}/admin`, { headers: authHeaders() });
         if (!res.ok) return false;
         const data = await res.json();
         const client = data.clients.find(c => c.id === clientId);
@@ -919,7 +914,6 @@
       btn.textContent = 'Saving…';
 
       const payload = {
-        secret:      SECRET,
         clientId:    editingClientId,
         delivery_time:        document.getElementById('editDeliveryTime').value.replace(':', ''),
         output_language:      document.getElementById('editLanguage').value,
@@ -934,7 +928,7 @@
       try {
         const res = await fetch(`${API_BASE}/admin`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(payload),
         });
         const data = await res.json();

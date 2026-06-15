@@ -1,14 +1,35 @@
 // api/admin.js — Internal admin endpoints
-// GET  /api/admin?secret=XXX          → list all clients + last briefing date
-// POST /api/admin { secret, clientId } → run full briefing pipeline for one client
+// Auth: admin Supabase session (Authorization: Bearer <token>, email in public.admins)
+//       OR x-cron-secret/secret === CRON_SECRET (automation / back-compat).
+// GET  /api/admin          → list all clients + last briefing date
+// PUT  /api/admin          → update client settings
+// POST /api/admin          → run full briefing pipeline for one client
 
 import { supabase } from '../lib/supabase.js';
 import { runPipelineForClient } from './agents/runner.js';
+import { getUserFromRequest } from './_auth.js';
 
 export const config = { runtime: 'nodejs' };
 
-function checkSecret(secret) {
-  return secret && secret === process.env.CRON_SECRET;
+function bodyOf(req) {
+  try { return typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {}); }
+  catch { return {}; }
+}
+
+// True if the request is from an allowlisted admin account, or carries CRON_SECRET.
+async function isAdmin(req) {
+  const user = await getUserFromRequest(req);
+  if (user?.email) {
+    const { data } = await supabase
+      .from('admins')
+      .select('email')
+      .ilike('email', user.email)
+      .maybeSingle();
+    if (data) return true;
+  }
+  const secret = req.query.secret || bodyOf(req).secret;
+  if (secret && secret === process.env.CRON_SECRET) return true;
+  return false;
 }
 
 export default async function handler(req, res) {
@@ -16,23 +37,21 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     return res.status(204).end();
   }
 
+  if (!(await isAdmin(req))) return res.status(401).json({ error: 'Unauthorized' });
+
   // ── GET: list all clients with last briefing ─────────────────────────────
   if (req.method === 'GET') {
-    const secret = req.query.secret;
-    if (!checkSecret(secret)) return res.status(401).json({ error: 'Unauthorized' });
-
     const { data: clients, error: ce } = await supabase
       .from('clients')
-      .select('id, client_name, email, delivery_time, active, created_at, updated_at')
+      .select('id, client_name, email, delivery_time, output_language, region, stories_per_section, client_profile, client_entities, client_topics, client_local_sources, active, created_at, updated_at')
       .order('updated_at', { ascending: false });
 
     if (ce) return res.status(500).json({ error: ce.message });
 
-    // Fetch latest briefing date + id for each client
     const { data: briefings, error: be } = await supabase
       .from('briefings')
       .select('id, client_id, date, created_at')
@@ -40,7 +59,6 @@ export default async function handler(req, res) {
 
     if (be) return res.status(500).json({ error: be.message });
 
-    // Map latest briefing per client
     const latestBriefing = {};
     for (const b of (briefings || [])) {
       if (!latestBriefing[b.client_id]) latestBriefing[b.client_id] = b;
@@ -61,21 +79,17 @@ export default async function handler(req, res) {
 
   // ── PUT: update client settings ─────────────────────────────────────────
   if (req.method === 'PUT') {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { secret, clientId, ...fields } = body || {};
-
-    if (!checkSecret(secret)) return res.status(401).json({ error: 'Unauthorized' });
+    const { clientId, ...fields } = bodyOf(req);
     if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
 
-    // Build update object — only include defined fields
     const update = {};
-    if (fields.delivery_time       !== undefined) update.delivery_time        = String(fields.delivery_time).replace(':', '');
-    if (fields.output_language     !== undefined) update.output_language      = fields.output_language;
-    if (fields.region              !== undefined) update.region               = fields.region;
-    if (fields.stories_per_section !== undefined) update.stories_per_section  = Number(fields.stories_per_section);
-    if (fields.client_profile      !== undefined) update.client_profile       = fields.client_profile;
-    if (fields.client_entities     !== undefined) update.client_entities      = fields.client_entities;
-    if (fields.client_topics       !== undefined) update.client_topics        = fields.client_topics;
+    if (fields.delivery_time        !== undefined) update.delivery_time        = String(fields.delivery_time).replace(':', '');
+    if (fields.output_language      !== undefined) update.output_language      = fields.output_language;
+    if (fields.region               !== undefined) update.region               = fields.region;
+    if (fields.stories_per_section  !== undefined) update.stories_per_section  = Number(fields.stories_per_section);
+    if (fields.client_profile       !== undefined) update.client_profile       = fields.client_profile;
+    if (fields.client_entities      !== undefined) update.client_entities      = fields.client_entities;
+    if (fields.client_topics        !== undefined) update.client_topics        = fields.client_topics;
     if (fields.client_local_sources !== undefined) update.client_local_sources = fields.client_local_sources;
     update.updated_at = new Date().toISOString();
 
@@ -87,15 +101,9 @@ export default async function handler(req, res) {
 
   // ── POST: run full pipeline for a specific client ───────────────────────
   if (req.method === 'POST') {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
-    const { secret, clientId } = body || {};
-
-    if (!checkSecret(secret)) return res.status(401).json({ error: 'Unauthorized' });
+    const { clientId } = bodyOf(req);
     if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
 
-    // Run pipeline directly (imported function) — no HTTP hop.
-    // Fire-and-forget via HTTP was unreliable: Vercel freezes the function
-    // context after res.end(), so the outbound fetch was never sent.
     try {
       const briefing = await runPipelineForClient(clientId);
       return res.status(200).json({

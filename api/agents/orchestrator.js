@@ -688,8 +688,8 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
         Compiled at ${timeCET} CET by parallel AI research agents \u00B7 ${activeSections.length} sections
       </div>
       <div class="footer-links">
-        <a href="${appUrl}/preferences.html?id=${client.id}">Manage preferences</a>
-        <a href="#">View archive</a>
+        <a href="${appUrl}/app">Manage preferences</a>
+        <a href="${appUrl}/app">View archive</a>
         <a href="${appUrl}/admin.html">Admin ↗</a>
       </div>
     </div>

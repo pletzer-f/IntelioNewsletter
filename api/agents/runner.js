@@ -64,8 +64,17 @@ export async function runPipelineForClient(clientId) {
     ? (Date.now() - new Date(profile.created_at).getTime()) / (1000 * 60 * 60 * 24)
     : Infinity;
 
-  if (profileAge > 31) {
-    console.log(`[runner] Refreshing Agent 00 profile (age: ${Math.round(profileAge)}d)`);
+  // Honor the client's chosen refresh cadence.
+  // 'on-demand' never auto-refreshes (manual trigger only); a profile is still
+  // generated on first run when none exists (profileAge === Infinity).
+  const cadence = client.client_profile_refresh || 'monthly';
+  const refreshThresholdDays =
+    cadence === 'weekly'    ? 7   :
+    cadence === 'on-demand' ? Infinity :
+    /* monthly default */     31;
+
+  if (profileAge > refreshThresholdDays) {
+    console.log(`[runner] Refreshing Agent 00 profile (age: ${Math.round(profileAge)}d, cadence: ${cadence})`);
     const profileQueries = [
       `${client.client_name} ${new Date().getFullYear()}`,
       `${client.region} economic outlook`,

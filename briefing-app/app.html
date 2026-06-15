@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intelio · Your dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet">
+  <style>
+    [data-theme="light"]{--bg:#F9F8F5;--surface:#FFFFFF;--surface-hi:#F3F0EB;--border:#E2DFD8;--border-hi:#C8C5BC;
+      --text:#0F172A;--text-2:#475569;--text-3:#94A3B8;--accent:#C41E3A;--accent-dim:rgba(196,30,58,0.07);--accent-glow:rgba(196,30,58,0.18);--pos:#166534;--pos-bg:rgba(22,101,52,0.09);}
+    [data-theme="dark"]{--bg:#0E0C0A;--surface:#161310;--surface-hi:#1E1B17;--border:#2C2820;--border-hi:#3C3830;
+      --text:#EDE9E0;--text-2:#887E6E;--text-3:#4A4438;--accent:#E53535;--accent-dim:rgba(229,53,53,0.09);--accent-glow:rgba(229,53,53,0.22);--pos:#4ADE80;--pos-bg:rgba(74,222,128,0.10);}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;min-height:100vh;}
+    a{color:var(--accent);text-decoration:none;}
+    .hidden{display:none!important;}
+
+    /* Header */
+    .top{position:sticky;top:0;z-index:50;background:var(--bg);border-bottom:1px solid var(--border);
+      padding:0 32px;height:64px;display:flex;align-items:center;justify-content:space-between;}
+    .top-logo{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;color:var(--text);letter-spacing:-0.025em;}
+    .top-logo .io{color:var(--accent);}
+    .top-right{display:flex;align-items:center;gap:14px;}
+    .top-email{font-size:12.5px;color:var(--text-3);font-family:'JetBrains Mono',monospace;}
+    .icon-btn{width:34px;height:34px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+      cursor:pointer;font-size:13px;color:var(--text-2);transition:all .18s;}
+    .icon-btn:hover{border-color:var(--accent);color:var(--accent);}
+    .btn-text{padding:8px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+      cursor:pointer;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--text-2);transition:all .18s;}
+    .btn-text:hover{border-color:var(--accent);color:var(--accent);}
+
+    .shell{max-width:920px;margin:0 auto;padding:32px 32px 80px;}
+    .loading{display:flex;align-items:center;justify-content:center;min-height:60vh;color:var(--text-3);font-size:14px;gap:10px;}
+    .spin{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:sp .7s linear infinite;}
+    @keyframes sp{to{transform:rotate(360deg);}}
+
+    /* Greeting */
+    .hello{font-family:'Playfair Display',serif;font-size:30px;font-weight:800;letter-spacing:-0.02em;margin-bottom:4px;}
+    .hello-sub{font-size:14px;color:var(--text-2);margin-bottom:26px;}
+    .hello-sub strong{color:var(--text);}
+
+    /* Tabs */
+    .tabbar{display:flex;gap:4px;border-bottom:1px solid var(--border);margin-bottom:28px;}
+    .tabbtn{padding:11px 18px;border:none;background:none;font-family:inherit;font-size:13.5px;font-weight:600;
+      color:var(--text-3);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .18s;}
+    .tabbtn:hover{color:var(--text-2);}
+    .tabbtn.active{color:var(--accent);border-bottom-color:var(--accent);}
+    .pane{display:none;animation:fade .3s ease;} .pane.active{display:block;}
+    @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-bottom:20px;}
+    .card-h{font-size:13px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:var(--text-3);margin-bottom:16px;}
+
+    /* Generate row */
+    .gen-row{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+    .gen-copy h3{font-family:'Playfair Display',serif;font-size:19px;font-weight:700;margin-bottom:4px;}
+    .gen-copy p{font-size:13px;color:var(--text-2);line-height:1.6;max-width:440px;}
+    .btn-accent{padding:12px 22px;border:none;border-radius:9px;background:var(--accent);color:#fff;
+      font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;white-space:nowrap;box-shadow:0 4px 14px var(--accent-glow);transition:all .2s;}
+    .btn-accent:hover:not(:disabled){opacity:.9;transform:translateY(-1px);}
+    .btn-accent:disabled{opacity:.5;cursor:default;box-shadow:none;}
+    .gen-status{font-size:12.5px;color:var(--text-3);margin-top:12px;line-height:1.5;}
+
+    /* Briefing list + viewer */
+    .blist{display:flex;flex-direction:column;gap:0;}
+    .brow{display:flex;align-items:center;justify-content:space-between;padding:14px 4px;border-bottom:1px solid var(--border);}
+    .brow:last-child{border-bottom:none;}
+    .brow-date{font-size:14px;font-weight:600;}
+    .brow-meta{font-size:11.5px;color:var(--text-3);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+    .brow a{font-size:12.5px;font-weight:600;}
+    .empty{text-align:center;color:var(--text-3);font-size:13.5px;padding:30px 16px;line-height:1.6;}
+    .viewer{width:100%;height:560px;border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-top:4px;}
+
+    /* Forms */
+    .field{margin-bottom:18px;}
+    .field:last-child{margin-bottom:0;}
+    .frow{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    label{display:block;font-size:12px;font-weight:700;margin-bottom:7px;}
+    .lbl-hint{font-size:11.5px;color:var(--text-3);font-weight:400;margin-bottom:8px;line-height:1.5;}
+    input[type=text],input[type=email],textarea,select{width:100%;padding:10px 13px;background:var(--surface);
+      border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:13.5px;outline:none;transition:border-color .2s,box-shadow .2s;}
+    input:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+    textarea{resize:vertical;min-height:80px;line-height:1.6;}
+    .seg{display:flex;gap:6px;flex-wrap:wrap;}
+    .seg-opt{padding:9px 14px;border:1px solid var(--border);border-radius:8px;background:var(--surface);
+      cursor:pointer;font-size:12.5px;font-weight:600;color:var(--text-2);user-select:none;transition:all .18s;}
+    .seg-opt.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+    .checks{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+    .chk{display:flex;align-items:center;gap:9px;padding:11px 13px;border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:all .18s;user-select:none;}
+    .chk.on{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);}
+    .chk .box{width:16px;height:16px;border:1.5px solid var(--border-hi);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#fff;flex-shrink:0;}
+    .chk.on .box{background:var(--accent);border-color:var(--accent);}
+    .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 10px;min-height:44px;cursor:text;}
+    .chips:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim);}
+    .chip{display:inline-flex;align-items:center;gap:5px;background:var(--accent-dim);border:1px solid rgba(196,30,58,0.2);color:var(--accent);border-radius:5px;padding:3px 8px;font-size:12px;font-weight:600;}
+    .chip b{cursor:pointer;opacity:.7;font-weight:700;} .chip b:hover{opacity:1;}
+    .chip-in{border:none!important;background:transparent!important;box-shadow:none!important;padding:4px!important;min-width:120px;flex:1;font-size:13px;}
+    .save-row{display:flex;align-items:center;gap:14px;margin-top:8px;}
+    .btn-save{padding:11px 24px;border:none;border-radius:8px;background:var(--accent);color:#fff;font-family:inherit;font-size:13.5px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px var(--accent-glow);transition:all .2s;}
+    .btn-save:hover:not(:disabled){opacity:.9;transform:translateY(-1px);} .btn-save:disabled{opacity:.5;cursor:default;}
+
+    /* Toast */
+    .toast{position:fixed;bottom:26px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;
+      background:var(--text);color:var(--bg);font-size:13px;font-weight:600;padding:11px 20px;border-radius:10px;
+      box-shadow:0 8px 28px rgba(0,0,0,0.25);transition:all .3s;pointer-events:none;z-index:200;}
+    .toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+    .toast.err{background:#B91C1C;color:#fff;}
+    @media(max-width:640px){.frow,.checks{grid-template-columns:1fr;}.shell{padding:24px 18px 70px;}.top{padding:0 18px;}.top-email{display:none;}}
+  </style>
+</head>
+<body>
+  <header class="top">
+    <div class="top-logo">Intel<span class="io">io</span>.</div>
+    <div class="top-right">
+      <span class="top-email" id="userEmail"></span>
+      <button class="icon-btn" id="themeBtn" title="Toggle theme">☽</button>
+      <button class="btn-text" onclick="logout()">Sign out</button>
+    </div>
+  </header>
+
+  <div id="loading" class="loading"><span class="spin"></span> Loading your dashboard…</div>
+
+  <main class="shell hidden" id="shell">
+    <div class="hello" id="hello">Welcome back</div>
+    <div class="hello-sub" id="helloSub"></div>
+
+    <div class="tabbar">
+      <button class="tabbtn active" data-pane="briefings" onclick="tab('briefings')">Briefings</button>
+      <button class="tabbtn" data-pane="focus" onclick="tab('focus')">Profile &amp; Focus</button>
+      <button class="tabbtn" data-pane="schedule" onclick="tab('schedule')">Schedule</button>
+    </div>
+
+    <!-- BRIEFINGS -->
+    <section class="pane active" id="pane-briefings">
+      <div class="card">
+        <div class="gen-row">
+          <div class="gen-copy">
+            <h3>Generate a fresh briefing</h3>
+            <p>Run all your research agents now instead of waiting for the morning. One on-demand briefing per day.</p>
+          </div>
+          <button class="btn-accent" id="genBtn" onclick="generate()">↻ Generate today's briefing</button>
+        </div>
+        <div class="gen-status" id="genStatus"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Latest briefing</div>
+        <div id="latestWrap"><div class="empty">No briefings yet. Generate one above — it takes a few minutes.</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">All briefings</div>
+        <div class="blist" id="blist"><div class="empty">Nothing here yet.</div></div>
+      </div>
+    </section>
+
+    <!-- PROFILE & FOCUS -->
+    <section class="pane" id="pane-focus">
+      <div class="card">
+        <div class="card-h">About your business</div>
+        <div class="field frow">
+          <div><label>Company name</label><input type="text" id="f_name"></div>
+          <div><label>Your name</label><input type="text" id="f_contact"></div>
+        </div>
+        <div class="field">
+          <label>Business description</label>
+          <div class="lbl-hint">What you do, key markets, products, cost drivers, competitors. This drives the monthly intelligence profile.</div>
+          <textarea id="f_profile"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">What to focus on</div>
+        <div class="field">
+          <label>Key entities to monitor</label>
+          <div class="lbl-hint">Companies, brands, competitors, business units. Press Enter to add.</div>
+          <div class="chips" id="chips_entities"><input class="chip-in" id="in_entities" placeholder="Add an entity…"></div>
+        </div>
+        <div class="field">
+          <label>Topics to track</label>
+          <div class="lbl-hint">Technologies, regulations, product categories, themes. Press Enter to add.</div>
+          <div class="chips" id="chips_topics"><input class="chip-in" id="in_topics" placeholder="Add a topic…"></div>
+        </div>
+        <div class="field">
+          <label>Preferred sources</label>
+          <div class="lbl-hint">Outlets to prioritise, comma-separated. Agents weight and corroborate with these first.</div>
+          <textarea id="f_sources" placeholder="Reuters, Handelsblatt, Tiroler Tageszeitung…"></textarea>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Scope</div>
+        <div class="field frow">
+          <div>
+            <label>Primary region</label>
+            <select id="f_region"></select>
+          </div>
+          <div>
+            <label>Output language</label>
+            <div class="seg" id="seg_lang">
+              <div class="seg-opt" data-v="en">English</div>
+              <div class="seg-opt" data-v="de">Deutsch</div>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label>News scope</label>
+          <div class="seg" id="seg_scope">
+            <div class="seg-opt" data-v="both">Regional + Global</div>
+            <div class="seg-opt" data-v="regional">Regional only</div>
+            <div class="seg-opt" data-v="global">Global only</div>
+          </div>
+        </div>
+        <div class="field">
+          <label>Research agents (sections)</label>
+          <div class="checks" id="checks_sections"></div>
+        </div>
+      </div>
+
+      <div class="save-row">
+        <button class="btn-save" id="saveFocus" onclick="saveFocus()">Save changes</button>
+      </div>
+    </section>
+
+    <!-- SCHEDULE -->
+    <section class="pane" id="pane-schedule">
+      <div class="card">
+        <div class="card-h">Delivery</div>
+        <div class="field">
+          <label>Briefing rhythm</label>
+          <div class="seg" id="seg_view">
+            <div class="seg-opt" data-v="daily">Daily briefing</div>
+            <div class="seg-opt" data-v="weekly">Weekly digest (Fridays)</div>
+          </div>
+        </div>
+        <div class="field frow">
+          <div>
+            <label>Delivery time (CET)</label>
+            <select id="f_time">
+              <option value="0630">06:30</option><option value="0700">07:00</option>
+              <option value="0730">07:30</option><option value="0800">08:00</option><option value="0900">09:00</option>
+            </select>
+            <div class="lbl-hint">Target send time. Precise per-hour delivery rolls out with hourly scheduling.</div>
+          </div>
+          <div>
+            <label>Stories per section</label>
+            <select id="f_stories"><option>3</option><option>4</option><option>5</option><option>6</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-h">Intelligence profile</div>
+        <div class="field">
+          <label>Profile refresh cadence</label>
+          <div class="lbl-hint">How often the deep-dive company profile (Agent 00) is rebuilt.</div>
+          <div class="seg" id="seg_refresh">
+            <div class="seg-opt" data-v="monthly">Monthly</div>
+            <div class="seg-opt" data-v="weekly">Weekly</div>
+            <div class="seg-opt" data-v="on-demand">On-demand</div>
+          </div>
+        </div>
+      </div>
+      <div class="save-row">
+        <button class="btn-save" id="saveSchedule" onclick="saveSchedule()">Save changes</button>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
+  <script>
+    const sb = supabase.createClient(window.INTELIO_SUPABASE_URL, window.INTELIO_SUPABASE_KEY);
+    let CLIENT = null, USER = null;
+    const entities = [], topics = [];
+
+    const REGIONS = ['Austria','Germany','Switzerland','DACH (Austria + Germany + Switzerland)','Italy',
+      'Tirol / Western Austria focus','United Kingdom','France','Benelux','Nordics','Pan-European',
+      'Global (no regional focus)','North America','Asia-Pacific'];
+    const SECTIONS = [[1,'Macro & Markets'],[2,'Industry & Operations'],[3,'Private Equity & M&A'],
+      [4,'End-Market Demand'],[5,'Real Estate & Assets'],[6,'Local Policy & Monitoring']];
+
+    /* ---- Theme ---- */
+    const root = document.documentElement;
+    let theme = localStorage.getItem('intelio-theme') || 'light';
+    root.setAttribute('data-theme', theme);
+    document.getElementById('themeBtn').onclick = () => {
+      theme = theme === 'light' ? 'dark' : 'light';
+      root.setAttribute('data-theme', theme); localStorage.setItem('intelio-theme', theme);
+      document.getElementById('themeBtn').textContent = theme === 'light' ? '☽' : '☀';
+    };
+
+    /* ---- Boot: require a session ---- */
+    (async function boot() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) { window.location.replace('/login'); return; }
+      USER = session.user;
+      document.getElementById('userEmail').textContent = USER.email;
+
+      const { data: client, error } = await sb.from('clients').select('*').eq('user_id', USER.id).maybeSingle();
+      if (error) { toast(error.message, true); }
+
+      if (!client) {
+        // Authenticated but no linked briefing config yet.
+        document.getElementById('loading').innerHTML =
+          'No briefing profile is linked to <b style="color:var(--text);margin:0 4px">' + USER.email +
+          '</b> yet. <a href="/signup.html" style="margin-left:6px">Set one up →</a>';
+        return;
+      }
+      CLIENT = client;
+      hydrate();
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('shell').classList.remove('hidden');
+      loadBriefings();
+    })();
+
+    function tab(name) {
+      document.querySelectorAll('.tabbtn').forEach(b => b.classList.toggle('active', b.dataset.pane === name));
+      document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + name));
+    }
+
+    /* ---- Hydrate form from CLIENT ---- */
+    function hydrate() {
+      document.getElementById('hello').textContent = 'Welcome back, ' + (CLIENT.client_contact || '').split(' ')[0] + '.';
+      document.getElementById('helloSub').innerHTML = 'Briefing for <strong>' + esc(CLIENT.client_name) + '</strong> · ' +
+        esc(CLIENT.region || '') + ' · ' + (CLIENT.output_language === 'de' ? 'Deutsch' : 'English');
+
+      document.getElementById('f_name').value = CLIENT.client_name || '';
+      document.getElementById('f_contact').value = CLIENT.client_contact || '';
+      document.getElementById('f_profile').value = CLIENT.client_profile || '';
+      document.getElementById('f_sources').value = CLIENT.client_local_sources || '';
+
+      // region select
+      const rsel = document.getElementById('f_region');
+      rsel.innerHTML = REGIONS.map(r => '<option' + (r === CLIENT.region ? ' selected' : '') + '>' + esc(r) + '</option>').join('');
+      if (CLIENT.region && !REGIONS.includes(CLIENT.region)) {
+        rsel.insertAdjacentHTML('afterbegin', '<option selected>' + esc(CLIENT.region) + '</option>');
+      }
+
+      segSet('seg_lang', CLIENT.output_language || 'en');
+      segSet('seg_scope', CLIENT.news_scope || 'both');
+      segSet('seg_view', CLIENT.view_mode || 'daily');
+      segSet('seg_refresh', CLIENT.client_profile_refresh || 'monthly');
+      document.getElementById('f_time').value = CLIENT.delivery_time || '0700';
+      document.getElementById('f_stories').value = String(CLIENT.stories_per_section || 3);
+
+      // sections
+      const enabled = new Set((CLIENT.sections_enabled || []).map(Number).filter(Boolean));
+      document.getElementById('checks_sections').innerHTML = SECTIONS.map(([n, label]) =>
+        '<div class="chk' + (enabled.has(n) ? ' on' : '') + '" data-n="' + n + '" onclick="toggleChk(this)">' +
+        '<span class="box">✓</span>' + esc(label) + '</div>').join('');
+
+      (CLIENT.client_entities || []).forEach(v => addChip('entities', v));
+      (CLIENT.client_topics || []).forEach(v => addChip('topics', v));
+    }
+
+    /* ---- Segmented controls ---- */
+    function segSet(id, val) {
+      document.querySelectorAll('#' + id + ' .seg-opt').forEach(o => o.classList.toggle('active', o.dataset.v === val));
+    }
+    document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', e => {
+      const opt = e.target.closest('.seg-opt'); if (!opt) return;
+      seg.querySelectorAll('.seg-opt').forEach(o => o.classList.remove('active')); opt.classList.add('active');
+    }));
+    function segVal(id) { const a = document.querySelector('#' + id + ' .seg-opt.active'); return a ? a.dataset.v : null; }
+    function toggleChk(el) { el.classList.toggle('on'); }
+
+    /* ---- Chip inputs ---- */
+    function chipStore(kind){ return kind === 'entities' ? entities : topics; }
+    function addChip(kind, val) {
+      const store = chipStore(kind);
+      if (store.includes(val)) return;
+      store.push(val);
+      const wrap = document.getElementById('chips_' + kind);
+      const input = document.getElementById('in_' + kind);
+      const chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.innerHTML = esc(val) + '<b>✕</b>';
+      chip.querySelector('b').onclick = () => { const i = store.indexOf(val); if (i > -1) store.splice(i, 1); chip.remove(); };
+      wrap.insertBefore(chip, input);
+    }
+    ['entities','topics'].forEach(kind => {
+      const input = document.getElementById('in_' + kind);
+      document.getElementById('chips_' + kind).addEventListener('click', () => input.focus());
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ',') { e.preventDefault();
+          const v = input.value.trim().replace(/,$/, ''); if (v) addChip(kind, v); input.value = ''; }
+        if (e.key === 'Backspace' && !input.value) { const s = chipStore(kind); if (s.length) {
+          const last = s[s.length - 1]; s.pop();
+          const chips = document.getElementById('chips_' + kind).querySelectorAll('.chip');
+          if (chips.length) chips[chips.length - 1].remove();
+        }}
+      });
+    });
+
+    /* ---- Save ---- */
+    async function saveFocus() {
+      const btn = document.getElementById('saveFocus'); btn.disabled = true; btn.textContent = 'Saving…';
+      const sections = [...document.querySelectorAll('#checks_sections .chk.on')].map(c => Number(c.dataset.n));
+      const patch = {
+        client_name: document.getElementById('f_name').value.trim(),
+        client_contact: document.getElementById('f_contact').value.trim(),
+        client_profile: document.getElementById('f_profile').value.trim(),
+        client_local_sources: document.getElementById('f_sources').value.trim(),
+        region: document.getElementById('f_region').value,
+        output_language: segVal('seg_lang'),
+        news_scope: segVal('seg_scope'),
+        client_entities: entities.slice(),
+        client_topics: topics.slice(),
+        sections_enabled: sections.length ? sections : [1,2,3,4,5,6],
+        updated_at: new Date().toISOString(),
+      };
+      await persist(patch, btn, 'Save changes');
+    }
+    async function saveSchedule() {
+      const btn = document.getElementById('saveSchedule'); btn.disabled = true; btn.textContent = 'Saving…';
+      const patch = {
+        view_mode: segVal('seg_view'),
+        delivery_time: document.getElementById('f_time').value,
+        stories_per_section: Number(document.getElementById('f_stories').value),
+        client_profile_refresh: segVal('seg_refresh'),
+        updated_at: new Date().toISOString(),
+      };
+      await persist(patch, btn, 'Save changes');
+    }
+    async function persist(patch, btn, label) {
+      const { data, error } = await sb.from('clients').update(patch).eq('id', CLIENT.id).select().single();
+      btn.disabled = false; btn.textContent = label;
+      if (error) return toast(error.message, true);
+      CLIENT = data; hydrate(); toast('Saved — your next briefing will reflect this.');
+    }
+
+    /* ---- Briefings ---- */
+    async function loadBriefings() {
+      const { data, error } = await sb.from('briefings').select('id,date,created_at').order('date', { ascending: false });
+      if (error) return;
+      const list = document.getElementById('blist');
+      const latest = document.getElementById('latestWrap');
+      if (!data || !data.length) {
+        list.innerHTML = '<div class="empty">Nothing here yet.</div>';
+        return;
+      }
+      latest.innerHTML = '<iframe class="viewer" src="/api/briefings/' + data[0].id + '" title="Latest briefing"></iframe>';
+      list.innerHTML = data.map(b => {
+        const d = new Date(b.date).toLocaleDateString('en-GB', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+        const t = new Date(b.created_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+        return '<div class="brow"><div><div class="brow-date">' + d + '</div>' +
+          '<div class="brow-meta">Compiled ' + t + '</div></div>' +
+          '<a href="/api/briefings/' + b.id + '" target="_blank">Open ↗</a></div>';
+      }).join('');
+    }
+
+    async function generate() {
+      const btn = document.getElementById('genBtn'); const status = document.getElementById('genStatus');
+      btn.disabled = true; btn.textContent = '↻ Generating…';
+      status.textContent = 'Running your research agents — this takes about 3–4 minutes. You can keep using the page; the briefing will also arrive by email.';
+      const { data: { session } } = await sb.auth.getSession();
+      try {
+        const res = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
+        });
+        const out = await res.json();
+        if (!res.ok) throw new Error(out.error || 'Generation failed');
+        status.textContent = '✓ Done — your fresh briefing is ready below.';
+        await loadBriefings();
+      } catch (err) {
+        status.textContent = '⚠ ' + err.message;
+        btn.disabled = false; btn.textContent = '↻ Generate today\'s briefing';
+        return;
+      }
+      btn.textContent = '✓ Generated today';
+    }
+
+    /* ---- misc ---- */
+    async function logout() { await sb.auth.signOut(); window.location.replace('/login'); }
+    function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+    let toastT;
+    function toast(msg, isErr) {
+      const t = document.getElementById('toast'); t.textContent = msg;
+      t.className = 'toast show' + (isErr ? ' err' : ''); clearTimeout(toastT);
+      toastT = setTimeout(() => { t.className = 'toast' + (isErr ? ' err' : ''); }, 3200);
+    }
+  </script>
+</body>
+</html>

@@ -64,15 +64,18 @@ export default async function handler(req, res) {
 }
 
 /**
- * Check if this client's delivery_time falls within the current cron window.
- * Cron fires at 05:00 UTC. Client may have set a local delivery time.
- * For now, all active clients run daily (delivery time is handled by the email).
- * Extend this function to support weekly mode or timezone-aware delivery.
+ * Check whether this client should be delivered on the current cron run.
+ * Cron fires once per day at 05:00 UTC (see vercel.json).
+ *
+ * NOTE ON delivery_time: honoring the per-client hour (06:30–09:00) requires an
+ * hourly cron ("0 * * * *") so each run can match clients whose hour == current
+ * hour. With the current once-daily cron we deliver all eligible clients on that
+ * single run; precise send-time is part of the scheduling work in the user area.
  */
 function checkDeliveryWindow(client) {
   if (client.view_mode === 'weekly') {
-    // Weekly clients: only run on Mondays (UTC)
-    return new Date().getUTCDay() === 1;
+    // Weekly digest: deliver on Fridays (UTC) to match the signup UI promise.
+    return new Date().getUTCDay() === 5;
   }
   return true; // daily — always run
 }
