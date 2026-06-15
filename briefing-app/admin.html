@@ -541,11 +541,17 @@
       if (!ok) {
         const err = document.getElementById('unlockError');
         err.style.display = 'block';
-        err.textContent = 'This account is not an admin. Try another account or contact support.';
+        err.textContent = 'You are signed in with a non-admin account. Click “Sign in” above to switch to your admin login.';
       }
     })();
 
-    function goSignIn() { window.location.href = '/login?next=' + encodeURIComponent('/admin'); }
+    async function goSignIn() {
+      // Sign out any current (e.g. customer) session first, so the login page
+      // lets you enter your admin credentials instead of auto-forwarding the
+      // existing session straight back here.
+      try { await sb.auth.signOut(); } catch (_) {}
+      window.location.href = '/login?next=' + encodeURIComponent('/admin');
+    }
     async function adminSignOut() { await sb.auth.signOut(); window.location.reload(); }
     function authHeaders(extra) { return Object.assign({ 'Authorization': 'Bearer ' + TOKEN }, extra || {}); }
 
