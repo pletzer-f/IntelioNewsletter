@@ -521,6 +521,80 @@
     .config-key { color: var(--text-3); font-family: 'JetBrains Mono', monospace; font-size: 10.5px; letter-spacing: 0.04em; flex-shrink: 0; }
     .config-val { color: var(--text); font-weight: 600; text-align: right; }
 
+    /* ── AI suggest button + suggestion pills ── */
+    .label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-bottom: 7px; }
+    .label-row label { margin-bottom: 0; }
+    .suggest-btn {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 11px; border-radius: 20px; cursor: pointer;
+      background: var(--accent-dim); border: 1px solid rgba(196,30,58,0.22);
+      color: var(--accent); font-family: 'Inter', sans-serif;
+      font-size: 11.5px; font-weight: 700; letter-spacing: 0.01em;
+      transition: all 0.15s; white-space: nowrap;
+    }
+    .suggest-btn:hover:not(:disabled) { background: var(--accent); color: #fff; border-color: var(--accent); }
+    .suggest-btn:disabled { opacity: 0.55; cursor: default; }
+    .suggestions { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 10px; }
+    .suggestion-pill {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 5px 11px; border-radius: 20px; cursor: pointer;
+      background: var(--surface-hi); border: 1px dashed var(--border);
+      color: var(--text-2); font-size: 12.5px; font-weight: 500;
+      transition: all 0.15s; user-select: none; animation: fIn 0.25s ease both;
+    }
+    .suggestion-pill:hover { border-style: solid; border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+    .suggestion-pill .sp-plus { font-weight: 700; opacity: 0.65; }
+    .suggestions-note { font-size: 11px; color: var(--text-3); margin-top: 8px; width: 100%; line-height: 1.5; }
+
+    /* ── Account setup card (success screen) ── */
+    .account-card {
+      text-align: left; margin: 0 auto 8px; max-width: 460px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 22px 24px;
+      transition: background 0.38s ease, border-color 0.38s ease;
+    }
+    .account-badge {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 5px;
+    }
+    .account-badge::before {
+      content: '✓'; display: inline-flex; align-items: center; justify-content: center;
+      width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+      background: var(--accent); color: #fff; font-size: 11px; font-weight: 700;
+    }
+    .account-badge span { word-break: break-all; }
+    .account-sub { font-size: 12.5px; color: var(--text-2); line-height: 1.6; margin: 0 0 18px; }
+    .account-magic {
+      width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 12px 16px; border-radius: 9px; cursor: pointer;
+      background: var(--accent); color: #fff; border: none;
+      font-family: 'Inter', sans-serif; font-size: 13.5px; font-weight: 700;
+      box-shadow: 0 4px 14px var(--accent-glow); transition: all 0.2s;
+    }
+    .account-magic:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+    .account-magic:disabled { opacity: 0.6; cursor: default; box-shadow: none; }
+    .account-or {
+      display: flex; align-items: center; gap: 12px; margin: 16px 0;
+      color: var(--text-3); font-size: 11px; font-weight: 600;
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    .account-or::before, .account-or::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .account-pw-row { display: flex; gap: 8px; }
+    .account-pw-row input { flex: 1; }
+    .account-pw-btn {
+      padding: 11px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap;
+      background: var(--text); color: var(--surface); border: none;
+      font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700;
+      transition: opacity 0.2s;
+    }
+    .account-pw-btn:hover:not(:disabled) { opacity: 0.85; }
+    .account-pw-btn:disabled { opacity: 0.55; cursor: default; }
+    .account-msg { font-size: 12.5px; line-height: 1.55; margin-top: 12px; }
+    .account-msg.ok  { color: var(--accent); font-weight: 600; }
+    .account-msg.err { color: #C41E3A; }
+    .account-msg a { color: var(--accent); font-weight: 700; text-decoration: none; }
+    .account-msg a:hover { text-decoration: underline; }
+
     /* ══════════════════════════════════
        FEATURES STRIP
     ══════════════════════════════════ */
@@ -699,11 +773,15 @@
       </div>
 
       <div class="field">
-        <label>Key entities to monitor</label>
-        <div class="hint">Add companies, brands, competitors, or business units you want tracked. Press Enter or comma to add each.</div>
+        <div class="label-row">
+          <label>Key entities to monitor</label>
+          <button type="button" class="suggest-btn" id="suggestEntitiesBtn" onclick="suggest('entities')">✨ Suggest from my profile</button>
+        </div>
+        <div class="hint">Add companies, brands, competitors, or business units you want tracked. Press Enter or comma to add each — or let AI propose them from your business description above.</div>
         <div class="chip-input-wrap" id="entitiesWrap">
           <input class="chip-input" id="entityInput" type="text" placeholder="Type a name and press Enter…" autocomplete="off">
         </div>
+        <div class="suggestions" id="entitiesSuggestions"></div>
       </div>
 
       <div class="step-nav">
@@ -770,11 +848,15 @@
       </div>
 
       <div class="field">
-        <label>Custom topics to track</label>
-        <div class="hint">Industry-specific keywords, technologies, regulations, or product categories. Agents will incorporate these into their search queries.</div>
+        <div class="label-row">
+          <label>Custom topics to track</label>
+          <button type="button" class="suggest-btn" id="suggestTopicsBtn" onclick="suggest('topics')">✨ Suggest from my profile</button>
+        </div>
+        <div class="hint">Industry-specific keywords, technologies, regulations, or product categories. Agents will incorporate these into their search queries — or let AI propose them from your business description.</div>
         <div class="chip-input-wrap" id="topicsWrap">
           <input class="chip-input" id="topicInput" type="text" placeholder="e.g. heat pumps, BEG subsidies, R290 refrigerant…" autocomplete="off">
         </div>
+        <div class="suggestions" id="topicsSuggestions"></div>
       </div>
 
       <div class="field">
@@ -1076,7 +1158,24 @@
     <div class="success-icon">I.</div>
     <h2>You're configured.</h2>
     <p>Your intelligence profile is saved. Your first briefing is being generated right now — expect it in your inbox within the next few minutes. After that, it arrives automatically every morning.</p>
+
+    <div class="account-card" id="accountCard">
+      <div class="account-badge"><span id="acctEmail">your email</span> is now registered</div>
+      <div class="account-sub">Set up access to your dashboard — sign in with a one-click email link, or create a password below.</div>
+
+      <button class="account-magic" id="magicBtn" onclick="sendMagicLink()">✉&nbsp; Email me a sign-in link</button>
+
+      <div class="account-or">or create a password</div>
+
+      <div class="account-pw-row">
+        <input type="password" id="acctPassword" placeholder="Choose a password (min. 8 characters)" autocomplete="new-password">
+        <button class="account-pw-btn" id="pwBtn" onclick="createPassword()">Create →</button>
+      </div>
+      <div class="account-msg" id="acctMsg"></div>
+    </div>
+
     <div class="success-actions">
+      <a class="success-primary" id="dashLink" href="/app" style="display:none">Go to your dashboard →</a>
       <a class="success-secondary" href="#" onclick="restartForm()">← Edit configuration</a>
     </div>
     <div class="config-block">
@@ -1123,10 +1222,19 @@
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script>
     /* ════════════════════════════════════════
        INTELIO · Signup
     ════════════════════════════════════════ */
+
+    /* ── SUPABASE (account creation on the success screen) ──
+       Guarded: if the auth library fails to load, the signup funnel must still work. */
+    const sb = (window.supabase && window.INTELIO_SUPABASE_URL)
+      ? supabase.createClient(window.INTELIO_SUPABASE_URL, window.INTELIO_SUPABASE_KEY)
+      : null;
+    const ACCT_REDIRECT = window.location.origin + '/app';
 
     /* ── THEME ── */
     const html = document.documentElement;
@@ -1406,6 +1514,16 @@
       const sw = document.getElementById('successWrap');
       sw.classList.add('visible');
 
+      // Account-setup card: show which email is now registered, reset its state.
+      acctEmail = config.EMAIL;
+      document.getElementById('acctEmail').textContent = config.EMAIL;
+      setAcctMsg('', '');
+      document.getElementById('dashLink').style.display = 'none';
+      document.getElementById('acctPassword').value = '';
+      const mb = document.getElementById('magicBtn'), pb = document.getElementById('pwBtn');
+      mb.disabled = false; mb.innerHTML = '✉&nbsp; Email me a sign-in link';
+      pb.disabled = false; pb.textContent = 'Create →';
+
       const rows = [
         ['Company',   config.CLIENT_NAME],
         ['Region',    config.REGION],
@@ -1437,6 +1555,140 @@
       document.getElementById('step-1').classList.add('active');
       updateProgress();
       window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    /* ── ACCOUNT CREATION (success screen) ── */
+    let acctEmail = '';
+
+    function setAcctMsg(text, kind) {
+      const el = document.getElementById('acctMsg');
+      el.className = 'account-msg' + (kind ? ' ' + kind : '');
+      if (kind) el.innerHTML = text; else el.textContent = text;
+    }
+
+    async function createPassword() {
+      const pw = document.getElementById('acctPassword').value;
+      if (!acctEmail) return;
+      if (!sb) { setAcctMsg('Account setup is temporarily unavailable — you can sign in from the <a href="/login">login page</a> in a moment.', 'err'); return; }
+      if (!pw || pw.length < 8) { setAcctMsg('Please choose a password of at least 8 characters.', 'err'); return; }
+      const btn = document.getElementById('pwBtn');
+      btn.disabled = true; btn.textContent = 'Creating…';
+      setAcctMsg('', '');
+      try {
+        const { data, error } = await sb.auth.signUp({
+          email: acctEmail, password: pw,
+          options: { emailRedirectTo: ACCT_REDIRECT },
+        });
+        if (error) {
+          const m = (error.message || '').toLowerCase();
+          if (m.includes('already') || m.includes('registered')) {
+            setAcctMsg('This email already has an account. <a href="/login">Sign in instead →</a>', 'err');
+          } else {
+            setAcctMsg(error.message || 'Could not create your password — please try again.', 'err');
+          }
+          btn.disabled = false; btn.textContent = 'Create →';
+          return;
+        }
+        btn.textContent = 'Created ✓';
+        document.getElementById('dashLink').style.display = '';
+        if (data && data.session) {
+          // Email confirmation disabled — the user is signed in immediately.
+          setAcctMsg("Password set — you're signed in. Opening your dashboard…", 'ok');
+          setTimeout(() => { window.location.href = ACCT_REDIRECT; }, 1200);
+        } else {
+          // Confirmation required before first sign-in.
+          setAcctMsg('Password created. Check <strong>' + acctEmail + '</strong> to confirm your email, then open your dashboard.', 'ok');
+        }
+      } catch (err) {
+        setAcctMsg('Could not create your password — please try again.', 'err');
+        btn.disabled = false; btn.textContent = 'Create →';
+      }
+    }
+
+    async function sendMagicLink() {
+      if (!acctEmail) return;
+      if (!sb) { setAcctMsg('Account setup is temporarily unavailable — you can sign in from the <a href="/login">login page</a> in a moment.', 'err'); return; }
+      const btn = document.getElementById('magicBtn');
+      btn.disabled = true; btn.innerHTML = 'Sending…';
+      setAcctMsg('', '');
+      try {
+        const { error } = await sb.auth.signInWithOtp({
+          email: acctEmail,
+          options: { emailRedirectTo: ACCT_REDIRECT },
+        });
+        if (error) {
+          setAcctMsg(error.message || 'Could not send the link — please try again.', 'err');
+          btn.disabled = false; btn.innerHTML = '✉&nbsp; Email me a sign-in link';
+          return;
+        }
+        btn.innerHTML = 'Link sent ✓';
+        setAcctMsg('Sign-in link sent to <strong>' + acctEmail + '</strong>. Check your inbox (and spam) to access your dashboard.', 'ok');
+      } catch (err) {
+        setAcctMsg('Could not send the link — please try again.', 'err');
+        btn.disabled = false; btn.innerHTML = '✉&nbsp; Email me a sign-in link';
+      }
+    }
+
+    /* ── AI SUGGESTIONS (entities / topics) ── */
+    function suggest(type) {
+      const isEnt = type === 'entities';
+      const btn = document.getElementById(isEnt ? 'suggestEntitiesBtn' : 'suggestTopicsBtn');
+      const container = document.getElementById(isEnt ? 'entitiesSuggestions' : 'topicsSuggestions');
+      const company = document.getElementById('f-company').value.trim();
+      const description = document.getElementById('f-desc').value.trim();
+      const region = (document.getElementById('f-region') || {}).value || '';
+      const existing = isEnt ? entities : topics;
+
+      if (!company) {
+        container.innerHTML = '<div class="suggestions-note">Add your company name in Step 1 first — suggestions are built from your business profile.</div>';
+        return;
+      }
+
+      const label = btn.innerHTML;
+      btn.disabled = true; btn.textContent = '✨ Thinking…';
+      container.innerHTML = '<div class="suggestions-note">Generating suggestions from your profile…</div>';
+
+      fetch('/api/suggest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, company, description, region, existing }),
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) throw new Error(data.error);
+          renderSuggestions(container, data.suggestions || [], type);
+        })
+        .catch(() => {
+          container.innerHTML = '<div class="suggestions-note">Couldn\'t generate suggestions right now — add them manually above.</div>';
+        })
+        .finally(() => { btn.disabled = false; btn.innerHTML = label; });
+    }
+
+    function renderSuggestions(container, items, type) {
+      if (!items.length) {
+        container.innerHTML = '<div class="suggestions-note">No new suggestions — you may have added them already.</div>';
+        return;
+      }
+      container.innerHTML = '<div class="suggestions-note">Tap to add any that fit:</div>';
+      items.forEach(val => {
+        const pill = document.createElement('span');
+        pill.className = 'suggestion-pill';
+        pill.innerHTML = '<span class="sp-plus">+</span>' + escapeHtml(val);
+        pill.addEventListener('click', () => { addSuggestion(type, val); pill.remove(); });
+        container.appendChild(pill);
+      });
+    }
+
+    function addSuggestion(type, val) {
+      const isEnt = type === 'entities';
+      const store = isEnt ? entities : topics;
+      const wrap  = document.getElementById(isEnt ? 'entitiesWrap' : 'topicsWrap');
+      const input = document.getElementById(isEnt ? 'entityInput' : 'topicInput');
+      if (!store.includes(val)) { store.push(val); addChip(wrap, input, val, store); }
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
     }
   </script>
 
