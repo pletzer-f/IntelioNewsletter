@@ -10,6 +10,7 @@
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/login", "destination": "/login.html" },
     { "source": "/app", "destination": "/app.html" },
+    { "source": "/admin", "destination": "/admin.html" },
     { "source": "/reset", "destination": "/reset.html" }
   ],
   "crons": [
