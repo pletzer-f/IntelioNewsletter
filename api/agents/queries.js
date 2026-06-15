@@ -1,6 +1,11 @@
 // api/agents/queries.js — Search query builder per section agent
 // Takes the client config + monthly profile text and returns targeted search queries
 // that align with SKILL.md's 60% client-specific / 40% sector baseline rule.
+//
+// Honors:
+//   • client.news_scope            'regional' | 'global' | 'both'  → geographic weighting
+//   • client.client_local_sources  comma string of preferred outlets → source-targeted queries
+//   • client.client_priority_sources  text[] of preferred outlets (merged with the above)
 
 /**
  * Build search query arrays for all 6 section agents.
@@ -13,72 +18,91 @@ export function buildSectionQueries(client, profile) {
   const region   = client.region || 'Austria Germany DACH';
   const entities = client.client_entities || [];
   const topics   = client.client_topics   || [];
+  const scope    = client.news_scope || 'both';           // 'regional' | 'global' | 'both'
   const month    = new Date().toLocaleString('en-GB', { month: 'long', year: 'numeric' });
+  const year     = new Date().getFullYear();
 
   // Extract competitor list from profile (lines containing "competitor" or a list after "Competitor map")
-  const competitors = extractCompetitors(profile).slice(0, 5);
+  const competitors   = extractCompetitors(profile).slice(0, 5);
+  const primaryTopics = topics.length ? topics : inferTopics(client);
+
+  // Preferred outlets: signup outlet picker (comma string) + any priority sources (array), deduped.
+  const preferredSources = [
+    ...String(client.client_local_sources || '').split(',').map(s => s.trim()).filter(Boolean),
+    ...(client.client_priority_sources || []),
+  ].filter((v, i, a) => a.indexOf(v) === i);
+  const topSources = preferredSources.slice(0, 3);
+
+  // Scope flags drive which geographic queries are emitted.
+  const includeGlobal   = scope !== 'regional';
+  const includeRegional = scope !== 'global';
+  const marketGeo       = includeRegional ? region : 'global';
 
   // ── Agent 01: Macro & Markets ────────────────────────────────────────────
-  // Deliberately broad: ECB, PMI, FX, commodities, regional macro.
-  // No company-specific queries — macro is market-wide by definition.
+  // Deliberately broad: ECB, PMI, FX, commodities, regional/global macro.
   const agent01 = [
     `ECB interest rate decision ${month}`,
     `Eurozone inflation CPI ${month}`,
     `Eurozone PMI manufacturing services flash ${month}`,
     `TTF natural gas price Europe ${month}`,
     `EUR USD EUR CHF exchange rate ${month}`,
-    `${region} economic outlook GDP ${month}`,
+  ];
+  if (includeRegional) agent01.push(`${region} economic outlook GDP ${month}`);
+  if (includeGlobal)   agent01.push(
     `US Federal Reserve rate decision ${month}`,
     `global trade tariffs Europe impact ${month}`,
-  ];
+  );
 
   // ── Agent 02: Core Industry & Operations ─────────────────────────────────
-  // Topics = what sector the client operates in (e.g. healthcare analytics, pharma).
-  // Focus on sector-wide dynamics, regulation, and competitor news — NOT client company.
-  const primaryTopics = topics.length ? topics : inferTopics(client);
   const agent02 = [
-    ...primaryTopics.slice(0, 3).map(t => `${t} market trends ${region} ${month}`),
-    ...primaryTopics.slice(0, 2).map(t => `${t} regulation Europe ${new Date().getFullYear()}`),
+    ...primaryTopics.slice(0, 3).map(t => `${t} market trends ${marketGeo} ${month}`),
+    ...primaryTopics.slice(0, 2).map(t => `${t} regulation Europe ${year}`),
     ...primaryTopics.slice(0, 2).map(t => `${t} industry outlook ${month}`),
     ...competitors.slice(0, 3).map(c => `${c} ${month}`),
+    // Bias a couple of queries toward the client's preferred outlets.
+    ...topSources.slice(0, 2).map(s => `${primaryTopics[0] || marketGeo} ${s} ${month}`),
   ];
 
   // ── Agent 03: Private Equity & M&A ────────────────────────────────────────
   const agent03 = [
-    ...primaryTopics.slice(0, 2).map(t => `private equity ${t} DACH ${month}`),
+    ...primaryTopics.slice(0, 2).map(t => `private equity ${t} ${includeRegional ? 'DACH' : 'Europe'} ${month}`),
     ...primaryTopics.slice(0, 2).map(t => `M&A ${t} Europe ${month}`),
-    `${primaryTopics[0] || name} valuation multiples sector ${new Date().getFullYear()}`,
+    `${primaryTopics[0] || name} valuation multiples sector ${year}`,
     ...competitors.slice(0, 2).map(c => `${c} acquisition merger ${month}`),
-    `healthcare technology life sciences M&A Europe ${month}`,
   ];
 
   // ── Agent 04: End-Market Demand ────────────────────────────────────────────
-  // Focus on sector demand drivers and customer-side indicators — not client company results.
   const agent04 = [
     ...primaryTopics.slice(0, 3).map(t => `${t} demand growth forecast ${month}`),
-    `${region} healthcare pharma spending ${month}`,
-    `${region} business investment sentiment ${month}`,
     ...primaryTopics.slice(0, 2).map(t => `${t} customer procurement ${month}`),
   ];
+  if (includeRegional) agent04.push(
+    `${region} business investment sentiment ${month}`,
+    `${region} sector spending demand ${month}`,
+  );
+  if (includeGlobal) agent04.push(`global demand outlook ${primaryTopics[0] || 'industrial'} ${month}`);
 
   // ── Agent 05: Assets, Capex & Balance Sheet ───────────────────────────────
-  // Sector-wide capex, financing conditions, real assets — not company-specific.
   const agent05 = [
-    ...primaryTopics.slice(0, 2).map(t => `${t} investment capex ${region} ${month}`),
+    ...primaryTopics.slice(0, 2).map(t => `${t} investment capex ${marketGeo} ${month}`),
     `financing conditions ${primaryTopics[0] || 'industry'} Europe ${month}`,
-    `subsidy incentives ${primaryTopics[0] || 'life sciences'} ${region} ${new Date().getFullYear()}`,
-    `${region} commercial real estate yield ${month}`,
+    `subsidy incentives ${primaryTopics[0] || 'industry'} ${region} ${year}`,
     `European venture capital private equity fundraising ${month}`,
   ];
+  if (includeRegional) agent05.push(`${region} commercial real estate yield ${month}`);
 
   // ── Agent 06: Local Policy & Reputation ───────────────────────────────────
   const agent06 = [
     `"${name}" ${month}`,
     ...entities.map(e => `"${e}" ${month}`).slice(0, 3),
+  ];
+  if (includeRegional) agent06.push(
     `${region} business policy regulation ${month}`,
     `Austria Germany SME tax labor ${month}`,
-    ...primaryTopics.slice(0, 2).map(t => `${t} policy ${region} ${month}`),
-  ];
+  );
+  agent06.push(...primaryTopics.slice(0, 2).map(t => `${t} policy ${region} ${month}`));
+  // Query the client's preferred outlets directly for local/company coverage.
+  agent06.push(...topSources.slice(0, 2).map(s => `"${s}" ${region} ${month}`));
 
   return { agent01, agent02, agent03, agent04, agent05, agent06 };
 }

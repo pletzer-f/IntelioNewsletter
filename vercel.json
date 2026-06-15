@@ -7,7 +7,9 @@
     { "source": "/", "destination": "/signup.html", "permanent": false }
   ],
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api/$1" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/login", "destination": "/login.html" },
+    { "source": "/app", "destination": "/app.html" }
   ],
   "crons": [
     {
@@ -26,6 +28,7 @@
     "api/agents/runner.js": { "maxDuration": 300 },
     "api/preferences.js":   { "maxDuration": 10 },
     "api/chat.js":          { "maxDuration": 30 },
+    "api/generate.js":      { "maxDuration": 300 },
     "api/admin.js":         { "maxDuration": 300 }
   },
   "headers": [

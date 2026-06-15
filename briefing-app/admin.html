@@ -254,6 +254,56 @@
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ── Pipeline progress stepper ── */
+    .pipeline-progress {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-top: 8px;
+      animation: fadeSlide 0.25s ease;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(-8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .pipeline-header {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .pipeline-title {
+      font-size: 13px; font-weight: 600; color: var(--ink);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .pipeline-title .spinner { border-color: rgba(196,30,58,0.25); border-top-color: var(--crimson); width: 14px; height: 14px; }
+    .pipeline-elapsed {
+      font-size: 11px; font-weight: 600; color: var(--muted);
+      font-family: 'JetBrains Mono', monospace; letter-spacing: 0.03em;
+    }
+    .pipeline-bar {
+      width: 100%; height: 4px; background: var(--border); border-radius: 2px;
+      margin-bottom: 14px; overflow: hidden;
+    }
+    .pipeline-bar-fill {
+      height: 100%; background: var(--crimson); border-radius: 2px;
+      transition: width 0.6s cubic-bezier(0.4,0,0.2,1);
+    }
+    .pipeline-steps {
+      display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+    }
+    .pipeline-step {
+      text-align: center; font-size: 9.5px; font-weight: 600;
+      letter-spacing: 0.03em; color: var(--muted); padding: 6px 2px;
+      border-radius: 6px; transition: all 0.25s;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pipeline-step.done { color: var(--green); background: rgba(22,163,74,0.08); }
+    .pipeline-step.active { color: var(--crimson); background: rgba(196,30,58,0.08); font-weight: 700; }
+    .pipeline-step.failed { color: #DC2626; background: #FEF2F2; }
+    @media (max-width: 700px) {
+      .pipeline-steps { grid-template-columns: repeat(4, 1fr); }
+    }
+
     /* Empty + loading states */
     .table-empty {
       padding: 48px 20px;
@@ -358,15 +408,8 @@
     <div class="unlock-card">
       <div class="unlock-icon">✦</div>
       <h1>Admin Console</h1>
-      <p>Enter your admin secret to access the briefing dashboard.</p>
-      <input
-        class="unlock-input"
-        id="secretInput"
-        type="password"
-        placeholder="Enter admin secret…"
-        autocomplete="off"
-      >
-      <button class="unlock-btn" onclick="unlock()">Unlock →</button>
+      <p>Sign in with your admin account to access the briefing dashboard.</p>
+      <button class="unlock-btn" onclick="goSignIn()">Sign in →</button>
       <div class="unlock-error" id="unlockError">Incorrect secret — try again.</div>
     </div>
   </div>
@@ -382,6 +425,7 @@
       <div style="display:flex;gap:10px;align-items:center;">
         <button class="push-all-btn" style="background:var(--surface-2);color:var(--ink);border:1px solid var(--border);" onclick="reloadDashboard()" title="Refresh data">↻ Refresh</button>
         <button class="push-all-btn" id="pushAllBtn" onclick="pushAll()">Push to all users</button>
+        <button class="push-all-btn" style="background:var(--surface-2);color:var(--ink);border:1px solid var(--border);" onclick="adminSignOut()" title="Sign out">Sign out</button>
       </div>
     </div>
 
@@ -479,28 +523,30 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js"></script>
   <script>
     const API_BASE = '/api';
-    let SECRET = sessionStorage.getItem('intelio_admin_secret') || '';
+    const sb = supabase.createClient(window.INTELIO_SUPABASE_URL, window.INTELIO_SUPABASE_KEY);
+    let TOKEN = null;
     let clientData = [];
 
-    // ── Unlock ──────────────────────────────────────────────────────────────
-    if (SECRET) attemptLoad();
-
-    document.getElementById('secretInput').addEventListener('keydown', e => {
-      if (e.key === 'Enter') unlock();
-    });
-
-    async function unlock() {
-      const val = document.getElementById('secretInput').value.trim();
-      if (!val) return;
-      SECRET = val;
+    // ── Require an admin session ──────────────────────────────────────────────
+    (async function initAdmin() {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session) return; // remain on the sign-in card
+      TOKEN = session.access_token;
       const ok = await attemptLoad();
       if (!ok) {
-        document.getElementById('unlockError').style.display = 'block';
-        SECRET = '';
+        const err = document.getElementById('unlockError');
+        err.style.display = 'block';
+        err.textContent = 'This account is not an admin. Try another account or contact support.';
       }
-    }
+    })();
+
+    function goSignIn() { window.location.href = '/login?next=' + encodeURIComponent('/admin'); }
+    async function adminSignOut() { await sb.auth.signOut(); window.location.reload(); }
+    function authHeaders(extra) { return Object.assign({ 'Authorization': 'Bearer ' + TOKEN }, extra || {}); }
 
     async function reloadDashboard() {
       document.getElementById('dashSubtitle').textContent = 'Refreshing…';
@@ -510,10 +556,9 @@
 
     async function attemptLoad() {
       try {
-        const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
+        const res = await fetch(`${API_BASE}/admin`, { headers: authHeaders() });
         if (!res.ok) return false;
         const data = await res.json();
-        sessionStorage.setItem('intelio_admin_secret', SECRET);
         showDashboard(data.clients);
         return true;
       } catch {
@@ -557,7 +602,7 @@
           : formatDate(lastDate);
         const lastClass = !lastDate ? 'never' : lastDate === today ? 'today' : '';
         const viewLink = c.briefing_url
-          ? `<a href="${c.briefing_url}" target="_blank" style="font-size:11px;color:var(--crimson);text-decoration:none;margin-left:6px;font-weight:600;" title="View briefing">↗</a>`
+          ? `<a href="${c.briefing_url}?v=${Date.now()}" target="_blank" style="font-size:11px;color:var(--crimson);text-decoration:none;margin-left:6px;font-weight:600;" title="View briefing">↗</a>`
           : '';
         const updatedLabel = c.updated_at
           ? (new Date(c.updated_at).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' }) + ' ' + new Date(c.updated_at).toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' }))
@@ -582,25 +627,154 @@
       }).join('');
     }
 
+    // ── Pipeline progress tracker ─────────────────────────────────────────────
+    const PIPELINE_STEPS = [
+      { id: 'profile',  label: 'Profile',       dur: 12 },
+      { id: 'search',   label: 'Search',        dur: 18 },
+      { id: 'agents',   label: 'AI Agents',     dur: 55 },
+      { id: 'orch',     label: 'Orchestrator',   dur: 20 },
+      { id: 'assemble', label: 'Assembly',       dur: 3  },
+      { id: 'save',     label: 'Save',           dur: 3  },
+      { id: 'email',    label: 'Email',          dur: 5  },
+    ];
+
+    function createProgressEl(clientId) {
+      const total = PIPELINE_STEPS.reduce((s, p) => s + p.dur, 0);
+      const stepsHtml = PIPELINE_STEPS.map(s =>
+        `<div class="pipeline-step" id="ps-${clientId}-${s.id}">${s.label}</div>`
+      ).join('');
+      const el = document.createElement('div');
+      el.className = 'pipeline-progress';
+      el.id = `progress-${clientId}`;
+      el.innerHTML = `
+        <div class="pipeline-header">
+          <div class="pipeline-title"><span class="spinner"></span>Generating briefing…</div>
+          <div class="pipeline-elapsed" id="elapsed-${clientId}">0:00</div>
+        </div>
+        <div class="pipeline-bar"><div class="pipeline-bar-fill" id="bar-${clientId}" style="width:2%"></div></div>
+        <div class="pipeline-steps">${stepsHtml}</div>`;
+      return el;
+    }
+
+    function startPipelineProgress(clientId) {
+      const row = document.getElementById(`row-${clientId}`);
+      if (!row) return null;
+      // Remove any existing progress element
+      const existing = document.getElementById(`progress-${clientId}`);
+      if (existing) existing.remove();
+      const el = createProgressEl(clientId);
+      row.after(el);
+
+      const start = Date.now();
+      const total = PIPELINE_STEPS.reduce((s, p) => s + p.dur, 0);
+      let stepIdx = 0;
+      // Mark first step as active
+      const firstStep = document.getElementById(`ps-${clientId}-${PIPELINE_STEPS[0].id}`);
+      if (firstStep) firstStep.classList.add('active');
+
+      const timer = setInterval(() => {
+        const elapsed = (Date.now() - start) / 1000;
+        // Update elapsed timer
+        const mins = Math.floor(elapsed / 60);
+        const secs = Math.floor(elapsed % 60);
+        const elapsedEl = document.getElementById(`elapsed-${clientId}`);
+        if (elapsedEl) elapsedEl.textContent = `${mins}:${String(secs).padStart(2, '0')}`;
+
+        // Advance steps based on cumulative duration
+        let cumul = 0;
+        for (let i = 0; i < PIPELINE_STEPS.length; i++) {
+          cumul += PIPELINE_STEPS[i].dur;
+          const stepEl = document.getElementById(`ps-${clientId}-${PIPELINE_STEPS[i].id}`);
+          if (!stepEl) continue;
+          if (elapsed >= cumul) {
+            stepEl.classList.remove('active');
+            stepEl.classList.add('done');
+            // Activate next step
+            if (i + 1 < PIPELINE_STEPS.length) {
+              const nextEl = document.getElementById(`ps-${clientId}-${PIPELINE_STEPS[i + 1].id}`);
+              if (nextEl && !nextEl.classList.contains('done')) nextEl.classList.add('active');
+            }
+          } else if (elapsed >= cumul - PIPELINE_STEPS[i].dur) {
+            if (!stepEl.classList.contains('done')) stepEl.classList.add('active');
+          }
+        }
+
+        // Update progress bar (cap at 92% — last 8% on completion)
+        const pct = Math.min(92, (elapsed / total) * 92);
+        const bar = document.getElementById(`bar-${clientId}`);
+        if (bar) bar.style.width = pct + '%';
+      }, 500);
+
+      return { timer, start };
+    }
+
+    function finishPipelineProgress(clientId, tracker, success, errorStep) {
+      if (tracker?.timer) clearInterval(tracker.timer);
+      const el = document.getElementById(`progress-${clientId}`);
+      if (!el) return;
+
+      if (success) {
+        // Mark all steps done, fill bar to 100%
+        PIPELINE_STEPS.forEach(s => {
+          const stepEl = document.getElementById(`ps-${clientId}-${s.id}`);
+          if (stepEl) { stepEl.classList.remove('active'); stepEl.classList.add('done'); }
+        });
+        const bar = document.getElementById(`bar-${clientId}`);
+        if (bar) bar.style.width = '100%';
+        const title = el.querySelector('.pipeline-title');
+        if (title) title.innerHTML = '✓ Briefing complete';
+        // Show elapsed
+        if (tracker?.start) {
+          const secs = Math.round((Date.now() - tracker.start) / 1000);
+          const mins = Math.floor(secs / 60);
+          const rem = secs % 60;
+          const elapsedEl = document.getElementById(`elapsed-${clientId}`);
+          if (elapsedEl) elapsedEl.textContent = `${mins}:${String(rem).padStart(2, '0')}`;
+        }
+        // Fade out after 5 seconds
+        setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.5s'; setTimeout(() => el.remove(), 500); }, 5000);
+      } else {
+        // Mark failed step
+        const bar = document.getElementById(`bar-${clientId}`);
+        if (bar) bar.querySelector('.pipeline-bar-fill')?.style && (bar.querySelector('.pipeline-bar-fill').style.background = '#DC2626');
+        // Try to identify which step failed from error message
+        if (errorStep) {
+          const stepMap = { 'getClient': 'profile', 'getProfile': 'profile', 'agent00': 'profile',
+            'search': 'search', 'agents': 'agents', 'orchestrator': 'orch',
+            'assemble': 'assemble', 'save': 'save', 'email': 'email' };
+          for (const [key, stepId] of Object.entries(stepMap)) {
+            if (errorStep.includes(key)) {
+              const stepEl = document.getElementById(`ps-${clientId}-${stepId}`);
+              if (stepEl) { stepEl.classList.remove('active'); stepEl.classList.add('failed'); }
+              break;
+            }
+          }
+        }
+        const title = el.querySelector('.pipeline-title');
+        if (title) title.innerHTML = '✗ Pipeline failed';
+        setTimeout(() => el.remove(), 10000);
+      }
+    }
+
     // ── Push one ─────────────────────────────────────────────────────────────
     async function pushOne(clientId, name) {
       const btn = document.getElementById(`btn-${clientId}`);
       btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>Generating…';
+      btn.innerHTML = '<span class="spinner"></span>Running…';
 
       const prePushId = (clientData.find(c => c.id === clientId) || {}).last_briefing_id || null;
+      const tracker = startPipelineProgress(clientId);
 
       try {
-        // POST runs the full pipeline synchronously (~2–4 min).
         const res = await fetch(`${API_BASE}/admin`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ secret: SECRET, clientId }),
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ clientId }),
         });
         const data = await res.json();
         if (!res.ok || !data.success) throw new Error(data.error || 'Pipeline failed');
 
-        // Pipeline complete — refresh the row to show new briefing date + link
+        finishPipelineProgress(clientId, tracker, true);
         await refreshLastBriefing(clientId, prePushId);
         if (data.emailError) {
           showToast(`⚠ Briefing saved but email failed: ${data.emailError}`);
@@ -611,6 +785,7 @@
         btn.textContent = 'Push briefing';
 
       } catch (err) {
+        finishPipelineProgress(clientId, tracker, false, err.message);
         showToast(`Error for ${name}: ${err.message}`);
         btn.classList.add('error');
         btn.textContent = '✗ Failed — retry?';
@@ -651,7 +826,7 @@
     // Without prePushId: returns true if a briefing exists for today (legacy behaviour).
     async function refreshLastBriefing(clientId, prePushId = null) {
       try {
-        const res = await fetch(`${API_BASE}/admin?secret=${encodeURIComponent(SECRET)}`);
+        const res = await fetch(`${API_BASE}/admin`, { headers: authHeaders() });
         if (!res.ok) return false;
         const data = await res.json();
         const client = data.clients.find(c => c.id === clientId);
@@ -666,7 +841,7 @@
         if (lastEl) {
           const label = lastDate === today ? 'Today' : lastDate ? formatDate(lastDate) : 'Never';
           const link  = briefingUrl
-            ? `<a href="${briefingUrl}" target="_blank" style="font-size:11px;color:var(--crimson);text-decoration:none;margin-left:6px;font-weight:600;" title="View briefing">↗</a>`
+            ? `<a href="${briefingUrl}?v=${Date.now()}" target="_blank" style="font-size:11px;color:var(--crimson);text-decoration:none;margin-left:6px;font-weight:600;" title="View briefing">↗</a>`
             : '';
           lastEl.innerHTML = label + link;
           lastEl.className = 'client-last' + (lastDate === today ? ' today' : !lastDate ? ' never' : '');
@@ -739,7 +914,6 @@
       btn.textContent = 'Saving…';
 
       const payload = {
-        secret:      SECRET,
         clientId:    editingClientId,
         delivery_time:        document.getElementById('editDeliveryTime').value.replace(':', ''),
         output_language:      document.getElementById('editLanguage').value,
@@ -754,7 +928,7 @@
       try {
         const res = await fetch(`${API_BASE}/admin`, {
           method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(payload),
         });
         const data = await res.json();
