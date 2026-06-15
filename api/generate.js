@@ -47,6 +47,8 @@ export default async function handler(req, res) {
     // Roll back the slot so the user can retry after a failure.
     await supabase.from('clients').update({ last_manual_run_at: prev }).eq('id', client.id);
     console.error(`[generate] Pipeline failed for client ${client.id}:`, err);
-    return res.status(500).json({ error: err.message });
+    // Surface the originating code location so an unlabeled error is diagnosable.
+    const where = (err?.stack || '').split('\n').slice(1, 4).map(s => s.trim()).join('  ·  ');
+    return res.status(500).json({ error: err?.message || String(err), where });
   }
 }

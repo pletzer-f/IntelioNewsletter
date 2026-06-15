@@ -464,7 +464,7 @@
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
         });
         const out = await res.json();
-        if (!res.ok) throw new Error(out.error || 'Generation failed');
+        if (!res.ok) throw new Error((out.error || 'Generation failed') + (out.where ? '  @ ' + out.where : ''));
         status.textContent = '✓ Done — your fresh briefing is ready below.';
         await loadBriefings();
       } catch (err) {
