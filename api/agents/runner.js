@@ -53,6 +53,10 @@ export async function runPipelineForClient(clientId) {
   }
   console.log(`[runner] Starting pipeline for ${client.client_name} (${clientId})`);
 
+  // Token accumulator — every Claude call in this pipeline adds to it, so we can
+  // persist the real input/output token counts and compute cost in the admin console.
+  const usage = { input: 0, output: 0 };
+
   // Step 0: Ensure fresh monthly profile
   let profile;
   try {
@@ -82,7 +86,7 @@ export async function runPipelineForClient(clientId) {
     ];
     try {
       const profileSearch = await multiSearch(profileQueries, { count: 10, freshness: 'pm' });
-      const profileMarkdown = await runAgent00(client, profileSearch);
+      const profileMarkdown = await runAgent00(client, profileSearch, usage);
       const saved = await saveProfile(clientId, profileMarkdown);
       profile = saved;
     } catch (err) {
@@ -127,12 +131,12 @@ export async function runPipelineForClient(clientId) {
   let h01, h02, h03, h04, h05, h06;
   try {
     [h01, h02, h03, h04, h05, h06] = await Promise.all([
-      enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01) : Promise.resolve(''),
-      enabledSections.has(2) ? runAgent02(client, profileExcerpt, sr02) : Promise.resolve(''),
-      enabledSections.has(3) ? runAgent03(client, profileExcerpt, sr03) : Promise.resolve(''),
-      enabledSections.has(4) ? runAgent04(client, profileExcerpt, sr04) : Promise.resolve(''),
-      enabledSections.has(5) ? runAgent05(client, profileExcerpt, sr05) : Promise.resolve(''),
-      enabledSections.has(6) ? runAgent06(client, profileExcerpt, sr06) : Promise.resolve(''),
+      enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01, usage) : Promise.resolve(''),
+      enabledSections.has(2) ? runAgent02(client, profileExcerpt, sr02, usage) : Promise.resolve(''),
+      enabledSections.has(3) ? runAgent03(client, profileExcerpt, sr03, usage) : Promise.resolve(''),
+      enabledSections.has(4) ? runAgent04(client, profileExcerpt, sr04, usage) : Promise.resolve(''),
+      enabledSections.has(5) ? runAgent05(client, profileExcerpt, sr05, usage) : Promise.resolve(''),
+      enabledSections.has(6) ? runAgent06(client, profileExcerpt, sr06, usage) : Promise.resolve(''),
     ]);
   } catch (err) {
     throw new Error(`[Step 3/agents] ${err.message}`);
@@ -144,7 +148,7 @@ export async function runPipelineForClient(clientId) {
   console.log(`[runner] Running orchestrator`);
   let orchestratorHtml;
   try {
-    orchestratorHtml = await runOrchestrator(client, profileText, sectionHtmls);
+    orchestratorHtml = await runOrchestrator(client, profileText, sectionHtmls, usage);
   } catch (err) {
     throw new Error(`[Step 4/orchestrator] ${err.message}`);
   }
@@ -168,11 +172,11 @@ export async function runPipelineForClient(clientId) {
   // Step 6: Save to Supabase
   let briefing;
   try {
-    briefing = await saveBriefing(clientId, briefingHtml, today);
+    briefing = await saveBriefing(clientId, briefingHtml, today, usage.input, usage.output);
   } catch (err) {
     throw new Error(`[Step 6/save] ${err.message}`);
   }
-  console.log(`[runner] Briefing saved: ${briefing.id}`);
+  console.log(`[runner] Briefing saved: ${briefing.id} (tokens — in: ${usage.input}, out: ${usage.output})`);
 
   // Step 7: Send email — pass orchestratorHtml (executive summary) + section names
   // We do NOT send the full briefingHtml; the email contains the summary + a CTA link.

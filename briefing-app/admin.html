@@ -173,6 +173,10 @@
     }
     .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); letter-spacing: 0.07em; text-transform: uppercase; margin-bottom: 6px; }
     .stat-value { font-size: 28px; font-weight: 700; color: var(--ink); }
+    .stat-sub { font-size: 11.5px; color: var(--muted); margin-top: 7px; }
+    .cost-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin: 4px 0 14px; }
+    .cost-head h2 { font-size: 13px; font-weight: 700; color: var(--ink); letter-spacing: 0.02em; }
+    .cost-note { font-size: 11.5px; color: var(--muted); text-align: right; }
 
     /* ── Client table ── */
     .table-card {
@@ -493,6 +497,28 @@
       </div>
     </div>
 
+    <div class="cost-head">
+      <h2>Usage &amp; cost</h2>
+      <span class="cost-note" id="costBasis">—</span>
+    </div>
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-label">Avg cost / briefing</div>
+        <div class="stat-value" id="costAvg">—</div>
+        <div class="stat-sub" id="costAvgSub"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total cost</div>
+        <div class="stat-value" id="costTotal">—</div>
+        <div class="stat-sub" id="costTotalSub"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Tokens used (in · out)</div>
+        <div class="stat-value" id="costTokens" style="font-size:22px;">—</div>
+        <div class="stat-sub" id="costTokensSub"></div>
+      </div>
+    </div>
+
     <div class="table-card">
       <div class="table-head">
         <span>Company</span>
@@ -676,6 +702,31 @@
       renderClients(clientData);
       renderSettings(data.settings || { daily_enabled: true, monthly_enabled: true });
       renderAdmins(data.admins || []);
+      renderCosts(data.costs || {});
+    }
+
+    // ── Usage & cost overview ──────────────────────────────────────────────────
+    function renderCosts(c) {
+      c = c || {};
+      const money  = n => (n == null) ? '—' : '$' + (n < 0.01 ? n.toFixed(4) : n.toFixed(2));
+      const ktok   = n => { n = n || 0; return n >= 1000 ? (n / 1000).toFixed(n >= 100000 ? 0 : 1) + 'K' : String(n); };
+      const costed = c.costed_briefings || 0;
+
+      document.getElementById('costAvg').textContent    = money(c.avg_cost);
+      document.getElementById('costTotal').textContent  = money(c.total_cost != null ? c.total_cost : 0);
+      document.getElementById('costTokens').textContent = ktok(c.total_input_tokens) + ' · ' + ktok(c.total_output_tokens);
+
+      document.getElementById('costAvgSub').textContent =
+        costed ? `${ktok(c.avg_input_tokens)} in · ${ktok(c.avg_output_tokens)} out per briefing` : 'no usage data yet';
+      document.getElementById('costTotalSub').textContent =
+        `across ${costed} briefing${costed === 1 ? '' : 's'} with usage data`;
+      document.getElementById('costTokensSub').textContent =
+        `$${Math.round(c.input_per_million || 3)}/M in · $${Math.round(c.output_per_million || 15)}/M out`;
+
+      const untracked = (c.total_briefings || 0) - costed;
+      document.getElementById('costBasis').textContent =
+        `${c.model || 'claude-sonnet-4-6'} · estimated` +
+        (untracked > 0 ? ` · ${untracked} older briefing${untracked === 1 ? '' : 's'} without usage data` : '');
     }
 
     // ── Global system toggles ─────────────────────────────────────────────────

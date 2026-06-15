@@ -9,6 +9,7 @@
 import { supabase } from '../lib/supabase.js';
 import { runPipelineForClient } from './agents/runner.js';
 import { getUserFromRequest } from './_auth.js';
+import { PRICE_PER_INPUT_TOKEN, PRICE_PER_OUTPUT_TOKEN } from '../lib/claude.js';
 
 export const config = { runtime: 'nodejs' };
 
@@ -53,18 +54,52 @@ export default async function handler(req, res) {
     if (ce) return res.status(500).json({ error: ce.message });
 
     const { data: briefings, error: be } = await supabase
-      .from('briefings').select('id, client_id, date, created_at').order('date', { ascending: false });
+      .from('briefings').select('id, client_id, date, created_at, input_tokens, output_tokens').order('date', { ascending: false });
     if (be) return res.status(500).json({ error: be.message });
 
     const latest = {};
     for (const b of (briefings || [])) if (!latest[b.client_id]) latest[b.client_id] = b;
+
+    // ── Cost overview: aggregate real token usage → USD at current model pricing ──
+    const perClientCost = {};   // clientId → { cost, count }
+    let totalIn = 0, totalOut = 0, costedCount = 0;
+    for (const b of (briefings || [])) {
+      if (b.input_tokens == null && b.output_tokens == null) continue;  // older briefings have no usage
+      const inT  = b.input_tokens  || 0;
+      const outT = b.output_tokens || 0;
+      const cost = inT * PRICE_PER_INPUT_TOKEN + outT * PRICE_PER_OUTPUT_TOKEN;
+      totalIn += inT; totalOut += outT; costedCount += 1;
+      const pc = perClientCost[b.client_id] || (perClientCost[b.client_id] = { cost: 0, count: 0 });
+      pc.cost += cost; pc.count += 1;
+    }
+    const totalCost = totalIn * PRICE_PER_INPUT_TOKEN + totalOut * PRICE_PER_OUTPUT_TOKEN;
+    const costs = {
+      currency:            'USD',
+      model:               'claude-sonnet-4-6',
+      input_per_million:   PRICE_PER_INPUT_TOKEN  * 1_000_000,
+      output_per_million:  PRICE_PER_OUTPUT_TOKEN * 1_000_000,
+      total_briefings:     (briefings || []).length,
+      costed_briefings:    costedCount,
+      total_input_tokens:  totalIn,
+      total_output_tokens: totalOut,
+      total_cost:          totalCost,
+      avg_cost:            costedCount ? totalCost / costedCount : null,
+      avg_input_tokens:    costedCount ? Math.round(totalIn  / costedCount) : null,
+      avg_output_tokens:   costedCount ? Math.round(totalOut / costedCount) : null,
+    };
+
     const appUrl = process.env.APP_URL || `https://${process.env.VERCEL_URL}`;
-    const result = (clients || []).map(c => ({
-      ...c,
-      last_briefing:    latest[c.id]?.date || null,
-      last_briefing_id: latest[c.id]?.id   || null,
-      briefing_url:     latest[c.id]?.id ? `${appUrl}/api/briefings/${latest[c.id].id}` : null,
-    }));
+    const result = (clients || []).map(c => {
+      const pc = perClientCost[c.id];
+      return {
+        ...c,
+        last_briefing:    latest[c.id]?.date || null,
+        last_briefing_id: latest[c.id]?.id   || null,
+        briefing_url:     latest[c.id]?.id ? `${appUrl}/api/briefings/${latest[c.id].id}` : null,
+        avg_cost:         pc && pc.count ? pc.cost / pc.count : null,
+        briefing_count:   pc ? pc.count : 0,
+      };
+    });
 
     const { data: settings } = await supabase.from('app_settings').select('daily_enabled, monthly_enabled').eq('id', 1).maybeSingle();
     const { data: admins }   = await supabase.from('admins').select('email').order('email');
@@ -73,6 +108,7 @@ export default async function handler(req, res) {
       clients:  result,
       settings: settings || { daily_enabled: true, monthly_enabled: true },
       admins:   (admins || []).map(a => a.email),
+      costs,
     });
   }
 
