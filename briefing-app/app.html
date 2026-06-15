@@ -463,8 +463,14 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + session.access_token },
         });
-        const out = await res.json();
-        if (!res.ok) throw new Error((out.error || 'Generation failed') + (out.where ? '  @ ' + out.where : ''));
+        const raw = await res.text();
+        let out = {};
+        try { out = raw ? JSON.parse(raw) : {}; }
+        catch (_) {
+          // Non-JSON response = the function crashed (e.g. a missing env var) or timed out.
+          throw new Error(`Server error (HTTP ${res.status}) — likely a missing environment variable on the server. ${raw.slice(0, 180)}`);
+        }
+        if (!res.ok) throw new Error((out.error || `Generation failed (HTTP ${res.status})`) + (out.where ? '  @ ' + out.where : ''));
         status.textContent = '✓ Done — your fresh briefing is ready below.';
         await loadBriefings();
       } catch (err) {
