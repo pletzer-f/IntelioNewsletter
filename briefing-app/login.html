@@ -82,6 +82,7 @@
         <input type="password" id="p-pass" placeholder="••••••••" autocomplete="current-password">
         <button class="btn" id="p-btn" onclick="signInPw()">Sign in →</button>
         <button class="btn btn-ghost" id="p-signup" onclick="signUpPw()">Create an account</button>
+        <div style="text-align:center;margin-top:14px"><a href="#" onclick="forgotPw(event)" style="font-size:12.5px;color:var(--text-3);text-decoration:none">Forgot your password?</a></div>
       </div>
 
       <div class="foot">New here? <a href="/signup.html">Set up a briefing →</a></div>
@@ -144,6 +145,15 @@
       if (error) return showMsg(error.message, 'err');
       if (data.session) window.location.replace(NEXT);
       else showMsg('Account created — check your inbox to confirm your email, then sign in.', 'ok');
+    }
+
+    async function forgotPw(e) {
+      e.preventDefault();
+      const email = document.getElementById('p-email').value.trim();
+      if (!validEmail(email)) return showMsg('Enter your email in the field above, then click "Forgot your password?".', 'err');
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/reset' });
+      if (error) return showMsg(error.message, 'err');
+      showMsg('Check your inbox — we sent a password-reset link to ' + email + '.', 'ok');
     }
 
     document.addEventListener('keydown', e => {
