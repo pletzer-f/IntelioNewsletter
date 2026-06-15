@@ -1,7 +1,7 @@
 // api/cron/monthly.js — GET /api/cron/monthly (Vercel Cron, 04:00 UTC on 1st of month)
 // Refreshes Agent 00 monthly profile for all active clients.
 
-import { getAllActiveClients, getLatestProfile, saveProfile } from '../../lib/supabase.js';
+import { supabase, getAllActiveClients, getLatestProfile, saveProfile } from '../../lib/supabase.js';
 import { runAgent00 } from '../../lib/claude.js';
 import { multiSearch } from '../../lib/search.js';
 
@@ -14,6 +14,13 @@ export default async function handler(req, res) {
   }
 
   console.log('[cron/monthly] Starting monthly profile refresh');
+
+  // Respect the global pause toggle (admin console).
+  const { data: settings } = await supabase.from('app_settings').select('monthly_enabled').eq('id', 1).maybeSingle();
+  if (settings && settings.monthly_enabled === false) {
+    console.log('[cron/monthly] Monthly briefings paused via admin toggle — skipping.');
+    return res.status(200).json({ skipped: true, reason: 'monthly briefings disabled' });
+  }
 
   const clients = await getAllActiveClients();
   const results = [];

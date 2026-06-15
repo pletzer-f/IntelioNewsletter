@@ -1,7 +1,7 @@
 // api/cron/daily.js — GET /api/cron/daily (Vercel Cron, 05:00 UTC daily)
 // Loops through all active clients and fires the agent runner for each.
 
-import { getAllActiveClients } from '../../lib/supabase.js';
+import { supabase, getAllActiveClients } from '../../lib/supabase.js';
 import { runPipelineForClient } from '../agents/runner.js';
 
 export const config = { runtime: 'nodejs' };
@@ -15,6 +15,13 @@ export default async function handler(req, res) {
 
   const startTime = Date.now();
   console.log('[cron/daily] Starting daily briefing run');
+
+  // Respect the global pause toggle (admin console).
+  const { data: settings } = await supabase.from('app_settings').select('daily_enabled').eq('id', 1).maybeSingle();
+  if (settings && settings.daily_enabled === false) {
+    console.log('[cron/daily] Daily briefings paused via admin toggle — skipping.');
+    return res.status(200).json({ skipped: true, reason: 'daily briefings disabled' });
+  }
 
   let clients;
   try {

@@ -1,9 +1,10 @@
 // api/admin.js — Internal admin endpoints
 // Auth: admin Supabase session (Authorization: Bearer <token>, email in public.admins)
-//       OR x-cron-secret/secret === CRON_SECRET (automation / back-compat).
-// GET  /api/admin          → list all clients + last briefing date
-// PUT  /api/admin          → update client settings
-// POST /api/admin          → run full briefing pipeline for one client
+//       OR secret === CRON_SECRET (automation / back-compat).
+// GET  → clients + global settings + admins
+// PUT  → update one client's settings
+// POST → action dispatch: push | toggle_active | create_client | delete_client
+//                          | set_settings | add_admin | remove_admin
 
 import { supabase } from '../lib/supabase.js';
 import { runPipelineForClient } from './agents/runner.js';
@@ -16,15 +17,10 @@ function bodyOf(req) {
   catch { return {}; }
 }
 
-// True if the request is from an allowlisted admin account, or carries CRON_SECRET.
 async function isAdmin(req) {
   const user = await getUserFromRequest(req);
   if (user?.email) {
-    const { data } = await supabase
-      .from('admins')
-      .select('email')
-      .ilike('email', user.email)
-      .maybeSingle();
+    const { data } = await supabase.from('admins').select('email').ilike('email', user.email).maybeSingle();
     if (data) return true;
   }
   const secret = req.query.secret || bodyOf(req).secret;
@@ -32,8 +28,13 @@ async function isAdmin(req) {
   return false;
 }
 
+const SLUG_TO_NUM = { macro: 1, industry: 2, pe: 3, demand: 4, assets: 5, local: 6 };
+function normSections(arr) {
+  const r = (arr || []).map(v => { const n = Number(v); if (!isNaN(n) && n > 0) return n; return SLUG_TO_NUM[v] ?? null; }).filter(n => n !== null);
+  return r.length ? r : [1, 2, 3, 4, 5, 6];
+}
+
 export default async function handler(req, res) {
-  // CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, OPTIONS');
@@ -43,78 +44,138 @@ export default async function handler(req, res) {
 
   if (!(await isAdmin(req))) return res.status(401).json({ error: 'Unauthorized' });
 
-  // ── GET: list all clients with last briefing ─────────────────────────────
+  // ── GET: clients + settings + admins ────────────────────────────────────
   if (req.method === 'GET') {
     const { data: clients, error: ce } = await supabase
       .from('clients')
-      .select('id, client_name, email, delivery_time, output_language, region, stories_per_section, client_profile, client_entities, client_topics, client_local_sources, active, created_at, updated_at')
+      .select('id, client_name, email, delivery_time, output_language, region, news_scope, view_mode, stories_per_section, client_profile, client_entities, client_topics, client_local_sources, sections_enabled, active, created_at, updated_at')
       .order('updated_at', { ascending: false });
-
     if (ce) return res.status(500).json({ error: ce.message });
 
     const { data: briefings, error: be } = await supabase
-      .from('briefings')
-      .select('id, client_id, date, created_at')
-      .order('date', { ascending: false });
-
+      .from('briefings').select('id, client_id, date, created_at').order('date', { ascending: false });
     if (be) return res.status(500).json({ error: be.message });
 
-    const latestBriefing = {};
-    for (const b of (briefings || [])) {
-      if (!latestBriefing[b.client_id]) latestBriefing[b.client_id] = b;
-    }
-
+    const latest = {};
+    for (const b of (briefings || [])) if (!latest[b.client_id]) latest[b.client_id] = b;
     const appUrl = process.env.APP_URL || `https://${process.env.VERCEL_URL}`;
     const result = (clients || []).map(c => ({
       ...c,
-      last_briefing:    latestBriefing[c.id]?.date || null,
-      last_briefing_id: latestBriefing[c.id]?.id   || null,
-      briefing_url:     latestBriefing[c.id]?.id
-        ? `${appUrl}/api/briefings/${latestBriefing[c.id].id}`
-        : null,
+      last_briefing:    latest[c.id]?.date || null,
+      last_briefing_id: latest[c.id]?.id   || null,
+      briefing_url:     latest[c.id]?.id ? `${appUrl}/api/briefings/${latest[c.id].id}` : null,
     }));
 
-    return res.status(200).json({ clients: result });
+    const { data: settings } = await supabase.from('app_settings').select('daily_enabled, monthly_enabled').eq('id', 1).maybeSingle();
+    const { data: admins }   = await supabase.from('admins').select('email').order('email');
+
+    return res.status(200).json({
+      clients:  result,
+      settings: settings || { daily_enabled: true, monthly_enabled: true },
+      admins:   (admins || []).map(a => a.email),
+    });
   }
 
-  // ── PUT: update client settings ─────────────────────────────────────────
+  // ── PUT: update one client's settings ────────────────────────────────────
   if (req.method === 'PUT') {
-    const { clientId, ...fields } = bodyOf(req);
+    const { clientId, ...f } = bodyOf(req);
     if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
-
-    const update = {};
-    if (fields.delivery_time        !== undefined) update.delivery_time        = String(fields.delivery_time).replace(':', '');
-    if (fields.output_language      !== undefined) update.output_language      = fields.output_language;
-    if (fields.region               !== undefined) update.region               = fields.region;
-    if (fields.stories_per_section  !== undefined) update.stories_per_section  = Number(fields.stories_per_section);
-    if (fields.client_profile       !== undefined) update.client_profile       = fields.client_profile;
-    if (fields.client_entities      !== undefined) update.client_entities      = fields.client_entities;
-    if (fields.client_topics        !== undefined) update.client_topics        = fields.client_topics;
-    if (fields.client_local_sources !== undefined) update.client_local_sources = fields.client_local_sources;
-    update.updated_at = new Date().toISOString();
-
-    const { error } = await supabase.from('clients').update(update).eq('id', clientId);
+    const u = {};
+    if (f.delivery_time        !== undefined) u.delivery_time        = String(f.delivery_time).replace(':', '');
+    if (f.output_language      !== undefined) u.output_language      = f.output_language;
+    if (f.region               !== undefined) u.region               = f.region;
+    if (f.stories_per_section  !== undefined) u.stories_per_section  = Number(f.stories_per_section);
+    if (f.client_profile       !== undefined) u.client_profile       = f.client_profile;
+    if (f.client_entities      !== undefined) u.client_entities      = f.client_entities;
+    if (f.client_topics        !== undefined) u.client_topics        = f.client_topics;
+    if (f.client_local_sources !== undefined) u.client_local_sources = f.client_local_sources;
+    u.updated_at = new Date().toISOString();
+    const { error } = await supabase.from('clients').update(u).eq('id', clientId);
     if (error) return res.status(500).json({ error: error.message });
-
     return res.status(200).json({ updated: true, clientId });
   }
 
-  // ── POST: run full pipeline for a specific client ───────────────────────
+  // ── POST: action dispatch ────────────────────────────────────────────────
   if (req.method === 'POST') {
-    const { clientId } = bodyOf(req);
-    if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
+    const body = bodyOf(req);
+    const action = body.action || (body.clientId ? 'push' : null);
 
-    try {
-      const briefing = await runPipelineForClient(clientId);
-      return res.status(200).json({
-        success:    true,
-        briefingId: briefing.id,
-        emailError: briefing.emailError || null,
-      });
-    } catch (err) {
-      console.error('[admin] Pipeline error for', clientId, ':', err);
-      return res.status(500).json({ error: err.message || 'Pipeline failed' });
+    if (action === 'push') {
+      if (!body.clientId) return res.status(400).json({ error: 'Missing clientId' });
+      try {
+        const briefing = await runPipelineForClient(body.clientId);
+        return res.status(200).json({ success: true, briefingId: briefing.id, emailError: briefing.emailError || null });
+      } catch (err) {
+        console.error('[admin] Pipeline error:', err);
+        return res.status(500).json({ error: err.message || 'Pipeline failed' });
+      }
     }
+
+    if (action === 'toggle_active') {
+      if (!body.clientId) return res.status(400).json({ error: 'Missing clientId' });
+      const { error } = await supabase.from('clients').update({ active: !!body.active, updated_at: new Date().toISOString() }).eq('id', body.clientId);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ updated: true });
+    }
+
+    if (action === 'create_client') {
+      if (!body.email || !body.client_name) return res.status(400).json({ error: 'Email and company name are required.' });
+      const row = {
+        email:                  String(body.email).trim().toLowerCase(),
+        client_name:            body.client_name,
+        client_contact:         body.client_contact || null,
+        client_profile:         body.client_profile || null,
+        region:                 body.region || 'DACH',
+        news_scope:             body.news_scope || 'both',
+        output_language:        body.output_language || 'en',
+        view_mode:              body.view_mode || 'daily',
+        delivery_time:          String(body.delivery_time || '0700').replace(':', ''),
+        client_profile_refresh: body.client_profile_refresh || 'monthly',
+        stories_per_section:    Number(body.stories_per_section) || 3,
+        sections_enabled:       normSections(body.sections_enabled),
+        client_entities:        body.client_entities || [],
+        client_topics:          body.client_topics || [],
+        client_local_sources:   body.client_local_sources || null,
+        active:                 true,
+      };
+      const { data, error } = await supabase.from('clients').upsert(row, { onConflict: 'email' }).select().single();
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ created: true, clientId: data.id });
+    }
+
+    if (action === 'delete_client') {
+      if (!body.clientId) return res.status(400).json({ error: 'Missing clientId' });
+      const { error } = await supabase.from('clients').delete().eq('id', body.clientId);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ deleted: true });
+    }
+
+    if (action === 'set_settings') {
+      const u = { updated_at: new Date().toISOString() };
+      if (body.daily_enabled   !== undefined) u.daily_enabled   = !!body.daily_enabled;
+      if (body.monthly_enabled !== undefined) u.monthly_enabled = !!body.monthly_enabled;
+      const { error } = await supabase.from('app_settings').update(u).eq('id', 1);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ updated: true });
+    }
+
+    if (action === 'add_admin') {
+      const email = String(body.email || '').trim().toLowerCase();
+      if (!email) return res.status(400).json({ error: 'Missing email' });
+      const { error } = await supabase.from('admins').upsert({ email }, { onConflict: 'email' });
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ added: true });
+    }
+
+    if (action === 'remove_admin') {
+      const email = String(body.email || '').trim().toLowerCase();
+      if (!email) return res.status(400).json({ error: 'Missing email' });
+      const { error } = await supabase.from('admins').delete().eq('email', email);
+      if (error) return res.status(500).json({ error: error.message });
+      return res.status(200).json({ removed: true });
+    }
+
+    return res.status(400).json({ error: 'Unknown action' });
   }
 
   return res.status(405).json({ error: 'Method not allowed' });

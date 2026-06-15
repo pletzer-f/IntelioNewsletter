@@ -394,6 +394,42 @@
       .dashboard { padding: 24px 16px; }
       .modal-row { grid-template-columns: 1fr; }
     }
+
+    /* ── System toggles ── */
+    .system-bar { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 24px; }
+    .sys-toggle { display: flex; align-items: center; gap: 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; flex: 1; min-width: 240px; }
+    .sys-toggle-label { flex: 1; }
+    .sys-toggle-label strong { font-size: 14px; display: block; }
+    .sys-toggle-label span { font-size: 11.5px; color: var(--muted); }
+    .switch { position: relative; width: 46px; height: 26px; flex-shrink: 0; cursor: pointer; display: inline-block; }
+    .switch input { display: none; }
+    .switch .track { position: absolute; inset: 0; background: #CBD5E1; border-radius: 13px; transition: background .2s; }
+    .switch input:checked + .track { background: var(--green); }
+    .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+    .switch input:checked + .track + .knob { transform: translateX(20px); }
+
+    /* ── Row active mini-toggle ── */
+    .mini-switch { position: relative; width: 34px; height: 19px; cursor: pointer; display: inline-block; flex-shrink: 0; }
+    .mini-switch input { display: none; }
+    .mini-switch .mtrack { position: absolute; inset: 0; background: #CBD5E1; border-radius: 10px; transition: background .2s; }
+    .mini-switch input:checked + .mtrack { background: var(--green); }
+    .mini-switch .mknob { position: absolute; top: 2px; left: 2px; width: 15px; height: 15px; background: #fff; border-radius: 50%; transition: transform .2s; }
+    .mini-switch input:checked + .mtrack + .mknob { transform: translateX(15px); }
+
+    .del-btn { padding: 7px 10px; background: var(--surface-2); color: #DC2626; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter',sans-serif; font-size: 13px; cursor: pointer; transition: all .15s; }
+    .del-btn:hover { background: #FEF2F2; border-color: #FECACA; }
+    .add-user-btn { padding: 10px 20px; background: var(--crimson); color: #fff; border: none; border-radius: var(--radius); font-family: 'Inter',sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .add-user-btn:hover { background: #A01830; }
+
+    /* ── Admins management ── */
+    .admins-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 22px 24px; margin-top: 24px; }
+    .admins-card h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .admins-card p { font-size: 12.5px; color: var(--muted); margin-bottom: 14px; }
+    .admin-chip { display: inline-flex; align-items: center; gap: 8px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 6px 5px 13px; font-size: 12.5px; margin: 0 6px 6px 0; }
+    .admin-chip button { background: none; border: none; color: #DC2626; cursor: pointer; font-size: 13px; line-height: 1; padding: 2px 4px; }
+    .admin-add-row { display: flex; gap: 8px; margin-top: 12px; max-width: 460px; }
+    .admin-add-row input { flex: 1; padding: 9px 12px; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter',sans-serif; font-size: 13px; background: var(--surface-2); color: var(--ink); outline: none; }
+    .admin-add-row input:focus { border-color: var(--crimson); }
   </style>
 </head>
 <body>
@@ -422,11 +458,23 @@
         <h1>Briefing Dashboard</h1>
         <p id="dashSubtitle">Loading clients…</p>
       </div>
-      <div style="display:flex;gap:10px;align-items:center;">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+        <button class="add-user-btn" onclick="openCreateModal()">+ New user</button>
         <button class="push-all-btn" style="background:var(--surface-2);color:var(--ink);border:1px solid var(--border);" onclick="reloadDashboard()" title="Refresh data">↻ Refresh</button>
         <button class="push-all-btn" id="pushAllBtn" onclick="pushAll()">Push to all users</button>
         <button class="push-all-btn" style="background:var(--surface-2);color:var(--ink);border:1px solid var(--border);" onclick="location.href='/reset'" title="Change your admin password">Change password</button>
         <button class="push-all-btn" style="background:var(--surface-2);color:var(--ink);border:1px solid var(--border);" onclick="adminSignOut()" title="Sign out">Sign out</button>
+      </div>
+    </div>
+
+    <div class="system-bar" id="systemBar">
+      <div class="sys-toggle">
+        <div class="sys-toggle-label"><strong>Daily briefings</strong><span>Recurring morning run for all active users</span></div>
+        <label class="switch"><input type="checkbox" id="toggleDaily" onchange="setSystemToggle('daily_enabled', this.checked)"><span class="track"></span><span class="knob"></span></label>
+      </div>
+      <div class="sys-toggle">
+        <div class="sys-toggle-label"><strong>Monthly briefings</strong><span>Monthly company-profile refresh (Agent 00)</span></div>
+        <label class="switch"><input type="checkbox" id="toggleMonthly" onchange="setSystemToggle('monthly_enabled', this.checked)"><span class="track"></span><span class="knob"></span></label>
       </div>
     </div>
 
@@ -455,6 +503,16 @@
       </div>
       <div id="clientList">
         <div class="table-empty">Loading…</div>
+      </div>
+    </div>
+
+    <div class="admins-card">
+      <h3>Admins</h3>
+      <p>Accounts with full access to this console. Add a colleague's email to grant admin — they sign in at /admin with that account.</p>
+      <div id="adminsList"></div>
+      <div class="admin-add-row">
+        <input type="email" id="newAdminEmail" placeholder="colleague@company.com" onkeydown="if(event.key==='Enter')addAdmin()">
+        <button class="push-all-btn" onclick="addAdmin()">Add admin</button>
       </div>
     </div>
 
@@ -524,6 +582,43 @@
     </div>
   </div>
 
+  <!-- ── Create User Modal ───────────────────────────────────────────────── -->
+  <div class="modal-overlay" id="createOverlay" onclick="closeCreateModal(event)">
+    <div class="modal">
+      <div class="modal-head">
+        <div>
+          <div class="modal-title">New user &amp; briefing</div>
+          <div class="modal-subtitle">Creates a client and starts their daily briefing</div>
+        </div>
+        <button class="modal-close" onclick="closeCreateModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-row">
+          <div class="modal-field"><label>Company name *</label><input type="text" id="newName" placeholder="e.g. Müller GmbH"></div>
+          <div class="modal-field"><label>Contact name</label><input type="text" id="newContact" placeholder="First Last"></div>
+        </div>
+        <div class="modal-field"><label>Email *</label><input type="email" id="newEmail" placeholder="them@company.com"></div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Region</label><input type="text" id="newRegion" placeholder="DACH"></div>
+          <div class="modal-field"><label>Language</label><select id="newLang"><option value="en">English</option><option value="de">Deutsch</option></select></div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field"><label>Rhythm</label><select id="newView"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div>
+          <div class="modal-field"><label>Delivery time</label><input type="time" id="newTime" value="07:00"></div>
+        </div>
+        <div class="modal-field"><label>Business profile</label><textarea id="newProfile" rows="3" placeholder="What they do, key markets, products, competitors…"></textarea></div>
+        <div class="modal-field"><label>Topics (comma-separated)</label><input type="text" id="newTopics" placeholder="heat pumps, BEG subsidies…"></div>
+        <div class="modal-field"><label>Entities to monitor (comma-separated)</label><input type="text" id="newEntities" placeholder="Vaillant, Viessmann…"></div>
+        <div class="modal-field"><label>Preferred sources (comma-separated)</label><input type="text" id="newSources" placeholder="Handelsblatt, Reuters…"></div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-top:8px;color:var(--ink);"><input type="checkbox" id="newKick" checked> Generate the first briefing immediately</label>
+      </div>
+      <div class="modal-foot">
+        <button class="modal-cancel" onclick="closeCreateModal()">Cancel</button>
+        <button class="modal-save" id="createSaveBtn" onclick="createUser()">Create user</button>
+      </div>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-config.js"></script>
   <script>
@@ -566,19 +661,121 @@
         const res = await fetch(`${API_BASE}/admin`, { headers: authHeaders() });
         if (!res.ok) return false;
         const data = await res.json();
-        showDashboard(data.clients);
+        showDashboard(data);
         return true;
       } catch {
         return false;
       }
     }
 
-    function showDashboard(clients) {
-      clientData = clients;
+    function showDashboard(data) {
+      clientData = data.clients || [];
       document.getElementById('unlockWrap').style.display = 'none';
       document.getElementById('dashboard').style.display = 'block';
-      renderStats(clients);
-      renderClients(clients);
+      renderStats(clientData);
+      renderClients(clientData);
+      renderSettings(data.settings || { daily_enabled: true, monthly_enabled: true });
+      renderAdmins(data.admins || []);
+    }
+
+    // ── Global system toggles ─────────────────────────────────────────────────
+    function renderSettings(s) {
+      document.getElementById('toggleDaily').checked   = s.daily_enabled   !== false;
+      document.getElementById('toggleMonthly').checked = s.monthly_enabled !== false;
+    }
+    async function setSystemToggle(key, value) {
+      try {
+        const res = await fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ action: 'set_settings', [key]: value }) });
+        if (!res.ok) throw new Error('Failed');
+        showToast((key === 'daily_enabled' ? 'Daily' : 'Monthly') + ' briefings ' + (value ? 'enabled' : 'paused'));
+      } catch { showToast('Could not update setting — try again'); }
+    }
+
+    // ── Per-user active toggle ────────────────────────────────────────────────
+    async function toggleActive(clientId, active) {
+      try {
+        const res = await fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ action: 'toggle_active', clientId, active }) });
+        if (!res.ok) throw new Error('Failed');
+        const c = clientData.find(x => x.id === clientId); if (c) c.active = active;
+        renderStats(clientData);
+        showToast(active ? 'User activated' : 'User paused');
+      } catch { showToast('Could not update — try again'); }
+    }
+
+    // ── Create user ───────────────────────────────────────────────────────────
+    function openCreateModal() { document.getElementById('createOverlay').classList.add('open'); }
+    function closeCreateModal(e) { if (e && e.target !== document.getElementById('createOverlay')) return; document.getElementById('createOverlay').classList.remove('open'); }
+    function splitCsv(v) { return (v || '').split(',').map(s => s.trim()).filter(Boolean); }
+    async function createUser() {
+      const btn = document.getElementById('createSaveBtn');
+      const email = document.getElementById('newEmail').value.trim();
+      const name  = document.getElementById('newName').value.trim();
+      if (!email || !name) { showToast('Company name and email are required'); return; }
+      btn.disabled = true; btn.textContent = 'Creating…';
+      const payload = {
+        action: 'create_client', email, client_name: name,
+        client_contact:       document.getElementById('newContact').value.trim(),
+        region:               document.getElementById('newRegion').value.trim() || 'DACH',
+        output_language:      document.getElementById('newLang').value,
+        view_mode:            document.getElementById('newView').value,
+        delivery_time:        document.getElementById('newTime').value.replace(':', ''),
+        client_profile:       document.getElementById('newProfile').value.trim(),
+        client_topics:        splitCsv(document.getElementById('newTopics').value),
+        client_entities:      splitCsv(document.getElementById('newEntities').value),
+        client_local_sources: document.getElementById('newSources').value.trim(),
+      };
+      try {
+        const res = await fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify(payload) });
+        const out = await res.json();
+        if (!res.ok) throw new Error(out.error || 'Failed');
+        if (document.getElementById('newKick').checked && out.clientId) {
+          fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ action: 'push', clientId: out.clientId }) }).catch(() => {});
+          showToast('User created — first briefing is generating');
+        } else {
+          showToast('User created');
+        }
+        document.getElementById('createOverlay').classList.remove('open');
+        ['newEmail','newName','newContact','newRegion','newProfile','newTopics','newEntities','newSources'].forEach(id => document.getElementById(id).value = '');
+        await attemptLoad();
+      } catch (err) {
+        showToast('Error: ' + err.message);
+      } finally {
+        btn.disabled = false; btn.textContent = 'Create user';
+      }
+    }
+
+    // ── Delete user ───────────────────────────────────────────────────────────
+    async function deleteUser(clientId, name) {
+      if (!confirm('Delete "' + name + '" and all their briefings? This cannot be undone.')) return;
+      try {
+        const res = await fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ action: 'delete_client', clientId }) });
+        if (!res.ok) throw new Error('Failed');
+        clientData = clientData.filter(c => c.id !== clientId);
+        renderClients(clientData); renderStats(clientData);
+        showToast('User deleted');
+      } catch { showToast('Could not delete — try again'); }
+    }
+
+    // ── Manage admins ─────────────────────────────────────────────────────────
+    function renderAdmins(admins) {
+      const el = document.getElementById('adminsList');
+      el.innerHTML = (admins && admins.length)
+        ? admins.map(a => `<span class="admin-chip">${esc(a)}<button onclick="removeAdmin('${esc(a)}')" title="Remove admin">✕</button></span>`).join('')
+        : '<span style="font-size:12.5px;color:var(--muted)">No admins listed.</span>';
+    }
+    async function addAdmin() {
+      const input = document.getElementById('newAdminEmail');
+      const email = input.value.trim();
+      if (!email) return;
+      const res = await fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ action: 'add_admin', email }) });
+      if (!res.ok) { showToast('Could not add admin'); return; }
+      input.value = ''; showToast('Admin added'); await attemptLoad();
+    }
+    async function removeAdmin(email) {
+      if (!confirm('Remove admin access for ' + email + '?')) return;
+      const res = await fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ action: 'remove_admin', email }) });
+      if (!res.ok) { showToast('Could not remove admin'); return; }
+      showToast('Admin removed'); await attemptLoad();
     }
 
     // ── Stats ────────────────────────────────────────────────────────────────
@@ -616,19 +813,23 @@
           : '—';
         return `
           <div class="client-row" id="row-${c.id}">
-            <div>
-              <span class="status-dot ${c.active ? 'active' : ''}"></span>
-              <span class="client-name">${esc(c.client_name)}</span>
-              <span style="font-size:10px;color:var(--muted);margin-left:6px;" title="Last signup / update">${updatedLabel}</span>
+            <div style="display:flex;align-items:center;gap:9px;">
+              <label class="mini-switch" title="${c.active ? 'Active — briefings on' : 'Paused — briefings off'}">
+                <input type="checkbox" ${c.active ? 'checked' : ''} onchange="toggleActive('${c.id}', this.checked)">
+                <span class="mtrack"></span><span class="mknob"></span>
+              </label>
+              <div>
+                <span class="client-name">${esc(c.client_name)}</span>
+                <div style="font-size:10px;color:var(--muted);" title="Last update">${updatedLabel}</div>
+              </div>
             </div>
             <div class="client-email">${esc(c.email)}</div>
             <div class="client-time">${delivTime}</div>
             <div class="client-last ${lastClass}" id="last-${c.id}">${lastLabel}${viewLink}</div>
-            <div style="display:flex;gap:6px;align-items:center;">
+            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
               <button class="edit-btn" onclick="openEditModal('${c.id}')">Edit</button>
-              <button class="push-btn" id="btn-${c.id}" onclick="pushOne('${c.id}', '${esc(c.client_name)}')">
-                Push briefing
-              </button>
+              <button class="push-btn" id="btn-${c.id}" onclick="pushOne('${c.id}', '${esc(c.client_name)}')">Push</button>
+              <button class="del-btn" onclick="deleteUser('${c.id}', '${esc(c.client_name)}')" title="Delete user">✕</button>
             </div>
           </div>`;
       }).join('');
