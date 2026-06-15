@@ -35,50 +35,51 @@ export default async function handler(req, res) {
     }
   }
 
+  // 1. Save / update client in Supabase — the ONLY step allowed to fail the request.
+  let client;
   try {
-    // 1. Save / update client in Supabase
-    const client = await upsertClient(body);
+    client = await upsertClient(body);
     console.log(`[register] Upserted client: ${client.id} (${client.email})`);
+  } catch (err) {
+    console.error('[register] Failed to save client:', err);
+    return res.status(500).json({ error: `Could not save your details: ${err?.message || err}` });
+  }
 
-    // 2. Send welcome email — NON-FATAL. A welcome-email problem (e.g. a Resend
-    //    sender/domain misconfig) must never fail the registration itself.
-    try {
-      const welcomeHtml = buildWelcomeEmail(client);
-      await sendTransactional(
-        client.email,
-        `Welcome to Intelio — your briefings are being set up`,
-        welcomeHtml
-      );
-      console.log(`[register] Welcome email sent to ${client.email}`);
-    } catch (emailErr) {
-      console.error(`[register] Welcome email failed (non-fatal) for ${client.email}:`, emailErr?.message || emailErr);
-    }
+  // 2. Send welcome email — NON-FATAL. A welcome-email problem must never fail signup.
+  try {
+    const welcomeHtml = buildWelcomeEmail(client);
+    await sendTransactional(
+      client.email,
+      `Welcome to Intelio — your briefings are being set up`,
+      welcomeHtml
+    );
+    console.log(`[register] Welcome email sent to ${client.email}`);
+  } catch (emailErr) {
+    console.error(`[register] Welcome email failed (non-fatal) for ${client.email}:`, emailErr?.message || emailErr);
+  }
 
-    // 3. Kick off first briefing immediately — fire-and-forget into runner's own function context.
-    // runner.js has maxDuration:300 and handles Agent 00 + all 6 agents + email delivery.
-    // We do NOT await this — register returns immediately so the signup form feels instant.
+  // 3. Kick off first briefing — fire-and-forget, FULLY isolated. A failure here
+  //    (synchronous throw OR rejection) must never turn a successful signup into an error.
+  try {
     const appUrl = process.env.APP_URL || `https://${process.env.VERCEL_URL}`;
     fetch(`${appUrl}/api/agents/runner`, {
       method:  'POST',
       headers: {
-        'Content-Type':   'application/json',
-        'x-cron-secret':  process.env.CRON_SECRET,
+        'Content-Type':  'application/json',
+        'x-cron-secret': process.env.CRON_SECRET || '',
       },
       body: JSON.stringify({ clientId: client.id }),
-    }).catch(err => console.warn(`[register] Runner kick-off failed for ${client.id}:`, err.message));
-
-    console.log(`[register] Runner kicked off for ${client.id} — briefing will arrive shortly`);
-
-    return res.status(200).json({
-      success: true,
-      clientId: client.id,
-      message:  `Registration complete. Your first briefing is being generated and will arrive in your inbox shortly.`,
-    });
-
-  } catch (err) {
-    console.error('[register] Error:', err);
-    return res.status(500).json({ error: err.message || 'Internal server error' });
+    }).catch(err => console.warn(`[register] Runner kick-off failed for ${client.id}:`, err?.message || err));
+    console.log(`[register] Runner kicked off for ${client.id}`);
+  } catch (kickErr) {
+    console.warn(`[register] Runner kick-off threw synchronously (ignored):`, kickErr?.message || kickErr);
   }
+
+  return res.status(200).json({
+    success: true,
+    clientId: client.id,
+    message:  `Registration complete. Your first briefing is being generated and will arrive in your inbox shortly.`,
+  });
 }
 
 function buildWelcomeEmail(client) {
