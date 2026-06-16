@@ -49,7 +49,7 @@ export default async function handler(req, res) {
   if (req.method === 'GET') {
     const { data: clients, error: ce } = await supabase
       .from('clients')
-      .select('id, client_name, email, delivery_time, output_language, region, news_scope, view_mode, stories_per_section, client_profile, client_entities, client_topics, client_local_sources, sections_enabled, active, created_at, updated_at')
+      .select('id, client_name, email, delivery_time, delivery_dow, output_language, region, news_scope, view_mode, stories_per_section, client_profile, client_entities, client_topics, client_local_sources, sections_enabled, active, created_at, updated_at')
       .order('updated_at', { ascending: false });
     if (ce) return res.status(500).json({ error: ce.message });
 
@@ -118,6 +118,8 @@ export default async function handler(req, res) {
     if (!clientId) return res.status(400).json({ error: 'Missing clientId' });
     const u = {};
     if (f.delivery_time        !== undefined) u.delivery_time        = String(f.delivery_time).replace(':', '');
+    if (f.view_mode            !== undefined) u.view_mode            = (f.view_mode === 'weekly') ? 'weekly' : 'daily';
+    if (f.delivery_dow         !== undefined) { const d = Number(f.delivery_dow); if (Number.isInteger(d) && d >= 0 && d <= 6) u.delivery_dow = d; }
     if (f.output_language      !== undefined) u.output_language      = f.output_language;
     if (f.region               !== undefined) u.region               = f.region;
     if (f.stories_per_section  !== undefined) u.stories_per_section  = Number(f.stories_per_section);
@@ -164,8 +166,9 @@ export default async function handler(req, res) {
         region:                 body.region || 'DACH',
         news_scope:             body.news_scope || 'both',
         output_language:        body.output_language || 'en',
-        view_mode:              body.view_mode || 'daily',
+        view_mode:              body.view_mode === 'weekly' ? 'weekly' : 'daily',
         delivery_time:          String(body.delivery_time || '0700').replace(':', ''),
+        delivery_dow:           (() => { const d = Number(body.delivery_dow); return (Number.isInteger(d) && d >= 0 && d <= 6) ? d : 1; })(),
         client_profile_refresh: body.client_profile_refresh || 'monthly',
         stories_per_section:    Number(body.stories_per_section) || 3,
         sections_enabled:       normSections(body.sections_enabled),

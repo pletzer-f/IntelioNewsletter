@@ -33,18 +33,31 @@ export default async function handler(req, res) {
 
   console.log(`[cron/daily] Processing ${clients.length} active clients`);
 
-  // Run all eligible clients in PARALLEL so total time = max(individual_times) ~3 min,
-  // not sum(individual_times) ~12 min which exceeds the 300s function limit.
+  // Cron now fires HOURLY (see vercel.json). Deliver each client only on their
+  // scheduled slot — matched on day-of-week + hour in Europe/Vienna (CET/CEST).
+  const slot  = viennaParts();
+  const today = new Date().toISOString().split('T')[0];
+  console.log(`[cron/daily] Vienna slot — day ${slot.dow}, hour ${String(slot.hour).padStart(2, '0')}:00`);
+
+  // Run all due clients in PARALLEL so total time = max(individual_times) ~3 min,
+  // not sum(individual_times) which could exceed the 300s function limit.
   const eligible = clients.filter(c => {
-    const ok = checkDeliveryWindow(c);
-    if (!ok) console.log(`[cron/daily] Skipping ${c.client_name} (not in delivery window)`);
+    const ok = isDeliverySlot(c, slot);
+    if (!ok) console.log(`[cron/daily] Skipping ${c.client_name} (not their slot)`);
     return ok;
   });
 
-  console.log(`[cron/daily] Running ${eligible.length} pipelines in parallel`);
+  console.log(`[cron/daily] ${eligible.length} client(s) due this hour — running in parallel`);
 
   const settled = await Promise.allSettled(
     eligible.map(async (client) => {
+      // Guard: never generate/send the same day's briefing twice (e.g. if the hour re-fires).
+      const { data: existing } = await supabase
+        .from('briefings').select('id').eq('client_id', client.id).eq('date', today).maybeSingle();
+      if (existing) {
+        console.log(`[cron/daily] ${client.client_name} already has a briefing for ${today} — skipping`);
+        return client.id;
+      }
       console.log(`[cron/daily] Starting pipeline for ${client.client_name}`);
       await runPipelineForClient(client.id);
       return client.id;
@@ -71,18 +84,32 @@ export default async function handler(req, res) {
 }
 
 /**
- * Check whether this client should be delivered on the current cron run.
- * Cron fires once per day at 05:00 UTC (see vercel.json).
- *
- * NOTE ON delivery_time: honoring the per-client hour (06:30–09:00) requires an
- * hourly cron ("0 * * * *") so each run can match clients whose hour == current
- * hour. With the current once-daily cron we deliver all eligible clients on that
- * single run; precise send-time is part of the scheduling work in the user area.
+ * Per-client scheduling. Cron fires HOURLY (see vercel.json), so we match each
+ * client's delivery hour (and, for weekly, day-of-week) against the current
+ * wall-clock in Europe/Vienna:
+ *   • daily  → delivered every day at delivery_time's hour
+ *   • weekly → delivered only on delivery_dow at delivery_time's hour
+ * delivery_time is stored "HHMM" (CET/CEST); we match on the hour (minutes ignored).
  */
-function checkDeliveryWindow(client) {
+function isDeliverySlot(client, slot) {
+  const hh = parseInt(String(client.delivery_time || '0700').slice(0, 2), 10);
+  if (slot.hour !== (Number.isInteger(hh) ? hh : 7)) return false;
   if (client.view_mode === 'weekly') {
-    // Weekly digest: deliver on Fridays (UTC) to match the signup UI promise.
-    return new Date().getUTCDay() === 5;
+    const dow = Number.isInteger(client.delivery_dow) ? client.delivery_dow : 1;
+    return slot.dow === dow;
   }
-  return true; // daily — always run
+  return true; // daily — every day at the chosen hour
+}
+
+/** Current day-of-week (0=Sun..6=Sat) and hour (0-23) in Europe/Vienna, DST-aware. */
+function viennaParts(date = new Date()) {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Europe/Vienna', hour12: false, weekday: 'short', hour: '2-digit',
+    }).formatToParts(date).map(p => [p.type, p.value])
+  );
+  const dowMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  let hour = parseInt(parts.hour, 10);
+  if (hour === 24) hour = 0;   // en-US hour12:false reports midnight as '24'
+  return { dow: dowMap[parts.weekday] ?? 1, hour };
 }

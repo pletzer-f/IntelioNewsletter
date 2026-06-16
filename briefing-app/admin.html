@@ -559,7 +559,28 @@
       <div class="modal-body">
         <div class="modal-row">
           <div class="modal-field">
-            <label>Delivery time</label>
+            <label>Briefing rhythm</label>
+            <select id="editView" onchange="onEditRhythmChange()">
+              <option value="daily">Daily</option>
+              <option value="weekly">Weekly</option>
+            </select>
+          </div>
+          <div class="modal-field" id="editDowField" style="display:none">
+            <label>Day of week</label>
+            <select id="editDow">
+              <option value="1">Monday</option>
+              <option value="2">Tuesday</option>
+              <option value="3">Wednesday</option>
+              <option value="4">Thursday</option>
+              <option value="5">Friday</option>
+              <option value="6">Saturday</option>
+              <option value="0">Sunday</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-row">
+          <div class="modal-field">
+            <label>Delivery time <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0">(CET)</span></label>
             <input type="time" id="editDeliveryTime">
           </div>
           <div class="modal-field">
@@ -629,8 +650,15 @@
           <div class="modal-field"><label>Language</label><select id="newLang"><option value="en">English</option><option value="de">Deutsch</option></select></div>
         </div>
         <div class="modal-row">
-          <div class="modal-field"><label>Rhythm</label><select id="newView"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div>
-          <div class="modal-field"><label>Delivery time</label><input type="time" id="newTime" value="07:00"></div>
+          <div class="modal-field"><label>Rhythm</label><select id="newView" onchange="onNewRhythmChange()"><option value="daily">Daily</option><option value="weekly">Weekly</option></select></div>
+          <div class="modal-field"><label>Delivery time (CET)</label><input type="time" id="newTime" value="07:00"></div>
+        </div>
+        <div class="modal-row" id="newDowRow" style="display:none">
+          <div class="modal-field"><label>Day of week</label><select id="newDow">
+            <option value="1">Monday</option><option value="2">Tuesday</option><option value="3">Wednesday</option>
+            <option value="4">Thursday</option><option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
+          </select></div>
+          <div class="modal-field"></div>
         </div>
         <div class="modal-field"><label>Business profile</label><textarea id="newProfile" rows="3" placeholder="What they do, key markets, products, competitors…"></textarea></div>
         <div class="modal-field"><label>Topics (comma-separated)</label><input type="text" id="newTopics" placeholder="heat pumps, BEG subsidies…"></div>
@@ -754,8 +782,12 @@
     }
 
     // ── Create user ───────────────────────────────────────────────────────────
-    function openCreateModal() { document.getElementById('createOverlay').classList.add('open'); }
+    function openCreateModal() { onNewRhythmChange(); document.getElementById('createOverlay').classList.add('open'); }
     function closeCreateModal(e) { if (e && e.target !== document.getElementById('createOverlay')) return; document.getElementById('createOverlay').classList.remove('open'); }
+    function onNewRhythmChange() {
+      const weekly = document.getElementById('newView').value === 'weekly';
+      document.getElementById('newDowRow').style.display = weekly ? '' : 'none';
+    }
     function splitCsv(v) { return (v || '').split(',').map(s => s.trim()).filter(Boolean); }
     async function createUser() {
       const btn = document.getElementById('createSaveBtn');
@@ -770,6 +802,7 @@
         output_language:      document.getElementById('newLang').value,
         view_mode:            document.getElementById('newView').value,
         delivery_time:        document.getElementById('newTime').value.replace(':', ''),
+        delivery_dow:         parseInt(document.getElementById('newDow').value, 10),
         client_profile:       document.getElementById('newProfile').value.trim(),
         client_topics:        splitCsv(document.getElementById('newTopics').value),
         client_entities:      splitCsv(document.getElementById('newEntities').value),
@@ -851,6 +884,10 @@
       const today = new Date().toISOString().slice(0, 10);
       list.innerHTML = clients.map(c => {
         const delivTime = (c.delivery_time || '0700').replace(/(\d{2})(\d{2})/, '$1:$2');
+        const DOWS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const sched = c.view_mode === 'weekly'
+          ? `${DOWS[Number.isInteger(c.delivery_dow) ? c.delivery_dow : 1]} · ${delivTime}`
+          : `Daily · ${delivTime}`;
         const lastDate  = c.last_briefing;
         const lastLabel = !lastDate ? 'Never'
           : lastDate === today ? 'Today'
@@ -875,7 +912,7 @@
               </div>
             </div>
             <div class="client-email">${esc(c.email)}</div>
-            <div class="client-time">${delivTime}</div>
+            <div class="client-time">${sched}</div>
             <div class="client-last ${lastClass}" id="last-${c.id}">${lastLabel}${viewLink}</div>
             <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
               <button class="edit-btn" onclick="openEditModal('${c.id}')">Edit</button>
@@ -1145,6 +1182,9 @@
       // Delivery time: DB stores "0700" → input needs "07:00"
       const dt = (c.delivery_time || '0700').replace(/(\d{2})(\d{2})/, '$1:$2');
       document.getElementById('editDeliveryTime').value = dt;
+      document.getElementById('editView').value         = (c.view_mode === 'weekly') ? 'weekly' : 'daily';
+      document.getElementById('editDow').value          = String(Number.isInteger(c.delivery_dow) ? c.delivery_dow : 1);
+      onEditRhythmChange();
       document.getElementById('editLanguage').value     = c.output_language || 'en';
       document.getElementById('editRegion').value       = c.region || '';
       document.getElementById('editDepth').value        = String(c.stories_per_section || 5);
@@ -1166,6 +1206,12 @@
       editingClientId = null;
     }
 
+    // Show the day-of-week picker only for weekly briefings.
+    function onEditRhythmChange() {
+      const weekly = document.getElementById('editView').value === 'weekly';
+      document.getElementById('editDowField').style.display = weekly ? '' : 'none';
+    }
+
     async function saveEdit() {
       if (!editingClientId) return;
       const btn = document.getElementById('editSaveBtn');
@@ -1175,6 +1221,8 @@
       const payload = {
         clientId:    editingClientId,
         delivery_time:        document.getElementById('editDeliveryTime').value.replace(':', ''),
+        view_mode:            document.getElementById('editView').value,
+        delivery_dow:         parseInt(document.getElementById('editDow').value, 10),
         output_language:      document.getElementById('editLanguage').value,
         region:               document.getElementById('editRegion').value.trim(),
         stories_per_section:  parseInt(document.getElementById('editDepth').value, 10),
