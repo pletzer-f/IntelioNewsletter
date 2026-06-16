@@ -33,11 +33,11 @@ export default async function handler(req, res) {
 
   console.log(`[cron/daily] Processing ${clients.length} active clients`);
 
-  // Cron now fires HOURLY (see vercel.json). Deliver each client only on their
-  // scheduled slot — matched on day-of-week + hour in Europe/Vienna (CET/CEST).
+  // Cron fires once daily (see vercel.json). Weekly clients deliver only on their
+  // chosen weekday; daily clients deliver every run. Weekday matched in Europe/Vienna.
   const slot  = viennaParts();
   const today = new Date().toISOString().split('T')[0];
-  console.log(`[cron/daily] Vienna slot — day ${slot.dow}, hour ${String(slot.hour).padStart(2, '0')}:00`);
+  console.log(`[cron/daily] Vienna weekday ${slot.dow} (${today})`);
 
   // Run all due clients in PARALLEL so total time = max(individual_times) ~3 min,
   // not sum(individual_times) which could exceed the 300s function limit.
@@ -84,32 +84,25 @@ export default async function handler(req, res) {
 }
 
 /**
- * Per-client scheduling. Cron fires HOURLY (see vercel.json), so we match each
- * client's delivery hour (and, for weekly, day-of-week) against the current
- * wall-clock in Europe/Vienna:
- *   • daily  → delivered every day at delivery_time's hour
- *   • weekly → delivered only on delivery_dow at delivery_time's hour
- * delivery_time is stored "HHMM" (CET/CEST); we match on the hour (minutes ignored).
+ * Per-client scheduling. The cron fires once daily (see vercel.json):
+ *   • daily  → delivered every run
+ *   • weekly → delivered only on the client's chosen weekday (delivery_dow),
+ *              matched against the current weekday in Europe/Vienna (DST-aware).
+ * delivery_time is a preferred send time, but with a once-daily cron every
+ * briefing goes out on that single morning run, so the hour is best-effort.
  */
 function isDeliverySlot(client, slot) {
-  const hh = parseInt(String(client.delivery_time || '0700').slice(0, 2), 10);
-  if (slot.hour !== (Number.isInteger(hh) ? hh : 7)) return false;
   if (client.view_mode === 'weekly') {
     const dow = Number.isInteger(client.delivery_dow) ? client.delivery_dow : 1;
-    return slot.dow === dow;
+    return slot.dow === dow;   // weekly: only on the chosen weekday
   }
-  return true; // daily — every day at the chosen hour
+  return true;                 // daily: every day
 }
 
-/** Current day-of-week (0=Sun..6=Sat) and hour (0-23) in Europe/Vienna, DST-aware. */
+/** Current day-of-week (0=Sun..6=Sat) in Europe/Vienna, DST-aware. */
 function viennaParts(date = new Date()) {
-  const parts = Object.fromEntries(
-    new Intl.DateTimeFormat('en-US', {
-      timeZone: 'Europe/Vienna', hour12: false, weekday: 'short', hour: '2-digit',
-    }).formatToParts(date).map(p => [p.type, p.value])
-  );
+  const wd = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Vienna', weekday: 'short' })
+    .formatToParts(date).find(p => p.type === 'weekday')?.value;
   const dowMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
-  let hour = parseInt(parts.hour, 10);
-  if (hour === 24) hour = 0;   // en-US hour12:false reports midnight as '24'
-  return { dow: dowMap[parts.weekday] ?? 1, hour };
+  return { dow: dowMap[wd] ?? 1 };
 }
