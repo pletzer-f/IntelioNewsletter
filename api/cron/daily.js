@@ -33,18 +33,31 @@ export default async function handler(req, res) {
 
   console.log(`[cron/daily] Processing ${clients.length} active clients`);
 
-  // Run all eligible clients in PARALLEL so total time = max(individual_times) ~3 min,
-  // not sum(individual_times) ~12 min which exceeds the 300s function limit.
+  // Cron fires once daily (see vercel.json). Weekly clients deliver only on their
+  // chosen weekday; daily clients deliver every run. Weekday matched in Europe/Vienna.
+  const slot  = viennaParts();
+  const today = new Date().toISOString().split('T')[0];
+  console.log(`[cron/daily] Vienna weekday ${slot.dow} (${today})`);
+
+  // Run all due clients in PARALLEL so total time = max(individual_times) ~3 min,
+  // not sum(individual_times) which could exceed the 300s function limit.
   const eligible = clients.filter(c => {
-    const ok = checkDeliveryWindow(c);
-    if (!ok) console.log(`[cron/daily] Skipping ${c.client_name} (not in delivery window)`);
+    const ok = isDeliverySlot(c, slot);
+    if (!ok) console.log(`[cron/daily] Skipping ${c.client_name} (not their slot)`);
     return ok;
   });
 
-  console.log(`[cron/daily] Running ${eligible.length} pipelines in parallel`);
+  console.log(`[cron/daily] ${eligible.length} client(s) due this hour — running in parallel`);
 
   const settled = await Promise.allSettled(
     eligible.map(async (client) => {
+      // Guard: never generate/send the same day's briefing twice (e.g. if the hour re-fires).
+      const { data: existing } = await supabase
+        .from('briefings').select('id').eq('client_id', client.id).eq('date', today).maybeSingle();
+      if (existing) {
+        console.log(`[cron/daily] ${client.client_name} already has a briefing for ${today} — skipping`);
+        return client.id;
+      }
       console.log(`[cron/daily] Starting pipeline for ${client.client_name}`);
       await runPipelineForClient(client.id);
       return client.id;
@@ -71,18 +84,25 @@ export default async function handler(req, res) {
 }
 
 /**
- * Check whether this client should be delivered on the current cron run.
- * Cron fires once per day at 05:00 UTC (see vercel.json).
- *
- * NOTE ON delivery_time: honoring the per-client hour (06:30–09:00) requires an
- * hourly cron ("0 * * * *") so each run can match clients whose hour == current
- * hour. With the current once-daily cron we deliver all eligible clients on that
- * single run; precise send-time is part of the scheduling work in the user area.
+ * Per-client scheduling. The cron fires once daily (see vercel.json):
+ *   • daily  → delivered every run
+ *   • weekly → delivered only on the client's chosen weekday (delivery_dow),
+ *              matched against the current weekday in Europe/Vienna (DST-aware).
+ * delivery_time is a preferred send time, but with a once-daily cron every
+ * briefing goes out on that single morning run, so the hour is best-effort.
  */
-function checkDeliveryWindow(client) {
+function isDeliverySlot(client, slot) {
   if (client.view_mode === 'weekly') {
-    // Weekly digest: deliver on Fridays (UTC) to match the signup UI promise.
-    return new Date().getUTCDay() === 5;
+    const dow = Number.isInteger(client.delivery_dow) ? client.delivery_dow : 1;
+    return slot.dow === dow;   // weekly: only on the chosen weekday
   }
-  return true; // daily — always run
+  return true;                 // daily: every day
+}
+
+/** Current day-of-week (0=Sun..6=Sat) in Europe/Vienna, DST-aware. */
+function viennaParts(date = new Date()) {
+  const wd = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Vienna', weekday: 'short' })
+    .formatToParts(date).find(p => p.type === 'weekday')?.value;
+  const dowMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return { dow: dowMap[wd] ?? 1 };
 }

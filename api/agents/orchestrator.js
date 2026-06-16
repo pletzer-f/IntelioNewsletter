@@ -38,6 +38,38 @@ const SECTION_DEFS = [
   { slug: 'local',    name: 'Local Policy & Reputation', agent: 6 },
 ];
 
+// ── Section HTML repair (truncation safety net) ────────────────────────────
+//
+// A section agent can be cut off mid-output by the token ceiling. If the cut
+// lands INSIDE a tag (e.g. `<a class="story-src"`), the unterminated attribute
+// swallows the following `</section>` and the next `<section>` during browser
+// parsing — destroying an entire downstream section. This repair guarantees the
+// HTML handed to the page is always well-formed, regardless of where a cut fell.
+export function repairSectionHtml(html) {
+  if (!html) return '';
+  let s = String(html);
+
+  // 1) Drop a dangling partial tag at the very end (cut mid-tag, e.g. `<a class="story-`).
+  const lastLt = s.lastIndexOf('<');
+  const lastGt = s.lastIndexOf('>');
+  if (lastLt > lastGt) s = s.slice(0, lastLt);
+
+  // 2) Drop a trailing incomplete <article> (opened but never closed = truncated story).
+  const open  = (s.match(/<article\b/gi)  || []).length;
+  const close = (s.match(/<\/article>/gi) || []).length;
+  if (open > close) {
+    const lastArticle = s.lastIndexOf('<article');
+    if (lastArticle >= 0) s = s.slice(0, lastArticle);
+  }
+
+  // 3) Backstop: balance any remaining unclosed <div> so flex/grid layout can't leak.
+  const dOpen  = (s.match(/<div\b/gi)  || []).length;
+  const dClose = (s.match(/<\/div>/gi) || []).length;
+  if (dOpen > dClose) s += '</div>'.repeat(dOpen - dClose);
+
+  return s.trim();
+}
+
 // ── Main assembly function ──────────────────────────────────────────────────
 
 /**
@@ -48,7 +80,11 @@ const SECTION_DEFS = [
 export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls, enabledSections, tickers = [] }) {
   const { h01, h02, h03, h04, h05, h06 } = sectionHtmls;
   const appUrl = process.env.APP_URL || '';
-  const htmlByAgent = { 1: h01, 2: h02, 3: h03, 4: h04, 5: h05, 6: h06 };
+  // Repair each section before use so a truncated agent output can never corrupt the page.
+  const htmlByAgent = {
+    1: repairSectionHtml(h01), 2: repairSectionHtml(h02), 3: repairSectionHtml(h03),
+    4: repairSectionHtml(h04), 5: repairSectionHtml(h05), 6: repairSectionHtml(h06),
+  };
 
   const dateLabel = new Date(today).toLocaleDateString('en-GB', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
