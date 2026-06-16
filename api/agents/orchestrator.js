@@ -270,15 +270,6 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       margin-bottom: 6px; font-family: 'Inter', sans-serif;
     }
 
-    /* Executive Summary "bottom line" (BLUF) — prominent lead above the highlights */
-    .summary-card .summary-bluf {
-      font-size: 16.5px; line-height: 1.72; color: var(--text); font-weight: 500;
-      margin: 6px 0 24px; padding: 2px 0 2px 16px;
-      border-left: 3px solid var(--accent);
-      font-family: 'Inter', sans-serif;
-    }
-    .summary-card .summary-bluf strong { font-weight: 700; }
-
     /* ── Mobile nav button (hidden on desktop) ───────────────────────── */
     .mob-sec-btn { display: none; }
 
