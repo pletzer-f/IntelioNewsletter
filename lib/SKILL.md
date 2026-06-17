@@ -185,9 +185,9 @@ Explain transmission:
 
 Agent scheduling model:
 - AGENT 00 runs monthly (or on-demand) and feeds all daily agents.
-- AGENTS 01-06 run in parallel for daily/weekly briefings.
+- AGENTS 01-07 run in parallel for daily/weekly briefings.
 
-Global rule for AGENTS 01-06:
+Global rule for AGENTS 01-07:
 - Use section baseline research plus client-specific overlays from the monthly profile.
 - Every section must include at least one client-linked story, or explicitly state `No material client-specific development`.
 - Query composition target: at least 60% client-specific terms (entities, competitors, products, regions, regulators) and up to 40% sector baseline terms.
@@ -201,7 +201,7 @@ Deliverable:
   - Segment-level priorities and sensitivities
   - Competitor list and watchlist
   - Supplier/customer and regulatory dependencies
-  - Section-specific query overlays for AGENTS 01-06
+  - Section-specific query overlays for AGENTS 01-07
   - Leading indicators and alert thresholds
 
 Output requirements:
@@ -310,6 +310,26 @@ Lens:
 - Direct mention and reputation risk/opportunity
 - Permits, labor, tax, and compliance effects
 - Region-specific demand and operating constraints
+
+### AGENT 07 - POLITICS AND GEOPOLITICS
+Question: What political, policy, and geopolitical developments in the client's region(s) affect its operating environment, costs, and strategic optionality?
+
+Baseline queries (always anchored to the client's configured region(s)):
+- `[primary region] government policy reform [month year]`
+- `[primary region] election coalition parliament vote [month year]`
+- `EU regulation directive [client sector] [year]`
+- `[region] trade tariffs sanctions geopolitics [month year]`
+- `[region] budget fiscal tax policy [year]`
+
+Client overlay:
+- Weight strictly by the client's region(s), sector, and the regulatory/political dependencies from AGENT 00.
+- Surface ONLY politically-driven developments that plausibly move the client's markets, input costs, demand, or licence to operate — not generic political theatre.
+
+Lens:
+- Government formation, elections, and the resulting policy direction
+- Legislative and regulatory agenda, with implementation timelines and compliance cost
+- Geopolitics, trade policy, sanctions, and supranational (EU) policy transmitting into the region
+- Name the political actors, parties, ministries, and bodies; keep the client connection in the Business Implication block
 
 ## 8. ORCHESTRATOR SYNTHESIS RULES
 

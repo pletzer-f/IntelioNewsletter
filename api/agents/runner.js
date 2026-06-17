@@ -6,7 +6,7 @@ import { getClient, getLatestProfile, saveProfile, saveBriefing } from '../../li
 import {
   runAgent00,
   runAgent01, runAgent02, runAgent03,
-  runAgent04, runAgent05, runAgent06,
+  runAgent04, runAgent05, runAgent06, runAgent07,
   runOrchestrator,
 } from '../../lib/claude.js';
 import { multiSearch } from '../../lib/search.js';
@@ -100,16 +100,17 @@ export async function runPipelineForClient(clientId) {
   const queries = buildSectionQueries(client, profileText);
 
   // Step 2: Run all section searches + market tickers in parallel
-  console.log(`[runner] Running parallel search for 6 sections + market tickers`);
-  let sr01, sr02, sr03, sr04, sr05, sr06, tickers;
+  console.log(`[runner] Running parallel search for 7 sections + market tickers`);
+  let sr01, sr02, sr03, sr04, sr05, sr06, sr07, tickers;
   try {
-    [sr01, sr02, sr03, sr04, sr05, sr06, tickers] = await Promise.all([
+    [sr01, sr02, sr03, sr04, sr05, sr06, sr07, tickers] = await Promise.all([
       multiSearch(queries.agent01, { count: 10, freshness: 'pd', country: 'DE' }),
       multiSearch(queries.agent02, { count: 8, freshness: 'pw', country: 'DE' }),
       multiSearch(queries.agent03, { count: 8, freshness: 'pw', country: 'DE' }),
       multiSearch(queries.agent04, { count: 8, freshness: 'pw', country: 'DE' }),
       multiSearch(queries.agent05, { count: 8, freshness: 'pw', country: 'DE' }),
       multiSearch(queries.agent06, { count: 8, freshness: 'pd', country: 'DE' }),
+      multiSearch(queries.agent07, { count: 8, freshness: 'pw', country: 'DE' }),
       fetchMarketTickers(),
     ]);
   } catch (err) {
@@ -117,32 +118,32 @@ export async function runPipelineForClient(clientId) {
   }
   console.log(`[runner] Market tickers fetched: ${tickers.length} instruments`);
 
-  // Step 3: Run all 6 section agents in parallel
-  // Token budget: ~1,400 tokens/agent × 6 = ~8,400 < 10K TPM (Tier 1 safe)
-  console.log(`[runner] Running 6 section agents in parallel`);
+  // Step 3: Run all enabled section agents in parallel (up to 7)
+  console.log(`[runner] Running section agents in parallel`);
   // Defensive: DB may contain [null,null,...] from old signups that sent slug strings.
-  // Filter to clean positive integers and fall back to all 6 sections if empty.
+  // Filter to clean positive integers and fall back to all 7 sections if empty.
   const rawEnabled = (client.sections_enabled || []).map(Number).filter(n => n > 0 && !isNaN(n));
-  const enabledSections = new Set(rawEnabled.length > 0 ? rawEnabled : [1, 2, 3, 4, 5, 6]);
+  const enabledSections = new Set(rawEnabled.length > 0 ? rawEnabled : [1, 2, 3, 4, 5, 6, 7]);
 
   // 2,000 chars ≈ 500 tokens — gives agents solid client context within budget
   const profileExcerpt = profileText.slice(0, 2000);
 
-  let h01, h02, h03, h04, h05, h06;
+  let h01, h02, h03, h04, h05, h06, h07;
   try {
-    [h01, h02, h03, h04, h05, h06] = await Promise.all([
+    [h01, h02, h03, h04, h05, h06, h07] = await Promise.all([
       enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01, usage) : Promise.resolve(''),
       enabledSections.has(2) ? runAgent02(client, profileExcerpt, sr02, usage) : Promise.resolve(''),
       enabledSections.has(3) ? runAgent03(client, profileExcerpt, sr03, usage) : Promise.resolve(''),
       enabledSections.has(4) ? runAgent04(client, profileExcerpt, sr04, usage) : Promise.resolve(''),
       enabledSections.has(5) ? runAgent05(client, profileExcerpt, sr05, usage) : Promise.resolve(''),
       enabledSections.has(6) ? runAgent06(client, profileExcerpt, sr06, usage) : Promise.resolve(''),
+      enabledSections.has(7) ? runAgent07(client, profileExcerpt, sr07, usage) : Promise.resolve(''),
     ]);
   } catch (err) {
     throw new Error(`[Step 3/agents] ${err.message}`);
   }
 
-  const sectionHtmls = [h01, h02, h03, h04, h05, h06].filter(Boolean);
+  const sectionHtmls = [h01, h02, h03, h04, h05, h06, h07].filter(Boolean);
 
   // Step 4: Orchestrator — executive highlights + key themes
   console.log(`[runner] Running orchestrator`);
@@ -161,7 +162,7 @@ export async function runPipelineForClient(clientId) {
       client,
       today,
       orchestratorHtml,
-      sectionHtmls: { h01, h02, h03, h04, h05, h06 },
+      sectionHtmls: { h01, h02, h03, h04, h05, h06, h07 },
       enabledSections,
       tickers,
     });
@@ -190,6 +191,7 @@ export async function runPipelineForClient(clientId) {
   if (enabledSections.has(4) && h04?.trim()) activeSectionNames.push('End-Market Demand');
   if (enabledSections.has(5) && h05?.trim()) activeSectionNames.push('Assets & Capex');
   if (enabledSections.has(6) && h06?.trim()) activeSectionNames.push('Local Policy & Reputation');
+  if (enabledSections.has(7) && h07?.trim()) activeSectionNames.push('Politics & Geopolitics');
 
   let emailError = null;
   try {

@@ -682,10 +682,10 @@
   <div class="hero">
     <div class="hero-badge">
       <span class="badge-dot"></span>
-      6 Parallel Research Agents · 14+ Verified Sources · Daily Delivery
+      7 Parallel Research Agents · 14+ Verified Sources · Daily Delivery
     </div>
     <h1>Your business intelligence,<br><em>researched and ready</em><br>every morning.</h1>
-    <p class="hero-sub">Intelio runs a team of AI research agents across macro, markets, industry, deals, and local news — synthesised around your specific business. Ready before the working day starts.</p>
+    <p class="hero-sub">Intelio runs a team of AI research agents across macro, markets, industry, deals, politics, and local news — synthesised around your specific business. Ready before the working day starts.</p>
     <div class="agent-strip">
       <span class="a-hi">AGENT 01</span> <span class="a-sep">·</span> Macro
       <span class="a-sep">·</span> <span class="a-hi">AGENT 02</span> <span class="a-sep">·</span> Industry
@@ -693,6 +693,7 @@
       <span class="a-sep">·</span> <span class="a-hi">AGENT 04</span> <span class="a-sep">·</span> Demand
       <span class="a-sep">·</span> <span class="a-hi">AGENT 05</span> <span class="a-sep">·</span> Assets
       <span class="a-sep">·</span> <span class="a-hi">AGENT 06</span> <span class="a-sep">·</span> Local
+      <span class="a-sep">·</span> <span class="a-hi">AGENT 07</span> <span class="a-sep">·</span> Politics
     </div>
   </div>
 
@@ -768,8 +769,9 @@
 
       <div class="field">
         <label>Business description</label>
-        <div class="hint">What does your company do? What markets, products, or geographies matter most? This becomes your client intelligence profile.</div>
+        <div class="hint">What does your company do? What markets, products, or geographies matter most? This becomes your client intelligence profile. Keep it tight — up to 150 words.</div>
         <textarea id="f-desc" placeholder="e.g. We manufacture industrial heat pumps and sell primarily in DACH and Italy. Our key cost drivers are copper, aluminium, and R290 refrigerant. We compete with Vaillant, Viessmann, and Daikin in the residential and light commercial segment."></textarea>
+        <div id="descCount" style="font-size:11px;color:var(--text-3);margin-top:6px;text-align:right;">0 / 150 words</div>
       </div>
 
       <div class="field">
@@ -782,6 +784,7 @@
           <input class="chip-input" id="entityInput" type="text" placeholder="Type a name and press Enter…" autocomplete="off">
         </div>
         <div class="suggestions" id="entitiesSuggestions"></div>
+        <div id="entitiesCount" style="font-size:11px;color:var(--text-3);margin-top:6px;">0 / 100 words</div>
       </div>
 
       <div class="step-nav">
@@ -802,8 +805,9 @@
       </div>
 
       <div class="field">
-        <label>Primary region <span class="req">*</span></label>
-        <select id="f-region" required>
+        <label>Primary market / region <span class="req">*</span></label>
+        <div class="hint">Where your business is based or sells most — this is the home base your briefing centres on.</div>
+        <select id="f-region" required onchange="updateScopeLabels()">
           <option value="" disabled selected>Select your primary region…</option>
           <optgroup label="Europe">
             <option>Austria</option>
@@ -827,24 +831,26 @@
       </div>
 
       <div class="field">
-        <label>News scope</label>
+        <label>Coverage</label>
+        <div class="hint">Your briefing always centres on the region above — this sets how much of the wider world we layer on top.</div>
         <div class="toggle-row" id="scopeToggle">
-          <label class="toggle-opt active">
+          <label class="toggle-opt active" onclick="updateScopePreview('both')">
             <input type="radio" name="scope" value="both" checked>
-            <strong>Regional + Global</strong>
-            <span>Local depth + world context</span>
+            <strong id="scopeBothLabel">Region + global context</strong>
+            <span>Local depth + the world news that moves it</span>
           </label>
-          <label class="toggle-opt">
+          <label class="toggle-opt" onclick="updateScopePreview('regional')">
             <input type="radio" name="scope" value="regional">
-            <strong>Regional only</strong>
-            <span>Your market, in depth</span>
+            <strong id="scopeRegLabel">Region only</strong>
+            <span>Just your market, in depth</span>
           </label>
-          <label class="toggle-opt">
+          <label class="toggle-opt" onclick="updateScopePreview('global')">
             <input type="radio" name="scope" value="global">
-            <strong>Global only</strong>
-            <span>Macro & markets focus</span>
+            <strong id="scopeGlobLabel">Global-first</strong>
+            <span id="scopeGlobSub">Worldwide markets, your region as the lens</span>
           </label>
         </div>
+        <div id="scopePreview" style="margin-top:12px;padding:10px 13px;background:var(--surface-hi);border-radius:8px;font-size:12.5px;line-height:1.55;color:var(--text-2);transition:background 0.38s ease;">📍 Your briefing leads with your region, and layers in the global developments that affect it.</div>
       </div>
 
       <div class="field">
@@ -857,6 +863,7 @@
           <input class="chip-input" id="topicInput" type="text" placeholder="e.g. heat pumps, BEG subsidies, R290 refrigerant…" autocomplete="off">
         </div>
         <div class="suggestions" id="topicsSuggestions"></div>
+        <div id="topicsCount" style="font-size:11px;color:var(--text-3);margin-top:6px;">0 / 80 words</div>
       </div>
 
       <div class="field">
@@ -970,6 +977,12 @@
               <span class="outlet-chip" data-val="ECB">ECB</span>
             </div>
           </div>
+          <div class="outlet-group">
+            <div class="outlet-group-label">➕ Add your own (max 5)</div>
+            <div class="chip-input-wrap" id="customSourcesWrap" style="margin-top:4px;">
+              <input class="chip-input" id="customSourceInput" type="text" placeholder="Type an outlet and press Enter…" autocomplete="off">
+            </div>
+          </div>
         </div>
         <div style="margin-top:8px;font-size:12px;color:var(--text-3);" id="outletCount">0 sources selected</div>
       </div>
@@ -996,7 +1009,7 @@
       <div class="section-heading">
         <div class="section-num">Step 03</div>
         <div class="section-title">Research agents</div>
-        <div class="section-desc">Each section runs as an independent AI research agent in parallel. Select the intelligence areas you want covered. Recommended: 4–6 agents.</div>
+        <div class="section-desc">Each section runs as an independent AI research agent in parallel. Select the intelligence areas you want covered. Recommended: 4–7 agents.</div>
       </div>
 
       <div class="field">
@@ -1067,11 +1080,22 @@
             <div class="sec-card-desc">Direct company mentions, local policy changes, regional permits, labour and tax, compliance developments.</div>
           </label>
 
+          <label class="sec-card selected">
+            <input type="checkbox" name="sections" value="7" checked>
+            <div class="sec-card-rec">Recommended</div>
+            <div class="sec-card-head">
+              <span class="sec-card-tag">Agent 07</span>
+              <div class="sec-card-check">✓</div>
+            </div>
+            <div class="sec-card-title">Politics & Geopolitics</div>
+            <div class="sec-card-desc">Government &amp; elections, the legislative and regulatory agenda, EU policy, trade and geopolitics — filtered to your region(s).</div>
+          </label>
+
         </div>
       </div>
 
       <div id="agentCount" style="margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-3); letter-spacing:0.06em; transition:color 0.38s ease;">
-        5 agents selected · Each runs in parallel · Est. 3–4 min total research time
+        6 agents selected · Each runs in parallel · Est. 5–6 min total research time
       </div>
 
       <div class="step-nav">
@@ -1390,30 +1414,54 @@
         `${n} agent${n !== 1 ? 's' : ''} selected · Each runs in parallel · Est. ${readTime} min total research time`;
     }
 
-    /* ── CHIP INPUTS ── */
-    function initChipInput(wrapId, inputId, store) {
+    /* ── CHIP INPUTS (with word caps + live counters) ── */
+    function chipWordCount(store) {
+      return store.reduce((n, s) => n + s.split(/\s+/).filter(Boolean).length, 0);
+    }
+    function flashWrap(el) {
+      const orig = el.style.borderColor;
+      el.style.boxShadow = '0 0 0 3px var(--accent-dim)';
+      el.style.borderColor = 'var(--accent)';
+      setTimeout(() => { el.style.boxShadow = ''; el.style.borderColor = orig; }, 380);
+    }
+    function initChipInput(wrapId, inputId, store, cap, counterId) {
       const wrap  = document.getElementById(wrapId);
       const input = document.getElementById(inputId);
+      const counterEl = counterId ? document.getElementById(counterId) : null;
+      const refresh = () => {
+        if (!counterEl) return;
+        const used = chipWordCount(store);
+        counterEl.textContent = `${used} / ${cap} words`;
+        counterEl.style.color = used >= cap ? 'var(--accent)' : 'var(--text-3)';
+      };
+      const tryAdd = (raw) => {
+        const val = String(raw).trim().replace(/,$/, '').trim();
+        if (!val || store.includes(val)) return false;
+        const w = val.split(/\s+/).filter(Boolean).length;
+        if (chipWordCount(store) + w > cap) { flashWrap(wrap); return false; }
+        store.push(val);
+        addChip(wrap, input, val, store, refresh);
+        refresh();
+        return true;
+      };
       wrap.addEventListener('click', () => input.focus());
-
       input.addEventListener('keydown', e => {
         if (e.key === 'Enter' || e.key === ',') {
           e.preventDefault();
-          const val = input.value.trim().replace(/,$/, '');
-          if (val && !store.includes(val)) {
-            store.push(val);
-            addChip(wrap, input, val, store);
-          }
+          tryAdd(input.value);
           input.value = '';
         }
         if (e.key === 'Backspace' && !input.value && store.length > 0) {
           const last = store.pop();
           wrap.querySelector(`.chip[data-val="${CSS.escape(last)}"]`)?.remove();
+          refresh();
         }
       });
+      refresh();
+      return tryAdd;
     }
 
-    function addChip(wrap, input, val, store) {
+    function addChip(wrap, input, val, store, onChange) {
       const chip = document.createElement('span');
       chip.className = 'chip';
       chip.dataset.val = val;
@@ -1422,17 +1470,25 @@
         const idx = store.indexOf(val);
         if (idx > -1) store.splice(idx, 1);
         chip.remove();
+        if (onChange) onChange();
       });
       wrap.insertBefore(chip, input);
     }
 
     const entities = [];
     const topics   = [];
-    initChipInput('entitiesWrap', 'entityInput', entities);
-    initChipInput('topicsWrap',   'topicInput',  topics);
+    const addEntity = initChipInput('entitiesWrap', 'entityInput', entities, 100, 'entitiesCount');
+    const addTopic  = initChipInput('topicsWrap',   'topicInput',  topics,   80, 'topicsCount');
 
-    /* ── OUTLET PICKER ── */
+    /* ── OUTLET PICKER (+ custom "add your own", max 5) ── */
     const selectedOutlets = [];
+    const customSources   = [];
+    const MAX_CUSTOM_SOURCES = 5;
+    function refreshOutletCount() {
+      const count = selectedOutlets.length;
+      document.getElementById('outletCount').textContent =
+        count === 0 ? '0 sources selected' : `${count} source${count !== 1 ? 's' : ''} selected`;
+    }
     document.querySelectorAll('#outletPicker .outlet-chip').forEach(chip => {
       chip.addEventListener('click', () => {
         const val = chip.dataset.val;
@@ -1443,11 +1499,85 @@
           const i = selectedOutlets.indexOf(val);
           if (i > -1) selectedOutlets.splice(i, 1);
         }
-        const count = selectedOutlets.length;
-        document.getElementById('outletCount').textContent =
-          count === 0 ? '0 sources selected' : `${count} source${count !== 1 ? 's' : ''} selected`;
+        refreshOutletCount();
       });
     });
+    (function initCustomSources() {
+      const wrap  = document.getElementById('customSourcesWrap');
+      const input = document.getElementById('customSourceInput');
+      if (!wrap || !input) return;
+      wrap.addEventListener('click', () => input.focus());
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ',') {
+          e.preventDefault();
+          const val = input.value.trim().replace(/,$/, '').trim();
+          input.value = '';
+          if (!val) return;
+          if (customSources.some(s => s.toLowerCase() === val.toLowerCase()) || selectedOutlets.includes(val)) return;
+          if (customSources.length >= MAX_CUSTOM_SOURCES) { flashWrap(wrap); return; }
+          customSources.push(val);
+          selectedOutlets.push(val);
+          addChip(wrap, input, val, customSources, () => {
+            const i = selectedOutlets.indexOf(val);
+            if (i > -1) selectedOutlets.splice(i, 1);
+            refreshOutletCount();
+          });
+          refreshOutletCount();
+        }
+        if (e.key === 'Backspace' && !input.value && customSources.length > 0) {
+          const last = customSources.pop();
+          const i = selectedOutlets.indexOf(last);
+          if (i > -1) selectedOutlets.splice(i, 1);
+          wrap.querySelector(`.chip[data-val="${CSS.escape(last)}"]`)?.remove();
+          refreshOutletCount();
+        }
+      });
+    })();
+
+    /* ── BUSINESS DESCRIPTION word counter (cap 150, enforced on submit) ── */
+    function countWords(s) { s = (s || '').trim(); return s ? s.split(/\s+/).length : 0; }
+    function trimWords(s, max) { const w = (s || '').split(/\s+/); return w.length <= max ? s : w.slice(0, max).join(' '); }
+    (function initDescCounter() {
+      const el = document.getElementById('f-desc');
+      const out = document.getElementById('descCount');
+      if (!el || !out) return;
+      const refresh = () => {
+        const n = countWords(el.value);
+        out.textContent = `${n} / 150 words`;
+        out.style.color = n > 150 ? 'var(--accent)' : 'var(--text-3)';
+      };
+      el.addEventListener('input', refresh);
+      refresh();
+    })();
+
+    /* ── REGION + COVERAGE: dynamic labels + plain-language preview ── */
+    function regionShort() {
+      const r = (document.getElementById('f-region').value || '').trim();
+      if (!r) return 'your region';
+      let s = r.split('(')[0].split('/')[0].trim();
+      if (/^global/i.test(s)) s = 'Global';
+      return s || 'your region';
+    }
+    function updateScopePreview(scopeArg) {
+      const R = regionShort();
+      const scope = scopeArg || (document.querySelector('input[name="scope"]:checked') || {}).value || 'both';
+      const el = document.getElementById('scopePreview');
+      if (!el) return;
+      el.textContent =
+        scope === 'regional' ? `📍 Your briefing covers ${R} only — maximum local depth, no global noise.` :
+        scope === 'global'   ? `🌍 Your briefing leads with global markets, read through a ${R} lens.` :
+                               `📍 Your briefing leads with ${R}, and layers in the global developments that affect it.`;
+    }
+    function updateScopeLabels() {
+      const R = regionShort();
+      const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+      set('scopeBothLabel', `${R} + global context`);
+      set('scopeRegLabel',  `${R} only`);
+      set('scopeGlobSub',   `Worldwide markets, ${R} as the lens`);
+      updateScopePreview();
+    }
+    updateScopeLabels();
+    updateAgentCount();
 
     /* ── SUBMIT ── */
     function handleSubmit() {
@@ -1462,7 +1592,7 @@
         CLIENT_NAME:            document.getElementById('f-company').value.trim(),
         CLIENT_CONTACT:         document.getElementById('f-name').value.trim(),
         EMAIL:                  document.getElementById('f-email').value.trim(),
-        CLIENT_PROFILE:         document.getElementById('f-desc').value.trim(),
+        CLIENT_PROFILE:         trimWords(document.getElementById('f-desc').value.trim(), 150),
         CLIENT_ENTITIES:        entities,
         REGION:                 document.getElementById('f-region').value,
         NEWS_SCOPE:             scope,
@@ -1674,17 +1804,14 @@
         const pill = document.createElement('span');
         pill.className = 'suggestion-pill';
         pill.innerHTML = '<span class="sp-plus">+</span>' + escapeHtml(val);
-        pill.addEventListener('click', () => { addSuggestion(type, val); pill.remove(); });
+        pill.addEventListener('click', () => { if (addSuggestion(type, val)) pill.remove(); });
         container.appendChild(pill);
       });
     }
 
+    // Adds via the capped chip helpers — returns false if the field's word cap is reached.
     function addSuggestion(type, val) {
-      const isEnt = type === 'entities';
-      const store = isEnt ? entities : topics;
-      const wrap  = document.getElementById(isEnt ? 'entitiesWrap' : 'topicsWrap');
-      const input = document.getElementById(isEnt ? 'entityInput' : 'topicInput');
-      if (!store.includes(val)) { store.push(val); addChip(wrap, input, val, store); }
+      return (type === 'entities' ? addEntity : addTopic)(val);
     }
 
     function escapeHtml(s) {

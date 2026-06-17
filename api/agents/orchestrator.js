@@ -36,6 +36,7 @@ const SECTION_DEFS = [
   { slug: 'demand',   name: 'End-Market Demand',         agent: 4 },
   { slug: 'assets',   name: 'Assets & Capex',            agent: 5 },
   { slug: 'local',    name: 'Local Policy & Reputation', agent: 6 },
+  { slug: 'politics', name: 'Politics & Geopolitics',    agent: 7 },
 ];
 
 // ── Section HTML repair (truncation safety net) ────────────────────────────

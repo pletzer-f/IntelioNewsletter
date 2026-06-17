@@ -29,10 +29,10 @@ async function isAdmin(req) {
   return false;
 }
 
-const SLUG_TO_NUM = { macro: 1, industry: 2, pe: 3, demand: 4, assets: 5, local: 6 };
+const SLUG_TO_NUM = { macro: 1, industry: 2, pe: 3, demand: 4, assets: 5, local: 6, politics: 7 };
 function normSections(arr) {
   const r = (arr || []).map(v => { const n = Number(v); if (!isNaN(n) && n > 0) return n; return SLUG_TO_NUM[v] ?? null; }).filter(n => n !== null);
-  return r.length ? r : [1, 2, 3, 4, 5, 6];
+  return r.length ? r : [1, 2, 3, 4, 5, 6, 7];
 }
 
 export default async function handler(req, res) {
