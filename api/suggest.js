@@ -7,7 +7,12 @@ import { complete } from '../lib/claude.js';
 
 export const config = { runtime: 'nodejs' };
 
-const MAX_SUGGESTIONS = 8;
+// Per-type generation targets. Items are short (1–4 words); the word cap keeps
+// this unauthenticated endpoint cheap while still allowing a broad, useful set.
+const LIMITS = {
+  entities: { count: 16, words: 100 },
+  topics:   { count: 14, words: 80 },
+};
 
 export default async function handler(req, res) {
   if (req.method === 'OPTIONS') {
@@ -32,14 +37,27 @@ export default async function handler(req, res) {
 
   if (!company) return res.status(400).json({ error: 'A company name is required to generate suggestions.' });
 
+  const lim = LIMITS[type];
+
   const kind = type === 'topics'
-    ? `specific topics, technologies, regulations, commodities, materials, or market themes this company should track. Keep them concrete and searchable (e.g. "R290 refrigerant", "BEG subsidies", "EU CBAM"). Avoid the company's own name and avoid generic words like "news" or "market".`
-    : `specific named entities: competitors, major customers, suppliers, regulators, industry bodies, or notable brands/business units relevant to this company. Prefer real, well-known names in the company's region and sector. Avoid generic words.`;
+    ? `specific, searchable topics that mirror this business — be broad and cover several of:
+  • core technologies, products, and methods the company uses or sells
+  • regulations, policy, and standards that affect it
+  • the market segments and end-markets it serves
+  • input costs / commodities and macro themes that move its economics
+Keep each item concrete and short (e.g. "real-world evidence", "GLP-1 demand", "EU CBAM", "clinical trial regulation", "R290 refrigerant"). Avoid the company's own name and generic words like "news" or "market".`
+    : `specific NAMED organisations across this company's value chain. Be generous and concrete, and cover ALL of these buckets (not just competitors):
+  • direct competitors / rivals
+  • major CUSTOMERS and client types — e.g. for a pharma-services firm like IQVIA: large pharma such as Novartis, Eli Lilly, Pfizer, Boehringer Ingelheim, Roche
+  • key suppliers and strategic partners
+  • regulators, government ministries, and political / industry bodies to watch in the company's region — e.g. EMA, FDA, EU Commission, national health or finance authorities
+Prefer real, well-known names relevant to the company's sector and region.`;
 
   const system = `You are an intelligence-analyst assistant for Intelio, a business news-briefing service.
-Given a company profile, propose a concise list of ${type} the company should monitor.
+Given a company profile, propose a BROAD, useful list of ${type} the company should monitor.
 Each item is one of: ${kind}
-Output ONLY a compact JSON array of ${MAX_SUGGESTIONS} short strings (each 1–4 words). No prose, no markdown fences, no object keys — just the array, e.g. ["Item one","Item two"].`;
+Aim for about ${lim.count} distinct items spread across the buckets above — more is better than fewer, as long as each is genuinely relevant to THIS company.
+Output ONLY a compact JSON array of short strings (each 1–4 words). No prose, no markdown fences, no object keys — just the array, e.g. ["Item one","Item two"].`;
 
   const user = `COMPANY: ${company}
 REGION: ${region || '(unspecified)'}
@@ -50,8 +68,8 @@ ALREADY ADDED (do not repeat these): ${existing.length ? existing.join(', ') : '
 Return the JSON array of suggested ${type} now.`;
 
   try {
-    const raw = await complete(system, user, 400);
-    const suggestions = parseList(raw, existing);
+    const raw = await complete(system, user, 700);
+    const suggestions = parseList(raw, existing, lim);
     return res.status(200).json({ suggestions });
   } catch (err) {
     console.error('[suggest] error:', err?.message || err);
@@ -59,8 +77,8 @@ Return the JSON array of suggested ${type} now.`;
   }
 }
 
-// Robustly extract a clean string array from the model output.
-function parseList(raw, existing) {
+// Robustly extract a clean string array from the model output, capped by count + words.
+function parseList(raw, existing, lim = { count: 14, words: 100 }) {
   let arr = [];
   const text = String(raw || '').trim();
   try {
@@ -73,14 +91,18 @@ function parseList(raw, existing) {
 
   const seen = new Set(existing.map(s => s.toLowerCase()));
   const out = [];
+  let words = 0;
   for (const item of arr) {
     const s = String(item || '').trim().replace(/^["'\-•\d.\s]+/, '').slice(0, 60);
     if (!s) continue;
     const key = s.toLowerCase();
     if (seen.has(key)) continue;
+    const w = s.split(/\s+/).filter(Boolean).length;
+    if (words + w > lim.words) break;      // respect the word budget
     seen.add(key);
     out.push(s);
-    if (out.length >= MAX_SUGGESTIONS) break;
+    words += w;
+    if (out.length >= lim.count) break;
   }
   return out;
 }

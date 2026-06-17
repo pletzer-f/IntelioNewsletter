@@ -104,7 +104,21 @@ export function buildSectionQueries(client, profile) {
   // Query the client's preferred outlets directly for local/company coverage.
   agent06.push(...topSources.slice(0, 2).map(s => `"${s}" ${region} ${month}`));
 
-  return { agent01, agent02, agent03, agent04, agent05, agent06 };
+  // ── Agent 07: Politics & Geopolitics ──────────────────────────────────────
+  // Anchored to the client's region(s); politically-driven developments only.
+  const agent07 = [
+    `${region} government policy reform ${month}`,
+    `${region} election coalition parliament ${month}`,
+    `${region} budget fiscal tax policy ${year}`,
+  ];
+  if (includeRegional) agent07.push(`${region} regulation business impact ${month}`);
+  if (includeGlobal)   agent07.push(
+    `EU policy regulation directive ${month}`,
+    `Europe trade tariffs sanctions geopolitics ${month}`,
+  );
+  agent07.push(...primaryTopics.slice(0, 2).map(t => `${t} policy regulation ${marketGeo} ${month}`));
+
+  return { agent01, agent02, agent03, agent04, agent05, agent06, agent07 };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
