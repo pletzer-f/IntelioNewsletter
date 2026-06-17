@@ -1009,40 +1009,37 @@
       <div class="section-heading">
         <div class="section-num">Step 03</div>
         <div class="section-title">Research agents</div>
-        <div class="section-desc">Each section runs as an independent AI research agent in parallel. Select the intelligence areas you want covered. Recommended: 4–7 agents.</div>
+        <div class="section-desc">Each section runs as an independent AI research agent in parallel. Choose the intelligence areas you want covered — pick as many as you like.</div>
       </div>
 
       <div class="field">
         <div class="section-cards" id="agentGrid">
 
-          <label class="sec-card selected">
-            <input type="checkbox" name="sections" value="1" checked>
-            <div class="sec-card-rec">Recommended</div>
+          <label class="sec-card">
+            <input type="checkbox" name="sections" value="1">
             <div class="sec-card-head">
               <span class="sec-card-tag">Agent 01</span>
-              <div class="sec-card-check">✓</div>
+              <div class="sec-card-check"></div>
             </div>
             <div class="sec-card-title">Macro & Markets</div>
             <div class="sec-card-desc">Rates, inflation, PMI, energy prices, equities, FX — economic conditions that affect cost of capital and demand.</div>
           </label>
 
-          <label class="sec-card selected">
-            <input type="checkbox" name="sections" value="2" checked>
-            <div class="sec-card-rec">Recommended</div>
+          <label class="sec-card">
+            <input type="checkbox" name="sections" value="2">
             <div class="sec-card-head">
               <span class="sec-card-tag">Agent 02</span>
-              <div class="sec-card-check">✓</div>
+              <div class="sec-card-check"></div>
             </div>
             <div class="sec-card-title">Industry & Operations</div>
             <div class="sec-card-desc">Sector developments, competitor moves, regulatory shifts, supply chain changes, and technology transitions.</div>
           </label>
 
-          <label class="sec-card selected">
-            <input type="checkbox" name="sections" value="3" checked>
-            <div class="sec-card-rec">Recommended</div>
+          <label class="sec-card">
+            <input type="checkbox" name="sections" value="3">
             <div class="sec-card-head">
               <span class="sec-card-tag">Agent 03</span>
-              <div class="sec-card-check">✓</div>
+              <div class="sec-card-check"></div>
             </div>
             <div class="sec-card-title">Private Equity & M&A</div>
             <div class="sec-card-desc">Deal flow in your sector, valuation multiples, strategic transactions, and consolidation signals.</div>
@@ -1058,34 +1055,31 @@
             <div class="sec-card-desc">Customer demand signals, order book trends, geographic divergence, and structural vs. seasonal patterns.</div>
           </label>
 
-          <label class="sec-card selected">
-            <input type="checkbox" name="sections" value="5" checked>
-            <div class="sec-card-rec">Recommended</div>
+          <label class="sec-card">
+            <input type="checkbox" name="sections" value="5">
             <div class="sec-card-head">
               <span class="sec-card-tag">Agent 05</span>
-              <div class="sec-card-check">✓</div>
+              <div class="sec-card-check"></div>
             </div>
             <div class="sec-card-title">Real Estate & Assets</div>
             <div class="sec-card-desc">Asset values, yields, capex economics, financing conditions, subsidies, and investment case dynamics.</div>
           </label>
 
-          <label class="sec-card selected">
-            <input type="checkbox" name="sections" value="6" checked>
-            <div class="sec-card-rec">Recommended</div>
+          <label class="sec-card">
+            <input type="checkbox" name="sections" value="6">
             <div class="sec-card-head">
               <span class="sec-card-tag">Agent 06</span>
-              <div class="sec-card-check">✓</div>
+              <div class="sec-card-check"></div>
             </div>
             <div class="sec-card-title">Local Policy & Monitoring</div>
             <div class="sec-card-desc">Direct company mentions, local policy changes, regional permits, labour and tax, compliance developments.</div>
           </label>
 
-          <label class="sec-card selected">
-            <input type="checkbox" name="sections" value="7" checked>
-            <div class="sec-card-rec">Recommended</div>
+          <label class="sec-card">
+            <input type="checkbox" name="sections" value="7">
             <div class="sec-card-head">
               <span class="sec-card-tag">Agent 07</span>
-              <div class="sec-card-check">✓</div>
+              <div class="sec-card-check"></div>
             </div>
             <div class="sec-card-title">Politics & Geopolitics</div>
             <div class="sec-card-desc">Government &amp; elections, the legislative and regulatory agenda, EU policy, trade and geopolitics — filtered to your region(s).</div>
@@ -1095,7 +1089,7 @@
       </div>
 
       <div id="agentCount" style="margin-top:12px; font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-3); letter-spacing:0.06em; transition:color 0.38s ease;">
-        6 agents selected · Each runs in parallel · Est. 5–6 min total research time
+        No agents selected — pick at least one to continue.
       </div>
 
       <div class="step-nav">
@@ -1409,8 +1403,10 @@
 
     function updateAgentCount() {
       const n = document.querySelectorAll('#agentGrid input:checked').length;
+      const el = document.getElementById('agentCount');
+      if (n === 0) { el.textContent = 'No agents selected — pick at least one to continue.'; return; }
       const readTime = n <= 3 ? '2–3' : n <= 5 ? '3–4' : '5–6';
-      document.getElementById('agentCount').textContent =
+      el.textContent =
         `${n} agent${n !== 1 ? 's' : ''} selected · Each runs in parallel · Est. ${readTime} min total research time`;
     }
 
