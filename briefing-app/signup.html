@@ -417,7 +417,7 @@
     }
 
     /* Depth selector */
-    .depth-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .depth-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .depth-card {
       padding: 18px 20px; border: 1.5px solid var(--border); border-radius: 10px;
       background: var(--surface); cursor: pointer; user-select: none;
@@ -1126,6 +1126,12 @@
             <div class="depth-card-sub">6 stories per section with deeper cross-sectional theme analysis. Includes week-ahead signals.</div>
             <div class="depth-card-meta">~15 min read · Delivered Friday 07:30</div>
           </label>
+          <label class="depth-card">
+            <input type="radio" name="depth" value="starter">
+            <div class="depth-card-title">Week starter</div>
+            <div class="depth-card-sub">6 stories per section with the week ahead in focus — your Monday-morning kickoff into the week.</div>
+            <div class="depth-card-meta">~15 min read · Delivered Monday 07:30</div>
+          </label>
         </div>
       </div>
 
@@ -1585,6 +1591,9 @@
       const scope    = (document.querySelector('input[name="scope"]:checked') || {}).value  || 'both';
       const depth    = (document.querySelector('input[name="depth"]:checked') || {}).value  || 'daily';
       const refresh  = (document.querySelector('input[name="refresh"]:checked') || {}).value || 'monthly';
+      // Briefing depth → schedule. 'starter' = weekly on Monday; 'weekly' = weekly on Friday.
+      const isWeekly    = depth === 'weekly' || depth === 'starter';
+      const deliveryDow = depth === 'starter' ? 1 : depth === 'weekly' ? 5 : 1;  // 1=Mon, 5=Fri
 
       const config = {
         CLIENT_NAME:            document.getElementById('f-company').value.trim(),
@@ -1598,11 +1607,12 @@
         CLIENT_LOCAL_SOURCES:   selectedOutlets.join(', '),
         OUTPUT_LANGUAGE:        selectedLang,
         SECTIONS_ENABLED:       sections,
-        VIEW_MODE:              depth,
+        VIEW_MODE:              isWeekly ? 'weekly' : 'daily',
+        DELIVERY_DOW:           deliveryDow,
         DELIVERY_TIME:          document.getElementById('f-time').value,
         CLIENT_PROFILE_REFRESH: refresh,
-        STORIES_PER_SECTION:    depth === 'daily' ? 3 : 6,
-        LOOKBACK_HOURS:         depth === 'weekly' ? 168 : 72,
+        STORIES_PER_SECTION:    isWeekly ? 6 : 3,
+        LOOKBACK_HOURS:         isWeekly ? 168 : 72,
       };
 
       // Show loading state on button
@@ -1652,13 +1662,22 @@
       mb.disabled = false; mb.innerHTML = '✉&nbsp; Email me a sign-in link';
       pb.disabled = false; pb.textContent = 'Create →';
 
+      const DOWS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const timeFmt = (config.DELIVERY_TIME || '0700').replace(/(\d{2})(\d{2})/, '$1:$2');
+      const depthLabel = config.VIEW_MODE === 'daily'
+        ? `Daily briefing — ${config.STORIES_PER_SECTION} stories/section`
+        : `${config.DELIVERY_DOW === 1 ? 'Week starter (Mon)' : 'Weekly digest (Fri)'} — ${config.STORIES_PER_SECTION} stories/section`;
+      const deliveryLabel = config.VIEW_MODE === 'daily'
+        ? `Daily · ${timeFmt} CET`
+        : `${DOWS[config.DELIVERY_DOW] || 'Weekly'} · ${timeFmt} CET`;
+
       const rows = [
         ['Company',   config.CLIENT_NAME],
         ['Region',    config.REGION],
         ['Scope',     config.NEWS_SCOPE],
         ['Agents',    config.SECTIONS_ENABLED.length + ' active'],
-        ['Depth',     config.VIEW_MODE + ' — ' + config.STORIES_PER_SECTION + ' stories/section'],
-        ['Delivery',  config.DELIVERY_TIME.replace(/(\d{2})(\d{2})/, '$1:$2') + ' CET'],
+        ['Format',    depthLabel],
+        ['Delivery',  deliveryLabel],
         ['Language',  config.OUTPUT_LANGUAGE === 'en' ? 'English' : 'Deutsch'],
         ['Refresh',   config.CLIENT_PROFILE_REFRESH],
       ];
