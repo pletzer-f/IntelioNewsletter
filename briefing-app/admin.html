@@ -830,14 +830,17 @@
 
     // ── Delete user ───────────────────────────────────────────────────────────
     async function deleteUser(clientId, name) {
-      if (!confirm('Delete "' + name + '" and all their briefings? This cannot be undone.')) return;
+      if (!confirm('Delete "' + name + '" completely?\n\nThis removes their briefing profile, all stored briefings, AND their login account (frees the email for re-use). This cannot be undone.')) return;
       try {
         const res = await fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ action: 'delete_client', clientId }) });
-        if (!res.ok) throw new Error('Failed');
+        const out = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(out.error || 'Failed');
         clientData = clientData.filter(c => c.id !== clientId);
         renderClients(clientData); renderStats(clientData);
-        showToast('User deleted');
-      } catch { showToast('Could not delete — try again'); }
+        showToast(out.authDeleted ? 'User + login deleted'
+          : out.authError ? 'Profile deleted — login could not be removed'
+          : 'User deleted (no linked login)');
+      } catch (e) { showToast('Could not delete — try again'); }
     }
 
     // ── Manage admins ─────────────────────────────────────────────────────────
