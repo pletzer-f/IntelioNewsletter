@@ -184,9 +184,37 @@ export default async function handler(req, res) {
 
     if (action === 'delete_client') {
       if (!body.clientId) return res.status(400).json({ error: 'Missing clientId' });
+
+      // Look up the linked login + email BEFORE deleting the client row.
+      const { data: clientRow } = await supabase
+        .from('clients').select('user_id, email').eq('id', body.clientId).maybeSingle();
+
+      // Delete the client (cascades to briefings + client_profiles).
       const { error } = await supabase.from('clients').delete().eq('id', body.clientId);
       if (error) return res.status(500).json({ error: error.message });
-      return res.status(200).json({ deleted: true });
+
+      // Also delete the login account so the person is fully removed and the email freed.
+      // Non-fatal: the client is already gone; report the auth outcome either way.
+      let authDeleted = false, authError = null;
+      let userId = clientRow?.user_id || null;
+      if (!userId && clientRow?.email) {
+        // Client wasn't linked — find the auth user by email (paginate defensively).
+        try {
+          for (let page = 1; page <= 10 && !userId; page++) {
+            const { data: list } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+            const users = list?.users || [];
+            const match = users.find(u => (u.email || '').toLowerCase() === clientRow.email.toLowerCase());
+            if (match) userId = match.id;
+            if (users.length < 200) break;
+          }
+        } catch (e) { authError = e?.message || String(e); }
+      }
+      if (userId) {
+        const { error: delErr } = await supabase.auth.admin.deleteUser(userId);
+        if (delErr) authError = delErr.message; else authDeleted = true;
+      }
+
+      return res.status(200).json({ deleted: true, authDeleted, authError });
     }
 
     if (action === 'set_settings') {
