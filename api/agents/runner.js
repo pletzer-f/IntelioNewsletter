@@ -7,9 +7,11 @@ import {
   runAgent00,
   runAgent01, runAgent02, runAgent03,
   runAgent04, runAgent05, runAgent06, runAgent07,
-  runOrchestrator,
+  runOrchestrator, runVerifier, computeCost,
 } from '../../lib/claude.js';
 import { multiSearch } from '../../lib/search.js';
+import { enrichWithText } from '../../lib/fetch-article.js';
+import { fetchMacroData, formatDataSheet } from '../../lib/macro-data.js';
 import { sendBriefingEmail } from '../../lib/email.js';
 import { fetchMarketTickers } from '../../lib/market.js';
 import { buildSectionQueries } from './queries.js';
@@ -55,7 +57,7 @@ export async function runPipelineForClient(clientId) {
 
   // Token accumulator — every Claude call in this pipeline adds to it, so we can
   // persist the real input/output token counts and compute cost in the admin console.
-  const usage = { input: 0, output: 0 };
+  const usage = { input: 0, output: 0, opusInput: 0, opusOutput: 0 };
 
   // Step 0: Ensure fresh monthly profile
   let profile;
@@ -100,10 +102,10 @@ export async function runPipelineForClient(clientId) {
   const queries = buildSectionQueries(client, profileText);
 
   // Step 2: Run all section searches + market tickers in parallel
-  console.log(`[runner] Running parallel search for 7 sections + market tickers`);
-  let sr01, sr02, sr03, sr04, sr05, sr06, sr07, tickers;
+  console.log(`[runner] Running parallel search + market + macro ground-truth`);
+  let sr01, sr02, sr03, sr04, sr05, sr06, sr07, tickers, macro;
   try {
-    [sr01, sr02, sr03, sr04, sr05, sr06, sr07, tickers] = await Promise.all([
+    [sr01, sr02, sr03, sr04, sr05, sr06, sr07, tickers, macro] = await Promise.all([
       multiSearch(queries.agent01, { count: 10, freshness: 'pd', country: 'DE' }),
       multiSearch(queries.agent02, { count: 8, freshness: 'pw', country: 'DE' }),
       multiSearch(queries.agent03, { count: 8, freshness: 'pw', country: 'DE' }),
@@ -112,11 +114,20 @@ export async function runPipelineForClient(clientId) {
       multiSearch(queries.agent06, { count: 8, freshness: 'pd', country: 'DE' }),
       multiSearch(queries.agent07, { count: 8, freshness: 'pw', country: 'DE' }),
       fetchMarketTickers(),
+      fetchMacroData(),   // authoritative ECB rates + euro-area inflation (graceful)
     ]);
   } catch (err) {
     throw new Error(`[Step 2/search] ${err.message}`);
   }
-  console.log(`[runner] Market tickers fetched: ${tickers.length} instruments`);
+  console.log(`[runner] Tickers: ${tickers.length} · macro: ECB ${macro?.deposit?.value ?? 'n/a'}% / HICP ${macro?.hicp?.value ?? 'n/a'}%`);
+
+  // Verified ground-truth figures (ECB rates, euro-area inflation, live markets) handed to agents.
+  const dataSheet = formatDataSheet(macro, tickers);
+
+  // Step 2.5: fetch full article text for the top sources per section, so agents reason
+  // from real content rather than snippets. Best-effort — mutates results in place, never throws.
+  console.log(`[runner] Fetching article text for top sources`);
+  await Promise.allSettled([sr01, sr02, sr03, sr04, sr05, sr06, sr07].map(sr => enrichWithText(sr, 4)));
 
   // Step 3: Run all enabled section agents in parallel (up to 7)
   console.log(`[runner] Running section agents in parallel`);
@@ -131,16 +142,34 @@ export async function runPipelineForClient(clientId) {
   let h01, h02, h03, h04, h05, h06, h07;
   try {
     [h01, h02, h03, h04, h05, h06, h07] = await Promise.all([
-      enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01, usage) : Promise.resolve(''),
-      enabledSections.has(2) ? runAgent02(client, profileExcerpt, sr02, usage) : Promise.resolve(''),
-      enabledSections.has(3) ? runAgent03(client, profileExcerpt, sr03, usage) : Promise.resolve(''),
-      enabledSections.has(4) ? runAgent04(client, profileExcerpt, sr04, usage) : Promise.resolve(''),
-      enabledSections.has(5) ? runAgent05(client, profileExcerpt, sr05, usage) : Promise.resolve(''),
-      enabledSections.has(6) ? runAgent06(client, profileExcerpt, sr06, usage) : Promise.resolve(''),
-      enabledSections.has(7) ? runAgent07(client, profileExcerpt, sr07, usage) : Promise.resolve(''),
+      enabledSections.has(1) ? runAgent01(client, profileExcerpt, sr01, usage, dataSheet) : Promise.resolve(''),
+      enabledSections.has(2) ? runAgent02(client, profileExcerpt, sr02, usage, dataSheet) : Promise.resolve(''),
+      enabledSections.has(3) ? runAgent03(client, profileExcerpt, sr03, usage, dataSheet) : Promise.resolve(''),
+      enabledSections.has(4) ? runAgent04(client, profileExcerpt, sr04, usage, dataSheet) : Promise.resolve(''),
+      enabledSections.has(5) ? runAgent05(client, profileExcerpt, sr05, usage, dataSheet) : Promise.resolve(''),
+      enabledSections.has(6) ? runAgent06(client, profileExcerpt, sr06, usage, dataSheet) : Promise.resolve(''),
+      enabledSections.has(7) ? runAgent07(client, profileExcerpt, sr07, usage, dataSheet) : Promise.resolve(''),
     ]);
   } catch (err) {
     throw new Error(`[Step 3/agents] ${err.message}`);
+  }
+
+  // Step 3.5: verification pass — fact-check each section against its own sources + the verified
+  // data sheet, stripping unsupported figures and fabricated URLs. Macro uses Opus + reasoning
+  // (most figure-critical); the rest use Sonnet. Best-effort: a failure keeps the original section.
+  console.log(`[runner] Verifying sections against sources`);
+  try {
+    [h01, h02, h03, h04, h05, h06, h07] = await Promise.all([
+      runVerifier(client, 'Macro & Markets',           h01, sr01, dataSheet, usage, { model: 'claude-opus-4-8', thinking: true }),
+      runVerifier(client, 'Core Industry',             h02, sr02, dataSheet, usage),
+      runVerifier(client, 'Private Equity & M&A',      h03, sr03, dataSheet, usage),
+      runVerifier(client, 'End-Market Demand',         h04, sr04, dataSheet, usage),
+      runVerifier(client, 'Assets & Capex',            h05, sr05, dataSheet, usage),
+      runVerifier(client, 'Local Policy & Reputation', h06, sr06, dataSheet, usage),
+      runVerifier(client, 'Politics & Geopolitics',    h07, sr07, dataSheet, usage),
+    ]);
+  } catch (err) {
+    console.warn(`[runner] Verification pass error (non-fatal, keeping drafts): ${err.message}`);
   }
 
   const sectionHtmls = [h01, h02, h03, h04, h05, h06, h07].filter(Boolean);
@@ -170,14 +199,17 @@ export async function runPipelineForClient(clientId) {
     throw new Error(`[Step 5/assemble] ${err.message}`);
   }
 
-  // Step 6: Save to Supabase
+  // Step 6: Save to Supabase (store total tokens across model tiers + the real USD cost)
+  const totalIn  = (usage.input  || 0) + (usage.opusInput  || 0);
+  const totalOut = (usage.output || 0) + (usage.opusOutput || 0);
+  const costUsd  = computeCost(usage);
   let briefing;
   try {
-    briefing = await saveBriefing(clientId, briefingHtml, today, usage.input, usage.output);
+    briefing = await saveBriefing(clientId, briefingHtml, today, totalIn, totalOut, costUsd);
   } catch (err) {
     throw new Error(`[Step 6/save] ${err.message}`);
   }
-  console.log(`[runner] Briefing saved: ${briefing.id} (tokens — in: ${usage.input}, out: ${usage.output})`);
+  console.log(`[runner] Briefing saved: ${briefing.id} ($${costUsd.toFixed(4)} · in ${totalIn} / out ${totalOut} · opus ${usage.opusInput || 0}/${usage.opusOutput || 0})`);
 
   // Step 7: Send email — pass orchestratorHtml (executive summary) + section names
   // We do NOT send the full briefingHtml; the email contains the summary + a CTA link.
