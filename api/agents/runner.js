@@ -57,7 +57,7 @@ export async function runPipelineForClient(clientId) {
 
   // Token accumulator — every Claude call in this pipeline adds to it, so we can
   // persist the real input/output token counts and compute cost in the admin console.
-  const usage = { input: 0, output: 0, opusInput: 0, opusOutput: 0 };
+  const usage = { input: 0, output: 0, opusInput: 0, opusOutput: 0, haikuInput: 0, haikuOutput: 0 };
 
   // Step 0: Ensure fresh monthly profile
   let profile;
@@ -157,16 +157,17 @@ export async function runPipelineForClient(clientId) {
   // Step 3.5: verification pass — fact-check each section against its own sources + the verified
   // data sheet, stripping unsupported figures and fabricated URLs. Macro uses Opus + reasoning
   // (most figure-critical); the rest use Sonnet. Best-effort: a failure keeps the original section.
-  console.log(`[runner] Verifying sections against sources`);
+  console.log(`[runner] Verifying every section against its sources (Haiku)`);
+  const vOpts = { model: 'claude-haiku-4-5' };   // fast, cheap, mechanical fact-check — runs on all sections
   try {
     [h01, h02, h03, h04, h05, h06, h07] = await Promise.all([
-      runVerifier(client, 'Macro & Markets',           h01, sr01, dataSheet, usage, { model: 'claude-opus-4-8', thinking: true }),
-      runVerifier(client, 'Core Industry',             h02, sr02, dataSheet, usage),
-      runVerifier(client, 'Private Equity & M&A',      h03, sr03, dataSheet, usage),
-      runVerifier(client, 'End-Market Demand',         h04, sr04, dataSheet, usage),
-      runVerifier(client, 'Assets & Capex',            h05, sr05, dataSheet, usage),
-      runVerifier(client, 'Local Policy & Reputation', h06, sr06, dataSheet, usage),
-      runVerifier(client, 'Politics & Geopolitics',    h07, sr07, dataSheet, usage),
+      runVerifier(client, 'Macro & Markets',           h01, sr01, dataSheet, usage, vOpts),
+      runVerifier(client, 'Core Industry',             h02, sr02, dataSheet, usage, vOpts),
+      runVerifier(client, 'Private Equity & M&A',      h03, sr03, dataSheet, usage, vOpts),
+      runVerifier(client, 'End-Market Demand',         h04, sr04, dataSheet, usage, vOpts),
+      runVerifier(client, 'Assets & Capex',            h05, sr05, dataSheet, usage, vOpts),
+      runVerifier(client, 'Local Policy & Reputation', h06, sr06, dataSheet, usage, vOpts),
+      runVerifier(client, 'Politics & Geopolitics',    h07, sr07, dataSheet, usage, vOpts),
     ]);
   } catch (err) {
     console.warn(`[runner] Verification pass error (non-fatal, keeping drafts): ${err.message}`);
@@ -200,8 +201,8 @@ export async function runPipelineForClient(clientId) {
   }
 
   // Step 6: Save to Supabase (store total tokens across model tiers + the real USD cost)
-  const totalIn  = (usage.input  || 0) + (usage.opusInput  || 0);
-  const totalOut = (usage.output || 0) + (usage.opusOutput || 0);
+  const totalIn  = (usage.input  || 0) + (usage.opusInput  || 0) + (usage.haikuInput  || 0);
+  const totalOut = (usage.output || 0) + (usage.opusOutput || 0) + (usage.haikuOutput || 0);
   const costUsd  = computeCost(usage);
   let briefing;
   try {
@@ -209,7 +210,7 @@ export async function runPipelineForClient(clientId) {
   } catch (err) {
     throw new Error(`[Step 6/save] ${err.message}`);
   }
-  console.log(`[runner] Briefing saved: ${briefing.id} ($${costUsd.toFixed(4)} · in ${totalIn} / out ${totalOut} · opus ${usage.opusInput || 0}/${usage.opusOutput || 0})`);
+  console.log(`[runner] Briefing saved: ${briefing.id} ($${costUsd.toFixed(4)} · in ${totalIn} / out ${totalOut} · haiku-verify ${usage.haikuInput || 0}/${usage.haikuOutput || 0})`);
 
   // Step 7: Send email — pass orchestratorHtml (executive summary) + section names
   // We do NOT send the full briefingHtml; the email contains the summary + a CTA link.
