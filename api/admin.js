@@ -54,28 +54,31 @@ export default async function handler(req, res) {
     if (ce) return res.status(500).json({ error: ce.message });
 
     const { data: briefings, error: be } = await supabase
-      .from('briefings').select('id, client_id, date, created_at, input_tokens, output_tokens').order('date', { ascending: false });
+      .from('briefings').select('id, client_id, date, created_at, input_tokens, output_tokens, cost_usd').order('date', { ascending: false });
     if (be) return res.status(500).json({ error: be.message });
 
     const latest = {};
     for (const b of (briefings || [])) if (!latest[b.client_id]) latest[b.client_id] = b;
 
-    // ── Cost overview: aggregate real token usage → USD at current model pricing ──
+    // ── Cost overview: prefer the stored real cost_usd (mixed Sonnet+Opus); fall back to a
+    //    Sonnet-rate estimate from tokens for older briefings that predate cost tracking. ──
     const perClientCost = {};   // clientId → { cost, count }
-    let totalIn = 0, totalOut = 0, costedCount = 0;
+    let totalIn = 0, totalOut = 0, totalCost = 0, costedCount = 0;
     for (const b of (briefings || [])) {
-      if (b.input_tokens == null && b.output_tokens == null) continue;  // older briefings have no usage
+      const hasTokens = b.input_tokens != null || b.output_tokens != null;
+      if (b.cost_usd == null && !hasTokens) continue;  // no usage data at all
       const inT  = b.input_tokens  || 0;
       const outT = b.output_tokens || 0;
-      const cost = inT * PRICE_PER_INPUT_TOKEN + outT * PRICE_PER_OUTPUT_TOKEN;
-      totalIn += inT; totalOut += outT; costedCount += 1;
+      const cost = (b.cost_usd != null)
+        ? Number(b.cost_usd)
+        : inT * PRICE_PER_INPUT_TOKEN + outT * PRICE_PER_OUTPUT_TOKEN;  // estimate for legacy rows
+      totalIn += inT; totalOut += outT; totalCost += cost; costedCount += 1;
       const pc = perClientCost[b.client_id] || (perClientCost[b.client_id] = { cost: 0, count: 0 });
       pc.cost += cost; pc.count += 1;
     }
-    const totalCost = totalIn * PRICE_PER_INPUT_TOKEN + totalOut * PRICE_PER_OUTPUT_TOKEN;
     const costs = {
       currency:            'USD',
-      model:               'claude-sonnet-4-6',
+      model:               'claude-sonnet-4-6 + opus-4-8',
       input_per_million:   PRICE_PER_INPUT_TOKEN  * 1_000_000,
       output_per_million:  PRICE_PER_OUTPUT_TOKEN * 1_000_000,
       total_briefings:     (briefings || []).length,
