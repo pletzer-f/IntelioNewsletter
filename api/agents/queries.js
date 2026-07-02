@@ -8,10 +8,10 @@
 //   • client.client_priority_sources  text[] of preferred outlets (merged with the above)
 
 /**
- * Build search query arrays for all 6 section agents.
+ * Build search query arrays for all 7 section agents.
  * @param {object} client  — Supabase client row
  * @param {string} profile — monthly profile markdown text
- * @returns {{ agent01: string[], agent02: string[], ..., agent06: string[] }}
+ * @returns {{ agent01: string[], agent02: string[], ..., agent07: string[] }}
  */
 export function buildSectionQueries(client, profile) {
   const name     = client.client_name;

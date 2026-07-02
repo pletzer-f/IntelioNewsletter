@@ -35,6 +35,11 @@
       --neu:          #64748B;
       --shadow-sm:    0 1px 4px rgba(15, 23, 42, 0.06);
       --shadow-md:    0 4px 20px rgba(15, 23, 42, 0.10);
+      /* Aliases used by orchestrator-injected chat/panel CSS — defined in BOTH
+         themes so dark mode never falls back to light-mode hardcodes. */
+      --ink:          #0F172A;
+      --surface-2:    #F3F0EB;
+      --muted:        #94A3B8;
     }
     [data-theme="dark"] {
       --bg:           #0E0C0A;
@@ -55,6 +60,9 @@
       --neu:          #78716C;
       --shadow-sm:    0 1px 4px rgba(0, 0, 0, 0.35);
       --shadow-md:    0 4px 20px rgba(0, 0, 0, 0.45);
+      --ink:          #EDE9E0;
+      --surface-2:    #1E1B17;
+      --muted:        #887E6E;
     }
 
     /* ── RESET ── */
@@ -881,11 +889,14 @@
        RESPONSIVE
     ════════════════════════════════════ */
     @media (max-width: 700px) {
-      .masthead { padding: 0 20px; grid-template-columns: 1fr auto; }
+      .masthead { padding: 0 20px; grid-template-columns: 1fr auto; height: 64px; }
       .masthead-left { display: none; }
       .masthead-center { text-align: left; }
       .masthead-date { display: none; }
+      .wordmark { font-size: 26px; }
       .signals-bar, .sec-nav { padding: 0 20px; }
+      .sig-item { padding: 0 14px; }
+      .ks-val { font-size: 28px; }
       .sec-counter-wrap { display: none; }
       .content { padding: 0 20px 60px; }
       .story-grid { grid-template-columns: 1fr; }

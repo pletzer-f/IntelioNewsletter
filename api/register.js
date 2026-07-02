@@ -4,8 +4,15 @@
 
 import { upsertClient } from '../lib/supabase.js';
 import { sendTransactional } from '../lib/email.js';
+import { runPipelineForClient } from './agents/runner.js';
 
 export const config = { runtime: 'nodejs' };
+
+// waitUntil keeps the serverless function alive after the response is sent, so
+// the first-briefing pipeline actually completes. Optional import: absent in
+// plain local dev, always present on Vercel.
+let waitUntil = null;
+try { ({ waitUntil } = await import('@vercel/functions')); } catch { /* local dev */ }
 
 export default async function handler(req, res) {
   // CORS preflight
@@ -58,21 +65,19 @@ export default async function handler(req, res) {
     console.error(`[register] Welcome email failed (non-fatal) for ${client.email}:`, emailErr?.message || emailErr);
   }
 
-  // 3. Kick off first briefing — fire-and-forget, FULLY isolated. A failure here
-  //    (synchronous throw OR rejection) must never turn a successful signup into an error.
+  // 3. Kick off first briefing — runs in-process AFTER the response is sent
+  //    (waitUntil), so signup stays instant but the pipeline isn't killed when
+  //    the lambda freezes (the old fire-and-forget fetch often never left the
+  //    process). FULLY isolated: a failure here must never fail the signup.
   try {
-    const appUrl = process.env.APP_URL || `https://${process.env.VERCEL_URL}`;
-    fetch(`${appUrl}/api/agents/runner`, {
-      method:  'POST',
-      headers: {
-        'Content-Type':  'application/json',
-        'x-cron-secret': process.env.CRON_SECRET || '',
-      },
-      body: JSON.stringify({ clientId: client.id }),
-    }).catch(err => console.warn(`[register] Runner kick-off failed for ${client.id}:`, err?.message || err));
-    console.log(`[register] Runner kicked off for ${client.id}`);
+    const firstRun = runPipelineForClient(client.id).then(
+      b   => console.log(`[register] First briefing complete for ${client.id}: ${b.id}`),
+      err => console.error(`[register] First briefing FAILED for ${client.id}:`, err?.message || err),
+    );
+    if (waitUntil) waitUntil(firstRun);
+    console.log(`[register] First briefing pipeline started for ${client.id}`);
   } catch (kickErr) {
-    console.warn(`[register] Runner kick-off threw synchronously (ignored):`, kickErr?.message || kickErr);
+    console.warn(`[register] Pipeline kick-off threw synchronously (ignored):`, kickErr?.message || kickErr);
   }
 
   return res.status(200).json({
@@ -83,10 +88,17 @@ export default async function handler(req, res) {
 }
 
 function buildWelcomeEmail(client) {
-  const sectionCount = (client.sections_enabled || [1,2,3,4,5,6]).length;
+  const sectionCount = (client.sections_enabled || [1,2,3,4,5,6,7]).length;
   const deliveryFmt  = (client.delivery_time || '0700').replace(/(\d{2})(\d{2})/, '$1:$2');
-  const prefsUrl     = `${process.env.APP_URL}/preferences.html?id=${client.id}`;
+  const appUrl       = process.env.APP_URL || `https://${process.env.VERCEL_URL}`;
+  const prefsUrl     = `${appUrl}/app`;
   const langLabel    = client.output_language === 'de' ? 'Deutsch' : 'English';
+  const DOWS         = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const isWeekly     = client.view_mode === 'weekly';
+  const cadenceLong  = isWeekly
+    ? `every <strong>${DOWS[client.delivery_dow ?? 1]}</strong> morning at <strong>${deliveryFmt} CET</strong>`
+    : `every morning at <strong>${deliveryFmt} CET</strong>`;
+  const cadenceShort = isWeekly ? `${DOWS[client.delivery_dow ?? 1]}s, ${deliveryFmt} CET` : `${deliveryFmt} CET daily`;
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -143,33 +155,22 @@ function buildWelcomeEmail(client) {
     <p class="sub">
       Your personalised briefing for <strong>${client.client_name}</strong> is being generated right now.
       Expect your first edition in your inbox <strong>within the next few minutes</strong>.
-      After that, it arrives automatically every morning at <strong>${deliveryFmt} CET</strong>.
+      After that, it arrives automatically ${cadenceLong}.
     </p>
     <div class="config">
       <div class="config-row"><span class="config-key">Company</span><span class="config-val">${client.client_name}</span></div>
       <div class="config-row"><span class="config-key">Region</span><span class="config-val">${client.region}</span></div>
       <div class="config-row"><span class="config-key">Sections</span><span class="config-val">${sectionCount} active</span></div>
-      <div class="config-row"><span class="config-key">Delivery</span><span class="config-val">${deliveryFmt} CET daily</span></div>
+      <div class="config-row"><span class="config-key">Delivery</span><span class="config-val">${cadenceShort}</span></div>
       <div class="config-row"><span class="config-key">Language</span><span class="config-val">${langLabel}</span></div>
     </div>
   </div>
   <hr class="rule">
   <div class="ft">
     <p>Reply to this email with any questions or feedback — we read everything.</p>
-    <p><a href="${prefsUrl}">Manage preferences</a> &nbsp;&middot;&nbsp; <a href="#">Unsubscribe</a></p>
+    <p><a href="${prefsUrl}">Manage preferences</a> &nbsp;&middot;&nbsp; <a href="mailto:noreply@8th-universe.com?subject=Unsubscribe">Unsubscribe</a></p>
   </div>
 </div>
 </body>
 </html>`;
-}
-
-function sectionName(n) {
-  return {
-    1: 'Macro',
-    2: 'Industry',
-    3: 'M&A',
-    4: 'Demand',
-    5: 'Assets',
-    6: 'Policy',
-  }[n] || `Section ${n}`;
 }

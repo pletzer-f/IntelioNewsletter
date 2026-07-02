@@ -654,7 +654,12 @@
       .nav-logo { font-size: 24px; }
       .nav-link { display: none; }
       .hero { padding: 52px 20px 40px; }
+      .hero h1 { font-size: clamp(30px, 8.5vw, 40px); }
       .trust-bar { padding: 14px 20px; }
+      .trust-inner { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+      .trust-inner::-webkit-scrollbar { display: none; }
+      .lang-opt { padding: 7px 14px; font-size: 12px; }
+      .agent-strip { line-height: 2; }
       .form-wrap { padding: 36px 20px 60px; }
       .field-row { grid-template-columns: 1fr; }
       .section-cards { grid-template-columns: 1fr; }
@@ -687,7 +692,7 @@
       7 Parallel Research Agents · 14+ Verified Sources · Daily Delivery
     </div>
     <h1>Your business intelligence,<br><em>researched and ready</em><br>anytime.</h1>
-    <p class="hero-sub">Intelio runs a team of AI research agents across macro, markets, industry, deals, politics, and local news — synthesised around your specific business. Ready before the working day starts.</p>
+    <p class="hero-sub">Intelio runs a team of AI research agents across macro, markets, industry, deals, assets, politics, and local news — synthesised around your specific business. Ready before the working day starts.</p>
     <div class="agent-strip">
       <span class="a-hi">AGENT 01</span> <span class="a-sep">·</span> Macro
       <span class="a-sep">·</span> <span class="a-hi">AGENT 02</span> <span class="a-sep">·</span> Industry
@@ -1124,13 +1129,13 @@
             <input type="radio" name="depth" value="weekly">
             <div class="depth-card-title">Weekly digest</div>
             <div class="depth-card-sub">6 stories per section with deeper cross-sectional theme analysis. Includes week-ahead signals.</div>
-            <div class="depth-card-meta">~15 min read · Delivered Friday 07:30</div>
+            <div class="depth-card-meta">~15 min read · Delivered Friday mornings</div>
           </label>
           <label class="depth-card">
             <input type="radio" name="depth" value="starter">
             <div class="depth-card-title">Week starter</div>
             <div class="depth-card-sub">6 stories per section with the week ahead in focus — your Monday-morning kickoff into the week.</div>
-            <div class="depth-card-meta">~15 min read · Delivered Monday 07:30</div>
+            <div class="depth-card-meta">~15 min read · Delivered Monday mornings</div>
           </label>
         </div>
       </div>
