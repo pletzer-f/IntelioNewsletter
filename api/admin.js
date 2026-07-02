@@ -78,7 +78,7 @@ export default async function handler(req, res) {
     }
     const costs = {
       currency:            'USD',
-      model:               'sonnet-4-6 write · haiku-4-5 verify',
+      model:               'sonnet-4-6 write · opus-4-8 verify + summary check',
       input_per_million:   PRICE_PER_INPUT_TOKEN  * 1_000_000,
       output_per_million:  PRICE_PER_OUTPUT_TOKEN * 1_000_000,
       total_briefings:     (briefings || []).length,

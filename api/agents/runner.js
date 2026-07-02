@@ -7,10 +7,10 @@ import {
   runAgent00,
   runAgent01, runAgent02, runAgent03,
   runAgent04, runAgent05, runAgent06, runAgent07,
-  runOrchestrator, runVerifier, computeCost,
+  runOrchestrator, runVerifier, runSummaryVerifier, computeCost,
 } from '../../lib/claude.js';
 import { multiSearch } from '../../lib/search.js';
-import { enrichWithText } from '../../lib/fetch-article.js';
+import { enrichWithText, enrichCitedSources } from '../../lib/fetch-article.js';
 import { fetchMacroData, formatDataSheet } from '../../lib/macro-data.js';
 import { sendBriefingEmail } from '../../lib/email.js';
 import { fetchMarketTickers } from '../../lib/market.js';
@@ -125,9 +125,10 @@ export async function runPipelineForClient(clientId) {
   const dataSheet = formatDataSheet(macro, tickers);
 
   // Step 2.5: fetch full article text for the top sources per section, so agents reason
-  // from real content rather than snippets. Best-effort — mutates results in place, never throws.
+  // from real content rather than snippets — snippet-only reasoning is the root cause of
+  // conflated figures and inverted conclusions. Best-effort — mutates in place, never throws.
   console.log(`[runner] Fetching article text for top sources`);
-  await Promise.allSettled([sr01, sr02, sr03, sr04, sr05, sr06, sr07].map(sr => enrichWithText(sr, 4)));
+  await Promise.allSettled([sr01, sr02, sr03, sr04, sr05, sr06, sr07].map(sr => enrichWithText(sr, 6, 5000)));
 
   // Step 3: Run all enabled section agents in parallel (up to 7)
   console.log(`[runner] Running section agents in parallel`);
@@ -154,11 +155,22 @@ export async function runPipelineForClient(clientId) {
     throw new Error(`[Step 3/agents] ${err.message}`);
   }
 
-  // Step 3.5: verification pass — fact-check each section against its own sources + the verified
-  // data sheet, stripping unsupported figures and fabricated URLs. Macro uses Opus + reasoning
-  // (most figure-critical); the rest use Sonnet. Best-effort: a failure keeps the original section.
-  console.log(`[runner] Verifying every section against its sources (Haiku)`);
-  const vOpts = { model: 'claude-haiku-4-5' };   // fast, cheap, mechanical fact-check — runs on all sections
+  // Step 3.4: make sure the text of every CITED article is available to the verifier.
+  // A fact-checker can only catch a wrong figure when the cited source's text is in
+  // front of it — this closed the gap behind the 2 July conflated-figures incident.
+  console.log(`[runner] Fetching text of cited sources for verification`);
+  await Promise.allSettled([
+    [h01, sr01], [h02, sr02], [h03, sr03], [h04, sr04], [h05, sr05], [h06, sr06], [h07, sr07],
+  ].map(([h, sr]) => enrichCitedSources(h, sr)));
+
+  // Step 3.5: verification pass — fact-check each section against its own sources + the
+  // verified data sheet, stripping unsupported figures, fabricated URLs, misattributions,
+  // and unsourced forward-looking conclusions. Runs on OPUS 4.8 with adaptive thinking:
+  // this is CEO-level output, and verification (conflation, inverted logic, wrong-period
+  // figures) is exactly where the strongest model earns its price. complete() falls back
+  // to Sonnet automatically if Opus errors. Best-effort: a failure keeps the draft.
+  console.log(`[runner] Verifying every section against its sources (Opus 4.8 + thinking)`);
+  const vOpts = { model: 'claude-opus-4-8', thinking: true };
   try {
     [h01, h02, h03, h04, h05, h06, h07] = await Promise.all([
       runVerifier(client, 'Macro & Markets',           h01, sr01, dataSheet, usage, vOpts),
@@ -183,6 +195,13 @@ export async function runPipelineForClient(clientId) {
   } catch (err) {
     throw new Error(`[Step 4/orchestrator] ${err.message}`);
   }
+
+  // Step 4.5: cross-check the Executive Summary against the verified sections
+  // (figures, dates, attribution pairing, no unsourced conclusions). The summary
+  // is the most-read block and previously shipped unverified. Opus + thinking;
+  // best-effort — a failure keeps the orchestrator draft.
+  console.log(`[runner] Cross-checking executive summary (Opus 4.8 + thinking)`);
+  orchestratorHtml = await runSummaryVerifier(client, orchestratorHtml, sectionHtmls, usage, vOpts);
 
   // Step 5: Assemble full briefing HTML
   const today = new Date().toISOString().split('T')[0];
@@ -210,7 +229,7 @@ export async function runPipelineForClient(clientId) {
   } catch (err) {
     throw new Error(`[Step 6/save] ${err.message}`);
   }
-  console.log(`[runner] Briefing saved: ${briefing.id} ($${costUsd.toFixed(4)} · in ${totalIn} / out ${totalOut} · haiku-verify ${usage.haikuInput || 0}/${usage.haikuOutput || 0})`);
+  console.log(`[runner] Briefing saved: ${briefing.id} ($${costUsd.toFixed(4)} · in ${totalIn} / out ${totalOut} · opus-verify ${usage.opusInput || 0}/${usage.opusOutput || 0})`);
 
   // Step 7: Send email — pass orchestratorHtml (executive summary) + section names
   // We do NOT send the full briefingHtml; the email contains the summary + a CTA link.
