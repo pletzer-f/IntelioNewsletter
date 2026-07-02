@@ -233,8 +233,17 @@
           <label>Briefing rhythm</label>
           <div class="seg" id="seg_view">
             <div class="seg-opt" data-v="daily">Daily briefing</div>
-            <div class="seg-opt" data-v="weekly">Weekly digest (Fridays)</div>
+            <div class="seg-opt" data-v="weekly">Weekly digest</div>
           </div>
+        </div>
+        <div class="field" id="dowField">
+          <label>Weekly delivery day</label>
+          <select id="f_dow">
+            <option value="1">Monday</option><option value="2">Tuesday</option>
+            <option value="3">Wednesday</option><option value="4">Thursday</option>
+            <option value="5">Friday</option><option value="6">Saturday</option><option value="0">Sunday</option>
+          </select>
+          <div class="lbl-hint">Only applies to the weekly rhythm — daily briefings arrive every morning.</div>
         </div>
         <div class="field frow">
           <div>
@@ -281,8 +290,8 @@
     const REGIONS = ['Austria','Germany','Switzerland','DACH (Austria + Germany + Switzerland)','Italy',
       'Tirol / Western Austria focus','United Kingdom','France','Benelux','Nordics','Pan-European',
       'Global (no regional focus)','North America','Asia-Pacific'];
-    const SECTIONS = [[1,'Macro & Markets'],[2,'Industry & Operations'],[3,'Private Equity & M&A'],
-      [4,'End-Market Demand'],[5,'Real Estate & Assets'],[6,'Local Policy & Monitoring']];
+    const SECTIONS = [[1,'Macro & Markets'],[2,'Core Industry'],[3,'Private Equity & M&A'],
+      [4,'End-Market Demand'],[5,'Assets & Capex'],[6,'Local Policy & Reputation'],[7,'Politics & Geopolitics']];
 
     /* ---- Theme ---- */
     const root = document.documentElement;
@@ -345,6 +354,8 @@
       segSet('seg_scope', CLIENT.news_scope || 'both');
       segSet('seg_view', CLIENT.view_mode || 'daily');
       segSet('seg_refresh', CLIENT.client_profile_refresh || 'monthly');
+      document.getElementById('f_dow').value = String(Number.isInteger(CLIENT.delivery_dow) ? CLIENT.delivery_dow : 1);
+      updateDowVisibility();
       document.getElementById('f_time').value = CLIENT.delivery_time || '0700';
       document.getElementById('f_stories').value = String(CLIENT.stories_per_section || 3);
 
@@ -365,7 +376,12 @@
     document.querySelectorAll('.seg').forEach(seg => seg.addEventListener('click', e => {
       const opt = e.target.closest('.seg-opt'); if (!opt) return;
       seg.querySelectorAll('.seg-opt').forEach(o => o.classList.remove('active')); opt.classList.add('active');
+      if (seg.id === 'seg_view') updateDowVisibility();
     }));
+    function updateDowVisibility() {
+      const weekly = segVal('seg_view') === 'weekly';
+      document.getElementById('dowField').style.display = weekly ? '' : 'none';
+    }
     function segVal(id) { const a = document.querySelector('#' + id + ' .seg-opt.active'); return a ? a.dataset.v : null; }
     function toggleChk(el) { el.classList.toggle('on'); }
 
@@ -411,7 +427,7 @@
         news_scope: segVal('seg_scope'),
         client_entities: entities.slice(),
         client_topics: topics.slice(),
-        sections_enabled: sections.length ? sections : [1,2,3,4,5,6],
+        sections_enabled: sections.length ? sections : [1,2,3,4,5,6,7],
         updated_at: new Date().toISOString(),
       };
       await persist(patch, btn, 'Save changes');
@@ -420,6 +436,7 @@
       const btn = document.getElementById('saveSchedule'); btn.disabled = true; btn.textContent = 'Saving…';
       const patch = {
         view_mode: segVal('seg_view'),
+        delivery_dow: Number(document.getElementById('f_dow').value),
         delivery_time: document.getElementById('f_time').value,
         stories_per_section: Number(document.getElementById('f_stories').value),
         client_profile_refresh: segVal('seg_refresh'),

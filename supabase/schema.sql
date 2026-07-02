@@ -24,7 +24,7 @@ create table if not exists clients (
   client_priority_sources text[]  default '{}',
   client_source_blacklist text[]  default '{}',
   output_language         text    default 'en',          -- 'en' | 'de'
-  sections_enabled        int[]   default '{1,2,3,4,5,6}',
+  sections_enabled        int[]   default '{1,2,3,4,5,6,7}',
   view_mode               text    default 'daily',       -- 'daily' | 'weekly'
   delivery_time           text    default '0700',        -- HHMM local time
   client_profile_refresh  text    default 'monthly',
@@ -118,6 +118,114 @@ drop trigger if exists clients_updated_at on clients;
 create trigger clients_updated_at
   before update on clients
   for each row execute function update_updated_at();
+
+-- ── Auth <-> client linking (both directions) ───────────────────────────────
+-- The backend writes with the service-role key, so user_id must be stamped by
+-- triggers for RLS-protected dashboard reads to work.
+
+-- 1. Login created AFTER the client row (normal signup flow): link by email.
+create or replace function link_client_to_user()
+returns trigger language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  update public.clients
+     set user_id = new.id
+   where lower(email) = lower(new.email)
+     and user_id is null;
+
+  update public.client_profiles cp
+     set user_id = c.user_id
+    from public.clients c
+   where cp.client_id = c.id
+     and cp.user_id is null
+     and c.user_id is not null;
+
+  update public.briefings b
+     set user_id = c.user_id
+    from public.clients c
+   where b.client_id = c.id
+     and b.user_id is null
+     and c.user_id is not null;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+  after insert on auth.users
+  for each row execute function link_client_to_user();
+
+-- 2. Client row created (or email changed) AFTER the login already exists.
+--    Without this, such rows keep user_id = null and the dashboard shows
+--    "No briefing profile linked".
+create or replace function adopt_user_for_client()
+returns trigger language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.user_id is null and new.email is not null then
+    select u.id into new.user_id
+      from auth.users u
+     where lower(u.email) = lower(new.email)
+     limit 1;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists adopt_user on clients;
+create trigger adopt_user
+  before insert or update of email on clients
+  for each row execute function adopt_user_for_client();
+
+-- 3. Stamp user_id on service-role-generated rows so they stay visible under RLS.
+create or replace function set_row_owner_from_client()
+returns trigger language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if new.user_id is null then
+    select user_id into new.user_id from public.clients where id = new.client_id;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists set_owner on briefings;
+create trigger set_owner
+  before insert on briefings
+  for each row execute function set_row_owner_from_client();
+
+drop trigger if exists set_owner on client_profiles;
+create trigger set_owner
+  before insert on client_profiles
+  for each row execute function set_row_owner_from_client();
+
+-- ── One-time backfill (safe to re-run): link pre-existing rows ──────────────
+update clients c
+   set user_id = u.id
+  from auth.users u
+ where c.user_id is null
+   and lower(c.email) = lower(u.email);
+
+update briefings b
+   set user_id = c.user_id
+  from clients c
+ where b.client_id = c.id
+   and b.user_id is null
+   and c.user_id is not null;
+
+update client_profiles cp
+   set user_id = c.user_id
+  from clients c
+ where cp.client_id = c.id
+   and cp.user_id is null
+   and c.user_id is not null;
 
 
 -- ── Verification queries ─────────────────────────────────────────────────────

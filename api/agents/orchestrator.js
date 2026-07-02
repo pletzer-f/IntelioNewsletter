@@ -79,12 +79,13 @@ export function repairSectionHtml(html) {
  * always matches the designed brand identity.
  */
 export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls, enabledSections, tickers = [] }) {
-  const { h01, h02, h03, h04, h05, h06 } = sectionHtmls;
+  const { h01, h02, h03, h04, h05, h06, h07 } = sectionHtmls;
   const appUrl = process.env.APP_URL || '';
   // Repair each section before use so a truncated agent output can never corrupt the page.
   const htmlByAgent = {
     1: repairSectionHtml(h01), 2: repairSectionHtml(h02), 3: repairSectionHtml(h03),
     4: repairSectionHtml(h04), 5: repairSectionHtml(h05), 6: repairSectionHtml(h06),
+    7: repairSectionHtml(h07),
   };
 
   const dateLabel = new Date(today).toLocaleDateString('en-GB', {
@@ -329,6 +330,11 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
 
       /* Allow impl-body to scroll on mobile (260px is too short) */
       .impl-body.open { max-height: 600px !important; overflow-y: auto !important; }
+
+      /* Key-stat numbers scale down on small screens (desktop rule above uses
+         !important, so this must too) */
+      .ks-val, .story-card .ks-val { font-size: 28px !important; }
+      .story-card .story-hl { font-size: 24px !important; }
     }
 
     /* ── Story source — branded accent badge ─────────────────────────── */
@@ -546,7 +552,13 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     .saved-panel { pointer-events: none; }
     .saved-panel.open { pointer-events: auto; }
     @media print { .saved-fab, .saved-panel { display: none !important; } }
-    @media (max-width: 600px) { .saved-panel { width: 100%; } .saved-fab { bottom: 80px; right: 20px; } }
+    @media (max-width: 600px) {
+      .saved-panel { width: 100%; }
+      .saved-fab { bottom: 80px; right: 20px; }
+      /* Stack the floating buttons: chat 20px, saved 80px, back-top 140px —
+         the template puts back-top at 20/20 where the chat FAB sits. */
+      .back-top { bottom: 140px !important; right: 20px !important; }
+    }
   </style>
 </head>
 <body>
@@ -989,8 +1001,8 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       const saved = getSavedArticles();
       if (!saved.length) return;
       const text = saved.map((s, i) =>
-        (i + 1) + '. ' + s.tag + '\n' + s.hl + '\n\n' + s.body + '\n\nSource: ' + s.src + '\n' + '\u2500'.repeat(60)
-      ).join('\n\n');
+        (i + 1) + '. ' + s.tag + '\\n' + s.hl + '\\n\\n' + s.body + '\\n\\nSource: ' + s.src + '\\n' + '\u2500'.repeat(60)
+      ).join('\\n\\n');
       const blob = new Blob([text], { type: 'text/plain' });
       const url  = URL.createObjectURL(blob);
       const a    = document.createElement('a');
@@ -1036,6 +1048,13 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     function mobNavSelect(idx) {
       closeMobNav();
       showSection(idx);
+    }
+
+    // Keep the mobile section-picker label in sync with EVERY navigation source
+    // (nav pills, keyboard, end-of-section buttons) — not just the drawer.
+    if (typeof updateUI === 'function') {
+      const _origUpdateUI = updateUI;
+      updateUI = function () { _origUpdateUI(); _updateMobNav(currentIdx); };
     }
 
     // Scroll spy removed — incompatible with tab-based display:none layout.

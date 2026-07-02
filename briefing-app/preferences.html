@@ -167,6 +167,12 @@
       font-size: 15px; color: var(--text-2); line-height: 1.7;
     }
     .load-error strong { color: var(--accent); display: block; font-size: 24px; margin-bottom: 12px; font-family: 'Playfair Display', serif; }
+
+    @media (max-width: 500px) {
+      .agent-grid { grid-template-columns: 1fr; }
+      .page { padding: 32px 16px 64px; }
+      .card { padding: 22px 20px; }
+    }
   </style>
 </head>
 <body>
@@ -234,7 +240,11 @@
           </label>
           <label class="agent-chip" data-id="6" onclick="toggleChip(this)">
             <input type="checkbox" value="6">
-            <span class="agent-dot"></span> Local Policy
+            <span class="agent-dot"></span> Local Policy &amp; Reputation
+          </label>
+          <label class="agent-chip" data-id="7" onclick="toggleChip(this)">
+            <input type="checkbox" value="7">
+            <span class="agent-dot"></span> Politics &amp; Geopolitics
           </label>
         </div>
       </div>
@@ -246,8 +256,10 @@
       <div class="field">
         <label>Stories per section</label>
         <div class="seg" id="segDepth">
-          <button class="seg-btn" data-val="3" onclick="setSeg('depth','3',this)">3 stories · Daily</button>
-          <button class="seg-btn" data-val="6" onclick="setSeg('depth','6',this)">6 stories · Weekly deep-dive</button>
+          <button class="seg-btn" data-val="3" onclick="setSeg('depth','3',this)">3 stories</button>
+          <button class="seg-btn" data-val="4" onclick="setSeg('depth','4',this)">4 stories</button>
+          <button class="seg-btn" data-val="5" onclick="setSeg('depth','5',this)">5 stories</button>
+          <button class="seg-btn" data-val="6" onclick="setSeg('depth','6',this)">6 stories</button>
         </div>
       </div>
       <div class="field">
@@ -348,7 +360,7 @@
     );
 
     /* Sections */
-    const enabled = new Set((c.sections_enabled || [1,2,3,4,5,6]).map(Number));
+    const enabled = new Set((c.sections_enabled || [1,2,3,4,5,6,7]).map(Number));
     document.querySelectorAll('#agentGrid .agent-chip').forEach(chip => {
       const id = parseInt(chip.dataset.id, 10);
       if (enabled.has(id)) {

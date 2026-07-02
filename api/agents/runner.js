@@ -1,5 +1,5 @@
 // api/agents/runner.js — POST /api/agents/runner
-// Executes the full 6-agent daily briefing pipeline for a single client.
+// Executes the full 7-agent daily briefing pipeline for a single client.
 // Called internally by /api/cron/daily (one invocation per active client).
 
 import { getClient, getLatestProfile, saveProfile, saveBriefing } from '../../lib/supabase.js';
