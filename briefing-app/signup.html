@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="intelio-build" content="t800-summary-fix">
+  <meta name="intelio-build" content="one-pager-summary">
   <title>Intelio · Set up your intelligence briefing</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1141,15 +1141,26 @@
         </div>
       </div>
 
-      <div class="field">
-        <label>Delivery time</label>
-        <select id="f-time">
-          <option value="0630">06:30 — Early start</option>
-          <option value="0700">07:00 — Before the commute</option>
-          <option value="0730" selected>07:30 — Before the working day</option>
-          <option value="0800">08:00 — With morning coffee</option>
-          <option value="0900">09:00 — Start of business</option>
-        </select>
+      <div class="field field-row">
+        <div>
+          <label>Delivery time</label>
+          <select id="f-time">
+            <option value="0630">06:30 — Early start</option>
+            <option value="0700">07:00 — Before the commute</option>
+            <option value="0730" selected>07:30 — Before the working day</option>
+            <option value="0800">08:00 — With morning coffee</option>
+            <option value="0900">09:00 — Start of business</option>
+          </select>
+        </div>
+        <div>
+          <label>Stories per section</label>
+          <select id="f-stories">
+            <option value="3" selected>3 — Focused</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6 — Deep-dive</option>
+          </select>
+        </div>
       </div>
 
       <div class="field">
@@ -1385,11 +1396,18 @@
     }
     ['scopeToggle', 'refreshToggle'].forEach(initToggleRow);
 
-    /* depth cards */
+    /* depth cards — picking a rhythm also sets a sensible stories-per-section
+       default (daily→3, weekly/starter→6) until the user changes it manually. */
+    let storiesTouched = false;
+    document.getElementById('f-stories').addEventListener('change', () => { storiesTouched = true; });
     document.getElementById('depthToggle').querySelectorAll('.depth-card').forEach(card => {
       card.addEventListener('click', () => {
         document.querySelectorAll('.depth-card').forEach(c => c.classList.remove('active'));
         card.classList.add('active');
+        if (!storiesTouched) {
+          const v = (card.querySelector('input').value === 'daily') ? '3' : '6';
+          document.getElementById('f-stories').value = v;
+        }
       });
     });
 
@@ -1617,7 +1635,7 @@
         DELIVERY_DOW:           deliveryDow,
         DELIVERY_TIME:          document.getElementById('f-time').value,
         CLIENT_PROFILE_REFRESH: refresh,
-        STORIES_PER_SECTION:    isWeekly ? 6 : 3,
+        STORIES_PER_SECTION:    Number(document.getElementById('f-stories').value) || (isWeekly ? 6 : 3),
         LOOKBACK_HOURS:         isWeekly ? 168 : 72,
       };
 
