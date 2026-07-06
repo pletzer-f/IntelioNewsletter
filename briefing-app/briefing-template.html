@@ -718,16 +718,18 @@
     /* ════════════════════════════════════
        NOTEPAD PANEL
     ════════════════════════════════════ */
+    /* Research notes slide in from the LEFT (its FAB sits bottom-left);
+       saved articles + chat live on the right. */
     .np-panel {
-      position: fixed; top: 0; right: 0;
+      position: fixed; top: 0; left: 0;
       width: 380px; height: 100vh;
       background: var(--surface);
-      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
       z-index: 800;
       display: flex; flex-direction: column;
-      transform: translateX(100%);
+      transform: translateX(-100%);
       transition: transform 0.36s cubic-bezier(0.22, 1, 0.36, 1), background 0.38s ease, border-color 0.38s ease;
-      box-shadow: -12px 0 40px rgba(0,0,0,0.12);
+      box-shadow: 12px 0 40px rgba(0,0,0,0.12);
     }
     .np-panel.open { transform: translateX(0); }
 
@@ -888,8 +890,12 @@
     /* ════════════════════════════════════
        RESPONSIVE
     ════════════════════════════════════ */
-    @media (max-width: 700px) {
+    /* 768px matches the generated briefing's mobile breakpoint (drawer nav) —
+       a 700px cutoff left a 701–768px dead zone with mobile nav but desktop grids. */
+    @media (max-width: 768px) {
       .masthead { padding: 0 20px; grid-template-columns: 1fr auto; height: 64px; }
+      /* Masthead is 64px on mobile — keep the section nav glued to it (no gap). */
+      .sec-nav { top: 64px; }
       .masthead-left { display: none; }
       .masthead-center { text-align: left; }
       .masthead-date { display: none; }
@@ -901,14 +907,17 @@
       .content { padding: 0 20px 60px; }
       .story-grid { grid-template-columns: 1fr; }
       .story-lead .story-hl { font-size: 24px; }
+      /* Section-end nav on mobile: dots on top (centered), then the two
+         full-width prev/next buttons stacked below. */
       .sec-end-nav {
+        display: grid;
         grid-template-columns: 1fr;
-        gap: 14px;
+        gap: 12px;
         padding-bottom: max(env(safe-area-inset-bottom, 0px), 24px);
         margin-bottom: 32px;
       }
-      .sec-end-prev, .sec-end-next { text-align: center; justify-self: stretch; }
-      .dots-bar { order: -1; }
+      .sec-end-prev, .sec-end-next { text-align: center; justify-self: stretch; width: 100%; }
+      .dots-bar { order: -1; margin-bottom: 6px; }
       .footer-inner { grid-template-columns: 1fr; gap: 20px; }
       .footer-links { align-items: flex-start; }
       .page-footer { padding: 32px 20px; }
