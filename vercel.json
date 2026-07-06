@@ -24,14 +24,14 @@
     }
   ],
   "functions": {
-    "api/cron/daily.js":    { "maxDuration": 300 },
-    "api/cron/monthly.js":  { "maxDuration": 300 },
-    "api/register.js":      { "maxDuration": 300 },
-    "api/agents/runner.js": { "maxDuration": 300 },
+    "api/cron/daily.js":    { "maxDuration": 800 },
+    "api/cron/monthly.js":  { "maxDuration": 800 },
+    "api/register.js":      { "maxDuration": 800 },
+    "api/agents/runner.js": { "maxDuration": 800 },
     "api/preferences.js":   { "maxDuration": 10 },
     "api/chat.js":          { "maxDuration": 30 },
-    "api/generate.js":      { "maxDuration": 300 },
-    "api/admin.js":         { "maxDuration": 300 }
+    "api/generate.js":      { "maxDuration": 800 },
+    "api/admin.js":         { "maxDuration": 800 }
   },
   "headers": [
     {
