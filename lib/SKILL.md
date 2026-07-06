@@ -337,10 +337,11 @@ After all section agents finish:
 - Merge duplicate events across sections; each underlying development (e.g. one ECB decision) appears in AT MOST ONE highlight — when several sections carry the same driver, consolidate its cross-sector meaning into ONE Key Theme instead of repeating it
 - Use ONLY figures, rates, and dates as they appear in the fact-checked section outputs, each paired with ITS OWN attribution — never move a figure under a different source's name, never introduce a new number
 - Resolve conflicting claims using tier hierarchy; apply AGENT 00 priorities when ranking ties occur
-- Open the summary with the PRIORITIES BOX: 3-4 topics ranked by materiality (expected financial impact for the client) x urgency, each row ending in ONE sentence of decision-relevant analysis plus the concrete observable (metric, data release, threshold, or date) that shows which way it breaks
-- Produce Executive Highlights: the top 7 DISTINCT stories, each at most 3 sentences — fact first (figure + date), then mechanism, then effect; interpretation marked as interpretation ("kann", "spricht fuer"), hedges preserved
+- THE SUMMARY IS A ONE-PAGER (~300 words of prose, hard budget) — a CEO grasps the day in under a minute; depth lives in the sections, never in the summary
+- Open the summary with the VISUAL PRIORITIES PANEL: 3-4 rows, each = rank + topic (max 4 words) + one observable line (max 10 words: the metric, release, or date that decides it) + a materiality chip (HOCH/MITTEL/NIEDRIG) and an urgency colour bar (now / this week / ongoing)
+- Produce Executive Highlights: the top 5 DISTINCT stories, each 1-2 sentences (max ~35 words) — fact first (figure + date), then the client-relevant effect; interpretation marked as interpretation ("kann", "spricht fuer"), hedges preserved
 - Market indicators (indices, FX, rates, commodities) are INDIRECT sentiment signals — never present them as direct evidence of operational outcomes (bookings, demand, occupancy); name the operational metric that would confirm
-- Build 4-5 cross-sectional Key Themes; at least ONE must be a downside/risk theme
+- Build EXACTLY 3 cross-sectional Key Themes, one sentence each (max 20 words); at least ONE must be a downside/risk theme
 - ANALYSIS VOICE ONLY: no task assignments, no addressing of client roles, no internal deadlines — the briefing analyses, it does not manage
 
 ## 9. OUTPUT FORMAT (HTML)
@@ -348,11 +349,11 @@ After all section agents finish:
 The exact HTML templates are supplied in the runtime prompts and are AUTHORITATIVE — follow them verbatim; never substitute alternative wrappers or class names.
 
 - Section agents: a flat sequence of identical `<article class="story-lead">` blocks. The `key-stat` block is OPTIONAL — include it only with a verified figure; a story without a number is acceptable. Every implication block carries the four labels: Signal / Evidenz / Risiko zur These / Zu beobachten (EN: Signal / Evidence / Risk to thesis / Watch).
-- Orchestrator: the `summary-prep` line, then the priorities box `<div>`, then a `sum-list` with 7 `sum-item`s, then the Key Themes block — in that order.
+- Orchestrator: the `summary-prep` line, then the visual priorities panel (bordered `<div>` with uppercase header, a table of colour-coded rows, and a micro-legend), then a `sum-list` with 5 `sum-item`s, then the Key Themes block (3 items) — in that order.
 
 ## 10. QUALITY GATES (MUST PASS)
 
-- [ ] Executive Summary opens with the priorities box, then 7 distinct highlights, then 4-5 Key Themes (at least one downside theme)
+- [ ] Executive Summary is a ONE-PAGER: priorities panel (3-4 rows, topic <=4 words, observable <=10 words), then 5 distinct highlights (<=35 words each), then exactly 3 one-sentence Key Themes (at least one downside theme); total prose <= ~300 words
 - [ ] Each story: headline + lede + body + implication block with all four labels
 - [ ] key-stat ONLY where a verified figure with a real source exists — never invent a number to fill a card
 - [ ] No fabricated links, dates, entities, or quotes; every URL copied exactly from the provided sources
