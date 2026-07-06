@@ -874,17 +874,69 @@
        PRINT STYLES
     ════════════════════════════════════ */
     @media print {
-      #progress, .masthead, .signals-bar, .sec-nav, .back-top,
-      .theme-btn, .print-btn, .sec-end-nav, .impl-toggle,
-      .np-panel, .np-fab, .hl-tooltip, .full-story-btn { display: none !important; }
-      .bsec { display: block !important; padding-top: 24px; }
-      .impl-body { max-height: none !important; }
-      .impl-inner { display: block !important; }
+      @page { size: A4; margin: 14mm 12mm 16mm; }
+
+      /* Preserve brand colours (chips, badges, sentiment dots, key-stat panels)
+         even when the browser's "background graphics" option is off. */
+      * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+
+      /* Paper palette — force light values in BOTH themes so a dark-mode user
+         never exports a dark-variable PDF onto white paper. */
+      [data-theme="light"], [data-theme="dark"] {
+        --bg: #FFFFFF; --surface: #FFFFFF; --surface-hi: #F5F4F0;
+        --border: #DDD9D0; --border-hi: #C8C5BC;
+        --text: #111827; --text-2: #374151; --text-3: #6B7280;
+        --accent: #C41E3A; --accent-dim: rgba(196,30,58,0.07); --accent-glow: transparent;
+        --pos: #166534; --pos-bg: rgba(22,101,52,0.08);
+        --neg: #991B1B; --neg-bg: rgba(153,27,27,0.08); --neu: #57534E;
+        --shadow-sm: none; --shadow-md: none;
+        --ink: #111827; --surface-2: #F5F4F0; --muted: #6B7280;
+      }
+
+      /* Interactive chrome has no business on paper */
+      #progress, .sec-nav, .back-top, .theme-btn, .print-btn, .sec-end-nav,
+      .impl-toggle, .np-panel, .np-fab, .hl-tooltip, .full-story-btn { display: none !important; }
+      html, body { background: #fff !important; }
+
+      /* Document header: static compact masthead + one wrapped ticker line */
+      .masthead {
+        position: static !important; height: auto; padding: 0 0 12px;
+        border-bottom: 2px solid #111827;
+      }
+      .signals-bar { position: static; padding: 8px 0; overflow: visible; border-bottom: 1px solid var(--border); }
+      .signals-inner { height: auto; flex-wrap: wrap; row-gap: 6px; min-width: 0; }
+
+      /* Sequential document: every section prints, one per page */
+      .content { max-width: none; padding: 0 !important; }
+      .bsec { display: block !important; opacity: 1 !important; transform: none !important; padding-top: 18px !important; break-before: page; }
+      #summary { break-before: auto; }
+      .sec-head { break-after: avoid; }
+
+      /* Pagination hygiene: never split a story, stat, or summary row */
+      article.story-lead { break-inside: avoid; padding: 16px 0 !important; }
+      .key-stat, .impl-inner, .sum-item { break-inside: avoid; }
+      .summary-card { box-shadow: none !important; }
+      .summary-card table, .summary-card tr { break-inside: avoid; }
       .story-card { break-inside: avoid; box-shadow: none !important; }
-      body { background: white !important; color: black !important; }
-      .wordmark, .footer-icon { color: black !important; }
-      .wordmark .io { color: #C41E3A !important; }
-      .page-footer { background: white !important; }
+
+      /* Implications print expanded, with a label replacing the hidden toggle */
+      .impl-body { max-height: none !important; overflow: visible !important; }
+      .impl-body::before {
+        content: "→ Business Implication";
+        display: block; margin-top: 12px;
+        font-family: 'Inter', sans-serif; font-size: 10px; font-weight: 700;
+        letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent);
+      }
+      .impl-inner { display: block !important; margin-top: 6px; }
+
+      /* Slightly denser type for paper */
+      .story-lead .story-hl { font-size: 23px !important; }
+      .story-lede { font-size: 13.5px !important; }
+      .story-body { font-size: 12.5px !important; }
+      .ks-val { font-size: 26px !important; }
+
+      .page-footer { background: #fff !important; border-top: 1px solid var(--border); }
+      .footer-links { display: none; }
     }
 
     /* ════════════════════════════════════

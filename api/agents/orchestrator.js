@@ -237,7 +237,11 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
 
     .chat-panel { pointer-events: none; }
     .chat-panel.open { pointer-events: auto; }
-    @media print { .chat-fab, .chat-panel { display: none !important; } }
+    @media print {
+      .chat-fab, .chat-panel, .art-save-btn, .mob-sec-btn, .mob-sec-drawer { display: none !important; }
+      /* orchestrator's screen padding is larger than the print layout wants */
+      .bsec { padding-top: 18px !important; }
+    }
     @media (max-width: 600px) { .chat-panel { width: 100%; } .chat-fab { bottom: 20px; right: 20px; } }
 
     /* ── Section top padding (tab-based layout — one section at a time) ── */
