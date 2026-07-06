@@ -202,6 +202,9 @@ export async function runPipelineForClient(clientId) {
   // best-effort — a failure keeps the orchestrator draft.
   console.log(`[runner] Cross-checking executive summary (Opus 4.8 + thinking)`);
   orchestratorHtml = await runSummaryVerifier(client, orchestratorHtml, sectionHtmls, usage, vOpts);
+  if (!/priorit/i.test(orchestratorHtml)) {
+    console.warn(`[runner] WARNING: executive summary is missing the priorities box after verification`);
+  }
 
   // Step 5: Assemble full briefing HTML
   const today = new Date().toISOString().split('T')[0];

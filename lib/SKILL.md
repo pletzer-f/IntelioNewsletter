@@ -334,69 +334,36 @@ Lens:
 ## 8. ORCHESTRATOR SYNTHESIS RULES
 
 After all section agents finish:
-- Merge duplicate events across sections
-- Resolve conflicting claims using tier hierarchy
-- Apply AGENT 00 priorities when ranking ties occur
-- Build 4-5 Key Themes that connect sections
-- Produce an Executive Highlights block with the top 5 stories by Importance Score
-
-Executive Highlights are mandatory and must appear before section details.
+- Merge duplicate events across sections; each underlying development (e.g. one ECB decision) appears in AT MOST ONE highlight — when several sections carry the same driver, consolidate its cross-sector meaning into ONE Key Theme instead of repeating it
+- Use ONLY figures, rates, and dates as they appear in the fact-checked section outputs, each paired with ITS OWN attribution — never move a figure under a different source's name, never introduce a new number
+- Resolve conflicting claims using tier hierarchy; apply AGENT 00 priorities when ranking ties occur
+- Open the summary with the PRIORITIES BOX: 3-4 topics ranked by materiality (expected financial impact for the client) x urgency, each row ending in ONE sentence of decision-relevant analysis plus the concrete observable (metric, data release, threshold, or date) that shows which way it breaks
+- Produce Executive Highlights: the top 7 DISTINCT stories, each at most 3 sentences — fact first (figure + date), then mechanism, then effect; interpretation marked as interpretation ("kann", "spricht fuer"), hedges preserved
+- Market indicators (indices, FX, rates, commodities) are INDIRECT sentiment signals — never present them as direct evidence of operational outcomes (bookings, demand, occupancy); name the operational metric that would confirm
+- Build 4-5 cross-sectional Key Themes; at least ONE must be a downside/risk theme
+- ANALYSIS VOICE ONLY: no task assignments, no addressing of client roles, no internal deadlines — the briefing analyses, it does not manage
 
 ## 9. OUTPUT FORMAT (HTML)
 
-### 9.1 Executive Highlights (top of briefing)
-Each highlight includes:
-- Rank (`#1` to `#5`)
-- Title
-- One-sentence restatement
-- Importance Score and Confidence label (`High/Medium/Low`)
+The exact HTML templates are supplied in the runtime prompts and are AUTHORITATIVE — follow them verbatim; never substitute alternative wrappers or class names.
 
-### 9.2 Story card format
-
-```html
-<div class="card">
-  <div class="card-number">0X/03</div>
-  <div class="card-title">[Analyst title]</div>
-  <div class="card-body">
-    <strong>Restated news:</strong> [Fact-based summary with number/date/direction.]
-    <br><br>
-    <strong>Analysis:</strong> [Economic mechanism and first/second-order implications.]
-    <br><br>
-    <strong>[ClientName] relevance:</strong> [Named entity + impact direction + horizon.]
-    <br><br>
-    <strong>What to monitor:</strong> [1-2 concrete indicators.]
-    <br><br>
-    <strong>Source synthesis:</strong> [Consensus across outlets + any disagreement.]
-  </div>
-  <div class="card-footer">
-    <span class="card-source">[Primary publication] · [DD Mon YYYY]</span>
-    <a class="card-link" href="[VERIFIED URL]" target="_blank">Read article</a>
-  </div>
-</div>
-```
-
-If story age is over `LOOKBACK_HOURS`, add a stale warning block.
-
-### 9.3 Source transparency line
-At end of each section include:
-- `Sources used:` comma-separated list of publications
-- `Coverage note:` global + local coverage completeness
+- Section agents: a flat sequence of identical `<article class="story-lead">` blocks. The `key-stat` block is OPTIONAL — include it only with a verified figure; a story without a number is acceptable. Every implication block carries the four labels: Signal / Evidenz / Risiko zur These / Zu beobachten (EN: Signal / Evidence / Risk to thesis / Watch).
+- Orchestrator: the `summary-prep` line, then the priorities box `<div>`, then a `sum-list` with 7 `sum-item`s, then the Key Themes block — in that order.
 
 ## 10. QUALITY GATES (MUST PASS)
 
-- [ ] Top of briefing includes Executive Highlights ranked by Importance Score
-- [ ] Each story has title + restated fact + analysis + client relevance + monitor-next
-- [ ] Each story has at least one verified URL and publication date
-- [ ] No fabricated links, dates, entities, or quotes
-- [ ] Each section has at least one Tier 1-2 source
-- [ ] Local relevance covered with Tier 3-4 or client-provided local sources where available
-- [ ] High-impact stories have 2+ independent sources
+- [ ] Executive Summary opens with the priorities box, then 7 distinct highlights, then 4-5 Key Themes (at least one downside theme)
+- [ ] Each story: headline + lede + body + implication block with all four labels
+- [ ] key-stat ONLY where a verified figure with a real source exists — never invent a number to fill a card
+- [ ] No fabricated links, dates, entities, or quotes; every URL copied exactly from the provided sources
+- [ ] Market indicators framed as indirect signals, never as direct operational evidence
+- [ ] No unsourced forward-looking claims; source hedges preserved
+- [ ] No task assignments to client roles, no internal deadlines — analysis voice throughout
+- [ ] Each section has at least one Tier 1-2 source; high-impact stories corroborated by 2+ independent sources where available
 - [ ] AGENT 00 profile exists and is <=31 days old, or is refreshed in current run
-- [ ] At least one client-specific card per section, or explicit `No material client-specific development`
 - [ ] Final selection follows target focus mix (default 65% client-fit / 35% sector baseline)
-- [ ] If evidence is missing, the claim is removed or explicitly marked unverified (not in Executive Highlights)
-- [ ] No duplicate event cards across sections
-- [ ] Quantitative datapoint present in every card
+- [ ] If evidence is missing, the claim is removed or explicitly marked unverified (never in Executive Highlights)
+- [ ] No duplicate event cards across sections or highlights
 - [ ] Key Themes are cross-sectional, not section summaries
 
 ## 11. DEFAULT CLIENT CONTEXT (PLETZER TEMPLATE)
