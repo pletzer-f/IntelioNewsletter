@@ -174,16 +174,17 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     .chat-fab:hover { transform: translateY(-2px) scale(1.06); box-shadow: 0 8px 28px rgba(196,30,58,0.45); }
     .chat-fab-icon { font-size: 18px; color: #fff; line-height: 1; }
 
-    /* ── Chat Panel ───────────────────────────────────────────────────── */
+    /* ── Chat Panel — slides in from the RIGHT (its FAB sits bottom-right,
+          matching the saved-articles panel; research notes own the left) ── */
     .chat-panel {
-      position: fixed; top: 0; left: 0;
+      position: fixed; top: 0; right: 0;
       width: 400px; max-width: 90vw; height: 100vh;
       background: var(--surface, #fff);
-      border-right: 1px solid var(--border, #E2DFD8);
-      box-shadow: 4px 0 32px rgba(15,23,42,0.12);
+      border-left: 1px solid var(--border, #E2DFD8);
+      box-shadow: -4px 0 32px rgba(15,23,42,0.12);
       display: flex; flex-direction: column;
       z-index: 900;
-      transform: translateX(-100%);
+      transform: translateX(100%);
       transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
     }
     .chat-panel.open { transform: translateX(0); }
@@ -356,7 +357,7 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
     /* ── Chat — use design-system CSS vars (dark-mode safe) ─────────────── */
     /* The inline chat styles above use --ink/--surface-2/--muted which aren't in the
        briefing template. These overrides replace them with the correct variables. */
-    .chat-panel { background: var(--surface); border-right-color: var(--border); }
+    .chat-panel { background: var(--surface); border-left-color: var(--border); }
     .chat-panel-head { background: #0F172A !important; }
     .chat-head-logo { color: #F9F8F5 !important; }
     .chat-head-title { color: rgba(255,255,255,0.38) !important; }
@@ -418,17 +419,21 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       clear: both !important;
     }
 
-    /* ── Prevent any wrapper div in sections from creating columns ───── */
-    .bsec > div:not(.sec-head) {
+    /* ── Prevent any wrapper div in sections from creating columns ─────
+          (.sec-end-nav is OUR OWN grid — the template script appends it as a
+          direct child of .bsec; forcing it to block broke prev/dots/next.) */
+    .bsec > div:not(.sec-head):not(.sec-end-nav) {
       display: block !important;
       columns: auto !important;
       column-count: auto !important;
     }
 
-    /* ── Save (bookmark) button on each story article ─────────────────── */
+    /* ── Save (bookmark) button on each story article ──────────────────
+          Block-level on its own line, with clear air above and below so it
+          never crowds the SOURCE badge that follows. */
     .art-save-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 12px; margin-top: 10px; margin-bottom: 8px;
+      display: flex; width: fit-content; align-items: center; gap: 6px;
+      padding: 5px 12px; margin: 18px 0 14px;
       background: transparent; border: 1px solid var(--border);
       border-radius: 20px; cursor: pointer;
       font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 600;
