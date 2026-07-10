@@ -876,6 +876,10 @@
     @media print {
       @page { size: A4; margin: 14mm 12mm 16mm; }
 
+      /* Chrome's print-preview scroll capture breaks with smooth scrolling —
+         a classic cause of blank previews and a blank page after the dialog. */
+      html { scroll-behavior: auto !important; }
+
       /* Preserve brand colours (chips, badges, sentiment dots, key-stat panels)
          even when the browser's "background graphics" option is off. */
       * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -898,9 +902,11 @@
       .impl-toggle, .np-panel, .np-fab, .hl-tooltip, .full-story-btn { display: none !important; }
       html, body { background: #fff !important; }
 
-      /* Document header: static compact masthead + one wrapped ticker line */
+      /* Document header: compact masthead + one wrapped ticker line.
+         (No position override — sticky already prints as static, and forcing
+         the switch is a known Chrome blank-after-print repaint trigger.) */
       .masthead {
-        position: static !important; height: auto; padding: 0 0 12px;
+        height: auto; padding: 0 0 12px;
         border-bottom: 2px solid #111827;
       }
       .signals-bar { position: static; padding: 8px 0; overflow: visible; border-bottom: 1px solid var(--border); }
@@ -1702,6 +1708,19 @@
       // Scroll to just below the sticky header stack (masthead + signals + secnav)
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    /* ── 3b. PRINT RECOVERY ──
+       Chrome can leave the live page blank after the print dialog closes (the
+       print↔screen media switch relayouts the whole tab-based document, and the
+       restore occasionally strands the compositor / scroll position). Force a
+       synchronous reflow and restore a sane scroll position afterwards. */
+    window.addEventListener('afterprint', () => {
+      const y = Math.min(window.scrollY, Math.max(0, document.body.scrollHeight - window.innerHeight));
+      document.body.style.display = 'none';
+      void document.body.offsetHeight;   // flush
+      document.body.style.display = '';
+      window.scrollTo(0, y);
+    });
 
     /* ── 4. STICKY NAV SHADOW ── */
     const secNavEl = document.getElementById('secNav');
