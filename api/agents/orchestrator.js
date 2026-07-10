@@ -241,6 +241,12 @@ export function assembleBriefing({ client, today, orchestratorHtml, sectionHtmls
       .chat-fab, .chat-panel, .art-save-btn, .mob-sec-btn, .mob-sec-drawer { display: none !important; }
       /* orchestrator's screen padding is larger than the print layout wants */
       .bsec { padding-top: 18px !important; }
+      /* Our screen rules clamp .content/.bsec to overflow-x:hidden (layout-leak
+         containment). During print fragmentation, overflow-hidden boxes get
+         CLIPPED to a single page in several Chrome versions — the classic
+         "blank pages in the PDF" bug. Release the containment on paper only;
+         this block sits after those rules, so it wins the cascade. */
+      .content, .bsec { overflow: visible !important; }
     }
     @media (max-width: 600px) { .chat-panel { width: 100%; } .chat-fab { bottom: 20px; right: 20px; } }
 
