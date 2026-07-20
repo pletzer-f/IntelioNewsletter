@@ -165,21 +165,31 @@ export async function runPipelineForClient(clientId) {
 
   // Step 3.5: verification pass — fact-check each section against its own sources + the
   // verified data sheet, stripping unsupported figures, fabricated URLs, misattributions,
-  // and unsourced forward-looking conclusions. Runs on OPUS 4.8 with adaptive thinking:
-  // this is CEO-level output, and verification (conflation, inverted logic, wrong-period
-  // figures) is exactly where the strongest model earns its price. complete() falls back
-  // to Sonnet automatically if Opus errors. Best-effort: a failure keeps the draft.
-  console.log(`[runner] Verifying every section against its sources (Opus 4.8 + thinking)`);
-  const vOpts = { model: 'claude-opus-4-8', thinking: true };
+  // and unsourced forward-looking conclusions.
+  //
+  // COST TIERING (added after a 7-section × 6-story first-run briefing hit ~$6):
+  // verification cost scales linearly with sections × stories, and Opus billing
+  // (thinking counts as output at $25/M) dominates it. Quality floor: the Macro
+  // section and the Executive Summary are ALWAYS verified on Opus 4.8 + thinking
+  // (highest figure density, most-read block). The remaining sections use Opus
+  // for standard workloads and Sonnet 4.6 once the briefing is large enough that
+  // all-Opus would overshoot the budget. complete() still auto-falls back to
+  // Sonnet on any Opus error. Best-effort: a failure keeps the draft.
+  const storiesPer = Number(client.stories_per_section) > 0 ? Number(client.stories_per_section) : 3;
+  const workload   = enabledSections.size * storiesPer;   // sections × stories ≈ cost driver
+  const OPUS_MAX_WORKLOAD = Number(process.env.OPUS_VERIFY_MAX_WORKLOAD || 20);
+  const vOptsOpus = { model: 'claude-opus-4-8', thinking: true };
+  const vOptsStd  = workload <= OPUS_MAX_WORKLOAD ? vOptsOpus : { model: 'claude-sonnet-4-6' };
+  console.log(`[runner] Verifying sections (workload ${workload}: macro+summary=opus, others=${vOptsStd === vOptsOpus ? 'opus' : 'sonnet'})`);
   try {
     [h01, h02, h03, h04, h05, h06, h07] = await Promise.all([
-      runVerifier(client, 'Macro & Markets',           h01, sr01, dataSheet, usage, vOpts),
-      runVerifier(client, 'Core Industry',             h02, sr02, dataSheet, usage, vOpts),
-      runVerifier(client, 'Private Equity & M&A',      h03, sr03, dataSheet, usage, vOpts),
-      runVerifier(client, 'End-Market Demand',         h04, sr04, dataSheet, usage, vOpts),
-      runVerifier(client, 'Assets & Capex',            h05, sr05, dataSheet, usage, vOpts),
-      runVerifier(client, 'Local Policy & Reputation', h06, sr06, dataSheet, usage, vOpts),
-      runVerifier(client, 'Politics & Geopolitics',    h07, sr07, dataSheet, usage, vOpts),
+      runVerifier(client, 'Macro & Markets',           h01, sr01, dataSheet, usage, vOptsOpus),
+      runVerifier(client, 'Core Industry',             h02, sr02, dataSheet, usage, vOptsStd),
+      runVerifier(client, 'Private Equity & M&A',      h03, sr03, dataSheet, usage, vOptsStd),
+      runVerifier(client, 'End-Market Demand',         h04, sr04, dataSheet, usage, vOptsStd),
+      runVerifier(client, 'Assets & Capex',            h05, sr05, dataSheet, usage, vOptsStd),
+      runVerifier(client, 'Local Policy & Reputation', h06, sr06, dataSheet, usage, vOptsStd),
+      runVerifier(client, 'Politics & Geopolitics',    h07, sr07, dataSheet, usage, vOptsStd),
     ]);
   } catch (err) {
     console.warn(`[runner] Verification pass error (non-fatal, keeping drafts): ${err.message}`);
@@ -201,7 +211,7 @@ export async function runPipelineForClient(clientId) {
   // is the most-read block and previously shipped unverified. Opus + thinking;
   // best-effort — a failure keeps the orchestrator draft.
   console.log(`[runner] Cross-checking executive summary (Opus 4.8 + thinking)`);
-  orchestratorHtml = await runSummaryVerifier(client, orchestratorHtml, sectionHtmls, usage, vOpts);
+  orchestratorHtml = await runSummaryVerifier(client, orchestratorHtml, sectionHtmls, usage, vOptsOpus);
   if (!/priorit/i.test(orchestratorHtml)) {
     console.warn(`[runner] WARNING: executive summary is missing the priorities box after verification`);
   }
@@ -233,6 +243,10 @@ export async function runPipelineForClient(clientId) {
     throw new Error(`[Step 6/save] ${err.message}`);
   }
   console.log(`[runner] Briefing saved: ${briefing.id} ($${costUsd.toFixed(4)} · in ${totalIn} / out ${totalOut} · opus-verify ${usage.opusInput || 0}/${usage.opusOutput || 0})`);
+  const costWarn = Number(process.env.BRIEFING_COST_WARN_USD || 4);
+  if (costUsd > costWarn) {
+    console.warn(`[runner] COST ALERT: briefing ${briefing.id} cost $${costUsd.toFixed(2)} (> $${costWarn}) — client ${client.client_name}, workload ${enabledSections.size}×${storiesPer}`);
+  }
 
   // Step 7: Send email — pass orchestratorHtml (executive summary) + section names
   // We do NOT send the full briefingHtml; the email contains the summary + a CTA link.
