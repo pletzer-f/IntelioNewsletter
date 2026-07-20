@@ -829,8 +829,20 @@
     }
 
     // ── Delete user ───────────────────────────────────────────────────────────
+    // Typed-name confirmation: a plain OK/Cancel dialog proved too easy to click
+    // through by accident, and deletion cascades (briefings + profile + login)
+    // with no undo.
     async function deleteUser(clientId, name) {
-      if (!confirm('Delete "' + name + '" completely?\n\nThis removes their briefing profile, all stored briefings, AND their login account (frees the email for re-use). This cannot be undone.')) return;
+      const typed = prompt(
+        'PERMANENTLY delete "' + name + '"?\n\n' +
+        'This removes their briefing profile, ALL stored briefings, AND their login account. There is no undo.\n\n' +
+        'Type the company name exactly to confirm:'
+      );
+      if (typed === null) return;                       // cancelled
+      if (typed.trim() !== name) {
+        alert('Name did not match — nothing was deleted.');
+        return;
+      }
       try {
         const res = await fetch(`${API_BASE}/admin`, { method: 'POST', headers: authHeaders({ 'Content-Type': 'application/json' }), body: JSON.stringify({ action: 'delete_client', clientId }) });
         const out = await res.json().catch(() => ({}));
